@@ -23,11 +23,19 @@ source("./helper.R")
 # ctb0004
 # Dados de "Fate of fipronil in soils under sugar cane cultivation from the Northeast of Brazil:
 # sorption and degradation"
-# https://docs.google.com/spreadsheets/d/17vSVemrAdkXL7il6x0729rd_fy7i9fga3uxdjwuUWWw/edit#gid=771766248
+# https://drive.google.com/drive/u/0/folders/1hZemS_Srcp5tqGlIFEuJT5Ri6ab-DSJf
 gs <- "17vSVemrAdkXL7il6x0729rd_fy7i9fga3uxdjwuUWWw"
+gid_validation <- 88779986
 gid_citation <- 0
 gid_event <- 1628657862
 gid_layer <- 771766248
+
+# validation #######################################################################################
+ctb0004_validation <- google_sheet(gs, gid_validation)
+str(ctb0004_validation)
+
+# Check for negative validation results
+sum(ctb0004_validation == FALSE, na.rm = TRUE)
 
 # citation #########################################################################################
 ctb0004_citation <- google_sheet(gs, gid_citation)
@@ -245,6 +253,8 @@ summary(ctb0004_layer[, dsi])
 # events and layers
 ctb0004 <- merge(ctb0004_event, ctb0004_layer, all = TRUE)
 ctb0004[, dataset_id := "ctb0004"]
+# citation
+ctb0004 <- merge(ctb0004, ctb0004_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0004)
 # Layers: 92
 # Events: 40
@@ -259,7 +269,7 @@ if (FALSE) {
   mapview::mapview(ctb0004_sf["argila"])
 }
 
-# Write to disk
+# Write to disk ####################################################################################
 ctb0004 <- select_output_columns(ctb0004)
 data.table::fwrite(ctb0004, "ctb0004/ctb0004.csv")
 data.table::fwrite(ctb0004_event, "ctb0004/ctb0004_event.csv")
