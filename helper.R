@@ -40,7 +40,7 @@ google_sheet <- function(gs, gid) {
   )
   dt <- data.table::fread(
     sheet_path,
-    dec = ",", sep = "\t", na.strings = c("NA", "NaN", "-", "#N/A")
+    dec = ",", sep = "\t", na.strings = c("NA", "NaN", "-", "#N/A"), header = TRUE
   )
   return(dt)
 }
