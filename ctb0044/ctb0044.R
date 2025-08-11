@@ -22,9 +22,17 @@ source("./helper.R")
 # de Itatiaia, Brasil"
 # https://drive.google.com/drive/folders/1j_CPeBHyMT-LpDc651xQATnr2RuoVVwO
 gs <- "14isyQnb-2cc8F51vF-C-DVosqJr801kwUIWrxoKspLc"
+gid_validation <- 88779986
 gid_citation <- 0
 gid_event <- 1628657862
 gid_layer <- 771766248
+
+# validation #######################################################################################
+ctb0044_validation <- google_sheet(gs, gid_validation)
+str(ctb0044_validation)
+
+# Check for negative validation results
+sum(ctb0044_validation == FALSE, na.rm = TRUE)
 
 # citation #########################################################################################
 ctb0044_citation <- google_sheet(gs, gid_citation)
