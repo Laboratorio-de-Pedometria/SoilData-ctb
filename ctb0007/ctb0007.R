@@ -17,10 +17,19 @@ source("./helper.R")
 # ctb0007
 # Dados de "Avaliação da cor e comportamento espectral de algumas classes de solos do Rio Grande do
 # Sul"
+# https://drive.google.com/drive/u/0/folders/1sZ8iE_lrunYooDa6INUQJKfOvzZXzsSn
 gs <- "1yH3S0lFCCGFQ2JupPH_5KAoleBA-v5zoU7RRlfzvNyo"
+gid_validation <- 88779986
 gid_citation <- 0
 gid_event <- 1628657862
 gid_layer <- 771766248
+
+# validation #######################################################################################
+ctb0007_validation <- google_sheet(gs, gid_validation)
+str(ctb0007_validation)
+
+# Check for negative validation results
+sum(ctb0007_validation == FALSE, na.rm = TRUE)
 
 # citation #########################################################################################
 ctb0007_citation <- google_sheet(gs, gid_citation)
@@ -231,6 +240,8 @@ ctb0007_layer[, dsi := NA_real_]
 # events and layers
 ctb0007 <- merge(ctb0007_event, ctb0007_layer, all = TRUE)
 ctb0007[, dataset_id := "ctb0007"]
+# citation
+ctb0007 <- merge(ctb0007, ctb0007_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0007)
 # Layers: 24
 # Events: 12
@@ -246,7 +257,7 @@ if (FALSE) {
   mapview::mapview(ctb0007_sf["argila"])
 }
 
-# Write to disk
+# Write to disk ####################################################################################
 ctb0007 <- select_output_columns(ctb0007)
 data.table::fwrite(ctb0007, "ctb0007/ctb0007.csv")
 data.table::fwrite(ctb0007_event, "ctb0007/ctb0007_event.csv")

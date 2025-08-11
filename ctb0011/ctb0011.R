@@ -23,10 +23,19 @@ source("./helper.R")
 # ctb0011
 # Mineralogia, morfologia e classificação de Saprolitos e Neossolos derivados de rochas vulcânicas
 # no Rio Grande do Sul
+# https://drive.google.com/drive/u/0/folders/1-R1Up6oTXTIophop_5AiI72URrd6abz4
 gs <- "1ksiT2Sz0kgD6BAve1GyQGLUefrZ1EainxzfofNsJwvk"
+gid_validation <- 88779986
 gid_citation <- 0
 gid_event <- 1628657862
 gid_layer <- 771766248
+
+# validation #######################################################################################
+ctb0011_validation <- google_sheet(gs, gid_validation)
+str(ctb0011_validation)
+
+# Check for negative validation results
+sum(ctb0011_validation == FALSE, na.rm = TRUE)
 
 # citation #########################################################################################
 ctb0011_citation <- google_sheet(gs, gid_citation)
@@ -224,6 +233,8 @@ ctb0011_layer[, dsi := NA_real_]
 # events and layers
 ctb0011 <- merge(ctb0011_event, ctb0011_layer, all = TRUE)
 ctb0011[, dataset_id := "ctb0011"]
+# citation
+ctb0011 <- merge(ctb0011, ctb0011_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0011)
 # Layers: 19
 # Events: 5
@@ -238,7 +249,7 @@ if (FALSE) {
   mapview::mapview(ctb0011_sf["argila"])
 }
 
-# Write to disk
+# Write to disk ####################################################################################
 ctb0011 <- select_output_columns(ctb0011)
 data.table::fwrite(ctb0011, "ctb0011/ctb0011.csv")
 data.table::fwrite(ctb0011_event, "ctb0011/ctb0011_event.csv")

@@ -22,10 +22,19 @@ source("./helper.R")
 # Google Sheet #####################################################################################
 # ctb0021
 # Dados de "Guia de campo da excursão pedológica da rocha à garrafa: geologia, solos e vinhos"
+# https://drive.google.com/drive/u/0/folders/1iBLW28Ul8o3pb5GFOmuZgjWIroavgf11
 gs <- "1HHKvkFLS5Mu7NBEmxW1jca902PzOWD2Vj4EdMM-DQhQ"
+gid_validation <- 88779986
 gid_citation <- 0
 gid_event <- 1628657862
 gid_layer <- 771766248
+
+# validation #######################################################################################
+ctb0021_validation <- google_sheet(gs, gid_validation)
+str(ctb0021_validation)
+
+# Check for negative validation results
+sum(ctb0021_validation == FALSE, na.rm = TRUE)
 
 # citation #########################################################################################
 ctb0021_citation <- google_sheet(gs, gid_citation)
@@ -285,6 +294,8 @@ str(ctb0021_layer)
 # events and layers
 ctb0021 <- merge(ctb0021_event, ctb0021_layer, all = TRUE)
 ctb0021[, dataset_id := "ctb0021"]
+# citation
+ctb0021 <- merge(ctb0021, ctb0021_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0021)
 # Layers: 42
 # Events: 8

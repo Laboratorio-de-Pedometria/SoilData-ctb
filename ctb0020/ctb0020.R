@@ -229,6 +229,8 @@ str(ctb0020_layer)
 # events and layers
 ctb0020 <- merge(ctb0020_event, ctb0020_layer, by = "observacao_id", all = TRUE)
 ctb0020[, dataset_id := "ctb0020"]
+# citation
+ctb0020 <- merge(ctb0020, ctb0020_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0020)
 # Layers: 136
 # Events: 34
@@ -254,7 +256,7 @@ if (FALSE) {
   mapview::mapview(ctb0020_sf["argila"])
 }
 
-# Write to disk
+# Write to disk ####################################################################################
 ctb0020 <- select_output_columns(ctb0020)
 data.table::fwrite(ctb0020, file = "ctb0020/ctb0020.csv")
 data.table::fwrite(ctb0020_event, file = "ctb0020/ctb0020_event.csv")

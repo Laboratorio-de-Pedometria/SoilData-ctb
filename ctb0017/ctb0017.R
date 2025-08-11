@@ -21,9 +21,17 @@ source("./helper.R")
 # Dados de 'Solos da Bacia Hidrográfica do Rio Uberaba'
 # https://docs.google.com/spreadsheets/d/1WBaSoLQDucp8_wXv9hMs8sT0ZEUOLfC_2fM-9Pr5OwE/
 gs <- "1WBaSoLQDucp8_wXv9hMs8sT0ZEUOLfC_2fM-9Pr5OwE"
+gid_validation <- 88779986
 gid_citation <- 0
 gid_event <- 1628657862
 gid_layer <- 771766248
+
+# validation #######################################################################################
+ctb0017_validation <- google_sheet(gs, gid_validation)
+str(ctb0017_validation)
+
+# Check for negative validation results
+sum(ctb0017_validation == FALSE, na.rm = TRUE)
 
 # citation #########################################################################################
 ctb0017_citation <- google_sheet(gs, gid_citation)
@@ -215,6 +223,8 @@ summary(ctb0017_layer[, dsi])
 # events and layers
 ctb0017 <- merge(ctb0017_event, ctb0017_layer, all = TRUE)
 ctb0017[, dataset_id := "ctb0017"]
+# citation
+ctb0017 <- merge(ctb0017, ctb0017_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0017)
 # Layers: 166
 # Events: 83

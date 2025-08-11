@@ -33,14 +33,12 @@ file_path <- path.expand("~/ownCloud/febr-repo/processamento/ctb0006/2022-05-25-
 ctb0006_citation <- openxlsx::read.xlsx(file_path, sheet = "identificacao")
 ctb0006_citation <- data.table::as.data.table(ctb0006_citation)
 str(ctb0006_citation)
+
 # dataset_titulo
-# Check for the string "Título" in column "campo". Then get the corresponding row value from column
-# "valor".
 dataset_titulo <- ctb0006_citation[campo == "dados_titulo", valor]
 # dataset_licenca
-# Check for the string "Termos de uso" in column "campo". Then get the corresponding row value from
-# column "valor".
 dataset_licenca <- ctb0006_citation[campo == "dados_licenca", valor]
+
 # Refactor data.table
 ctb0006_citation <- data.table::data.table(
   dataset_id = "ctb0006",
@@ -312,7 +310,10 @@ for (i in auger_holes) {
 ctb0006[, nearest := NULL]
 ctb0006[, has_layer := NULL]
 ctb0006[, sibcs := NULL]
+
+# Merge citation data
 ctb0006[, dataset_id := "ctb0006"]
+ctb0006 <- merge(ctb0006, ctb0006_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0006)
 # Layers: 2470
 # Events: 604
@@ -327,7 +328,7 @@ if (FALSE) {
   mapview::mapview(ctb0006_sf["argila"])
 }
 
-# Write to disk
+# Write to disk ####################################################################################
 ctb0006 <- select_output_columns(ctb0006)
 data.table::fwrite(ctb0006, "ctb0006/ctb0006.csv")
 data.table::fwrite(ctb0006_event, "ctb0006/ctb0006_event.csv")
