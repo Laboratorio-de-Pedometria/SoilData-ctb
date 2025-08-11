@@ -330,7 +330,7 @@ set_gps_precision <- function() {
 # sample ID, depth limits, and soil properties.
 select_output_columns <- function(data) {
   target_columns <- c(
-    "dataset_id",
+    "dataset_id", "dataset_titulo", "dataset_licenca",
     "observacao_id",
     "data_ano", "data_fonte",
     "coord_x", "coord_y", "coord_datum", "coord_fonte", "coord_precisao",
