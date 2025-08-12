@@ -69,11 +69,13 @@ Crie uma nova pasta para o estudo, seguindo uma das regras abaixo para a nomeaç
 * **Se o estudo ainda NÃO possui um código oficial**, crie um código temporário com o prefixo `tmp` seguido de quatro dígitos.
     * *Exemplo: `tmp0001`*
 
-### 4. Copie e Renomeie o Template
+### 4. Use um Script Existente como Exemplo
 
-Copie o arquivo `template_script.R` do diretório raiz para a sua nova pasta e renomeie-o para corresponder ao ID do estudo.
+Em vez de começar do zero, procure um script de um estudo já processado que seja semelhante ao seu novo estudo. O script `ctb0004/ctb0004.R` é um bom exemplo inicial.
 
-* *Exemplo: O arquivo dentro da pasta `ctb0064` deve se chamar `ctb0064.R`.*
+Copie o script selecionado para a nova pasta do estudo e renomeie-o para corresponder ao ID do seu estudo.
+
+**Exemplo:** Copie `ctb0004/ctb0004.R` para `tmp0001/` e renomeie para `tmp0001.R`.
 
 ### 5. Curadoria e Controle de Qualidade dos Dados
 
