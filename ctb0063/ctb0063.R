@@ -1,4 +1,4 @@
-# author: Alessandro Samuel-Rosa
+# autor: Alessandro Samuel-Rosa
 # data: 2025
 rm(list = ls())
 
@@ -235,6 +235,8 @@ str(ctb0063_layer)
 # events and layers
 ctb0063 <- merge(ctb0063_event, ctb0063_layer, all = TRUE)
 ctb0063[, dataset_id := "ctb0063"]
+# citation
+ctb0063 <- merge(ctb0063, ctb0063_citation, by = "dataset_id", all.x = TRUE)
 
 # Keep only rows where the source of the data is "Original"
 ctb0063 <- ctb0063[dados_fonte == "Original"]

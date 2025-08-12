@@ -1,5 +1,5 @@
-# author: Alessandro Samuel-Rosa
-# data: 2024 CC-BY
+# autor: Alessandro Samuel-Rosa
+# data: 2025
 rm(list = ls())
 
 # Install and load required packages
@@ -276,6 +276,8 @@ str(ctb0051_layer)
 # events and layers
 ctb0051 <- merge(ctb0051_event, ctb0051_layer, all = TRUE)
 ctb0051[, dataset_id := "ctb0051"]
+# citation
+ctb0051 <- merge(ctb0051, ctb0051_citation, by = "dataset_id", all.x = TRUE)
 # This work contains many soil profiles from previous works. We will discard them.
 ctb0051 <- ctb0051[is.na(observacao_fonte), ]
 summary_soildata(ctb0051)

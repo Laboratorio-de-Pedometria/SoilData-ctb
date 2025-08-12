@@ -1,4 +1,4 @@
-# author: Alessandro Samuel-Rosa
+# autor: Alessandro Samuel-Rosa
 # data: 2025
 rm(list = ls())
 
@@ -267,6 +267,8 @@ str(ctb0050_layer)
 # events and layers
 ctb0050 <- merge(ctb0050_event, ctb0050_layer, all = TRUE)
 ctb0050[, dataset_id := "ctb0050"]
+# citation
+ctb0050 <- merge(ctb0050, ctb0050_citation, by = "dataset_id", all.x = TRUE)
 
 # This work contains many soil profiles from previous works. We will discard them.
 # Wi discard them here to guarantee that the respective layers are also discarded too.

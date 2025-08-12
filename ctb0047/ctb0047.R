@@ -1,5 +1,5 @@
-# author: Alessandro Samuel-Rosa
-# data: 2024 CC-BY
+# autor: Alessandro Samuel-Rosa
+# data: 2025
 rm(list = ls())
 
 # Install and load required packages
@@ -211,6 +211,8 @@ str(ctb0047_layer)
 # events and layers
 ctb0047 <- merge(ctb0047_event, ctb0047_layer, all = TRUE)
 ctb0047[, dataset_id := "ctb0047"]
+# citation
+ctb0047 <- merge(ctb0047, ctb0047_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0047)
 # Layers: 44
 # Events: 26
@@ -222,7 +224,7 @@ if (FALSE) {
   mapview::mapview(ctb0047_sf["argila"])
 }
 
-# Write to disk
+# Write to disk ####################################################################################
 ctb0047 <- select_output_columns(ctb0047)
 data.table::fwrite(ctb0047, "ctb0047/ctb0047.csv")
 data.table::fwrite(ctb0047_event, "ctb0047/ctb0047_event.csv")

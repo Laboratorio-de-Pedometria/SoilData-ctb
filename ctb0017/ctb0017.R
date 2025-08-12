@@ -1,4 +1,4 @@
-# author: Alessandro Samuel-Rosa
+# autor: Alessandro Samuel-Rosa
 # data: 2024 CC-BY
 rm(list = ls())
 

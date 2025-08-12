@@ -1,5 +1,5 @@
-# author: Alessandro Samuel-Rosa
-# data: 2024 CC-BY
+# autor: Alessandro Samuel-Rosa
+# data: 2025
 rm(list = ls())
 
 # Install and load required packages
@@ -333,6 +333,8 @@ ctb0053[is.na(data_ano), data_ano := as.integer(names(which.max(table(ctb0053$da
 
 # Set the dataset_id
 ctb0053[, dataset_id := "ctb0053"]
+# citation
+ctb0053 <- merge(ctb0053, ctb0053_citation, by = "dataset_id", all.x = TRUE)
 
 # Jitter coordinates of events to pass checks for duplicated observations
 # Start by creating spatial object

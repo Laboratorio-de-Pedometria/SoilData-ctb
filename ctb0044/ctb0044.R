@@ -1,4 +1,4 @@
-# author: Alessandro Samuel-Rosa
+# autor: Alessandro Samuel-Rosa
 # data: 2025
 rm(list = ls())
 
@@ -300,6 +300,8 @@ str(ctb0044_layer)
 # events and layers
 ctb0044 <- merge(ctb0044_event, ctb0044_layer, all = TRUE)
 ctb0044[, dataset_id := "ctb0044"]
+# citation
+ctb0044 <- merge(ctb0044, ctb0044_citation, by = "dataset_id", all.x = TRUE)
 # There are some events that consist of rock outcrops. We remove them.
 ctb0044 <- ctb0044[use != "rock"]
 summary_soildata(ctb0044)

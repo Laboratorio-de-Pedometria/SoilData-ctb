@@ -1,5 +1,5 @@
-# author: Alessandro Samuel-Rosa
-# data: 2024 CC-BY
+# autor: Alessandro Samuel-Rosa
+# data: 2025
 rm(list = ls())
 
 # Install and load required packages
@@ -500,6 +500,8 @@ str(ctb0052_layer)
 # Merge events and layers
 ctb0052 <- merge(ctb0052_event, ctb0052_layer, all = TRUE)
 ctb0052[, dataset_id := "ctb0052"]
+# citation
+ctb0052 <- merge(ctb0052, ctb0052_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0052)
 # Layers: 467
 # Events: 137

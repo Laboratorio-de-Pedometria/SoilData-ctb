@@ -1,4 +1,4 @@
-# author: Alessandro Samuel-Rosa
+# autor: Alessandro Samuel-Rosa
 # data: 2025
 rm(list = ls())
 
@@ -19,10 +19,19 @@ source("./helper.R")
 # Google Sheet #####################################################################################
 # ctb0040
 # Fertilidade do Solo do Sítio Capinzal
+# https://drive.google.com/drive/u/0/folders/1cd8iV6W0JteUNVUD9Fk7-9i0yfCIQO-5
 gs <- "1kz5Tb5IVdK6P7i6m_OakCk-oFoRMN3WIQUu00UVkOJ0"
 gid_citation <- 0
+gid_validation <- 88779986
 gid_event <- 1628657862
 gid_layer <- 771766248
+
+# validation #######################################################################################
+ctb0040_validation <- google_sheet(gs, gid_validation)
+str(ctb0040_validation)
+
+# Check for negative validation results
+sum(ctb0040_validation == FALSE, na.rm = TRUE)
 
 # citation #########################################################################################
 ctb0040_citation <- google_sheet(gs, gid_citation)
@@ -166,9 +175,14 @@ ctb0040_layer <- ctb0040_layer[order(observacao_id, profund_sup, profund_inf)]
 ctb0040_layer[, camada_id := 1:.N, by = observacao_id]
 ctb0040_layer[, .N, by = camada_id]
 
-# terrafina
-# terra fina is missing. We set it to 1000 g/kg
-ctb0040_layer[, terrafina := 1000]
+# Terra fina [%v] -> terrafina
+# A proporção da fração terra fina foi estimada visualmente pelo autor dos dados como sendo de
+# aproximadamente 50% (~50).
+data.table::setnames(ctb0040_layer, old = "Terra fina [%v]", new = "terrafina")
+ctb0040_layer[, terrafina := as.character(terrafina)]
+ctb0040_layer[, terrafina := gsub("~", "", terrafina)]
+ctb0040_layer[, terrafina := as.numeric(terrafina)]
+summary(ctb0040_layer[, terrafina])
 
 # Argila [g/kg] -> argila
 data.table::setnames(ctb0040_layer, old = "Argila [g/kg]", new = "argila")
@@ -210,8 +224,10 @@ str(ctb0040_layer)
 # events and layers
 ctb0040 <- merge(ctb0040_event, ctb0040_layer, all = TRUE)
 ctb0040[, dataset_id := "ctb0040"]
+# citation
+ctb0040 <- merge(ctb0040, ctb0040_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0040)
-# Layers: 16
+# Layers: 32
 # Events: 8
 # Georeferenced events: 8
 

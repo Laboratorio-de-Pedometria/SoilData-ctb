@@ -1,4 +1,4 @@
-# author: Alessandro Samuel-Rosa
+# autor: Alessandro Samuel-Rosa
 # data: 2025
 rm(list = ls())
 
@@ -225,6 +225,8 @@ str(ctb0035_layer)
 # events and layers
 ctb0035 <- merge(ctb0035_event, ctb0035_layer, all = TRUE)
 ctb0035[, dataset_id := "ctb0035"]
+# citation
+ctb0035 <- merge(ctb0035, ctb0035_citation, by = "dataset_id", all.x = TRUE)
 
 # Order by coord_x
 # Print the layers with duplicated coordinates, checking key soil properties

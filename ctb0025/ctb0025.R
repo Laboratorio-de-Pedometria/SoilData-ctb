@@ -1,5 +1,5 @@
-# author: Alessandro Samuel-Rosa
-# data: 2024 CC-BY
+# autor: Alessandro Samuel-Rosa
+# data: 2025
 rm(list = ls())
 
 # Install and load required packages
@@ -343,7 +343,11 @@ for (i in auger_holes) {
 ctb0025[, nearest := NULL]
 ctb0025[, has_layer := NULL]
 ctb0025[, sibcs := NULL]
+
+# Add dataset_id
 ctb0025[, dataset_id := "ctb0025"]
+# citation
+ctb0025 <- merge(ctb0025, ctb0025_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0025)
 # Layers: 869
 # Events: 237

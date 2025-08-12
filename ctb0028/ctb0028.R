@@ -1,4 +1,4 @@
-# author: Alessandro Samuel-Rosa
+# autor: Alessandro Samuel-Rosa
 # data: 2025
 rm(list = ls())
 
@@ -23,8 +23,16 @@ source("./helper.R")
 # https://drive.google.com/drive/u/0/folders/13FfWFNVY3rEudetbJ3IdUVTIvD43xT7y
 gs <- "1PwavEXm8Ow59aF8ZykvKsJwj6THbv_i_3yUmZUuHgkI"
 gid_citation <- 851221394
+gid_validation <- 1253941506
 gid_event <- 398191837
 gid_layer <- 1547320225
+
+# validation #######################################################################################
+ctb0028_validation <- google_sheet(gs, gid_validation)
+str(ctb0028_validation)
+
+# Check for negative validation results
+sum(ctb0028_validation == FALSE, na.rm = TRUE)
 
 # citation #########################################################################################
 ctb0028_citation <- google_sheet(gs, gid_citation)
@@ -244,6 +252,8 @@ str(ctb0028_layer)
 # events and layers
 ctb0028 <- merge(ctb0028_event, ctb0028_layer, all = TRUE)
 ctb0028[, dataset_id := "ctb0028"]
+# citation
+ctb0028 <- merge(ctb0028, ctb0028_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0028)
 # Layers: 77
 # Events: 31
