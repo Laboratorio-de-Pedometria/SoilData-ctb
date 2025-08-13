@@ -21,7 +21,7 @@ source("./helper.R")
 # Dados de "Levantamento de reconhecimento de alta intensidade dos solos da Apa de Cafuringa-DF,
 # escala 1:100.000"
 # https://drive.google.com/drive/folders/1xCfTSFF5fk5izBf7kjtkuJqHss-jddLf
-gs <- "1ANGyAqMCzT-iWZPziHCUUilSGDTfQCfl"
+gs <- "13s32KBMYs7-g5pQyLg7WzhcK8RRvQMF3T93ZT9-An14"
 gid_validation <- 1974932169
 gid_citation <- 923063661
 gid_event <- 1636375983
