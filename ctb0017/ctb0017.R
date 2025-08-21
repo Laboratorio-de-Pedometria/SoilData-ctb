@@ -19,7 +19,7 @@ source("./helper.R")
 # Google Sheet #####################################################################################
 # ctb0017
 # Dados de 'Solos da Bacia Hidrográfica do Rio Uberaba'
-# https://docs.google.com/spreadsheets/d/1WBaSoLQDucp8_wXv9hMs8sT0ZEUOLfC_2fM-9Pr5OwE/
+# https://drive.google.com/drive/folders/1CtxewFfjgRQuWTFO6fjZ_M3-w-m2Glds?usp=drive_link
 gs <- "1WBaSoLQDucp8_wXv9hMs8sT0ZEUOLfC_2fM-9Pr5OwE"
 gid_validation <- 88779986
 gid_citation <- 0
