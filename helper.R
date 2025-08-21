@@ -45,6 +45,29 @@ google_sheet <- function(gs, gid) {
   return(dt)
 }
 
+# Read SoilData Catalog ############################################################################
+# This function reads a spreadsheet catalog containing the spreadsheet ID and GID for each dataset.
+# It returns a data.table with the dataset ID, Google Sheet ID, and GID.
+# ctb: character string, the dataset ID (e.g., "ctb0001")
+# Returns: data.table with the dataset ID, Google Sheet ID, and GID
+# Example usage: soildata_catalog("ctb0001")
+# Note: The function assumes that the google_sheet function is available and that the Google Sheet
+# with the catalog is publicly accessible.
+soildata_catalog <- function(ctb) {
+  # Read the catalog from the Google Sheet
+  catalog <- google_sheet(gs = "13_6nt97aNc3bWHrfXW-OpkmtvVh-D37DLgRnu6Yps48", gid = 0)
+  # Keep only relevant columns
+  # ID, gs_id	gid_citation	gid_event	gid_layer	gid_validation
+  catalog <- catalog[, .(ID, gs_id, gid_citation, gid_event, gid_layer, gid_validation)]
+  # Filter by ID == ctb
+  catalog <- catalog[ID == ctb]
+  # Check if catalog is empty
+  if (nrow(catalog) == 0) {
+    stop(paste("No catalog found for dataset ID:", ctb))
+    }
+  return(catalog)
+}
+
 # Solve plus sign in layer depth limits ############################################################
 # This function checks if a string (soil layer depth, generally the last record of the 'profund_inf'
 # column) ends with a plus sign ('+'). This generraly occurs when the final depth of a soil layer is
