@@ -25,11 +25,6 @@ source("./helper.R")
 # sorption and degradation"
 # https://drive.google.com/drive/u/0/folders/1hZemS_Srcp5tqGlIFEuJT5Ri6ab-DSJf
 ctb0004_ids <- soildata_catalog("ctb0004")
-# gs <- "17vSVemrAdkXL7il6x0729rd_fy7i9fga3uxdjwuUWWw"
-# gid_validation <- 88779986
-# gid_citation <- 0
-# gid_event <- 1628657862
-# gid_layer <- 771766248
 
 # validation #######################################################################################
 ctb0004_validation <- google_sheet(ctb0004_ids$gs_id, ctb0004_ids$gid_validation)
@@ -228,9 +223,9 @@ data.table::setnames(ctb0004_layer, old = "Org. C [g/kg]", new = "carbono")
 ctb0004_layer[, carbono := as.numeric(carbono)]
 summary(ctb0004_layer[, carbono])
 
-# CEC -> ctc
+# CEC [cmolc/kg] -> ctc
 # CEC is missing for all 0-15 and 15-30 layers
-data.table::setnames(ctb0004_layer, old = "CEC", new = "ctc")
+data.table::setnames(ctb0004_layer, old = "CEC [cmolc/kg]", new = "ctc")
 ctb0004_layer[, ctc := as.numeric(ctc)]
 summary(ctb0004_layer[, ctc])
 
