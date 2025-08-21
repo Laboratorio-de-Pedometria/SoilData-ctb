@@ -24,21 +24,22 @@ source("./helper.R")
 # Dados de "Fate of fipronil in soils under sugar cane cultivation from the Northeast of Brazil:
 # sorption and degradation"
 # https://drive.google.com/drive/u/0/folders/1hZemS_Srcp5tqGlIFEuJT5Ri6ab-DSJf
-gs <- "17vSVemrAdkXL7il6x0729rd_fy7i9fga3uxdjwuUWWw"
-gid_validation <- 88779986
-gid_citation <- 0
-gid_event <- 1628657862
-gid_layer <- 771766248
+ctb0004_ids <- soildata_catalog("ctb0004")
+# gs <- "17vSVemrAdkXL7il6x0729rd_fy7i9fga3uxdjwuUWWw"
+# gid_validation <- 88779986
+# gid_citation <- 0
+# gid_event <- 1628657862
+# gid_layer <- 771766248
 
 # validation #######################################################################################
-ctb0004_validation <- google_sheet(gs, gid_validation)
+ctb0004_validation <- google_sheet(ctb0004_ids$gs_id, ctb0004_ids$gid_validation)
 str(ctb0004_validation)
 
 # Check for negative validation results
 sum(ctb0004_validation == FALSE, na.rm = TRUE)
 
 # citation #########################################################################################
-ctb0004_citation <- google_sheet(gs, gid_citation)
+ctb0004_citation <- google_sheet(ctb0004_ids$gs_id, ctb0004_ids$gid_citation)
 str(ctb0004_citation)
 
 # dataset_titulo
@@ -60,7 +61,7 @@ ctb0004_citation <- data.table::data.table(
 print(ctb0004_citation)
 
 # event ############################################################################################
-ctb0004_event <- google_sheet(gs, gid_event)
+ctb0004_event <- google_sheet(ctb0004_ids$gs_id, ctb0004_ids$gid_event)
 str(ctb0004_event)
 
 # Process fields
@@ -155,7 +156,7 @@ ctb0004_event[, .N, by = taxon_st]
 str(ctb0004_event)
 
 # layers ###########################################################################################
-ctb0004_layer <- google_sheet(gs, gid_layer)
+ctb0004_layer <- google_sheet(ctb0004_ids$gs_id, ctb0004_ids$gid_layer)
 str(ctb0004_layer)
 
 # Process fields
