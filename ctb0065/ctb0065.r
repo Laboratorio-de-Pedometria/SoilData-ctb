@@ -151,5 +151,166 @@ str(ctb0065_layer)
 
 # PROCESS FIELDS
 
+# observacao_id
+# old: ID do evento
+# new: observacao_id
+data.table::setnames(ctb0065_layer, old = "ID do evento", new = "observacao_id")
+ctb0065_layer[, observacao_id := as.character(observacao_id)]
+ctb0065_layer[, .N, by = observacao_id]
 
+# camada_nome
+# old: ID da camada
+# new: camada_nome
+data.table::setnames(ctb0065_layer, old = "ID da camada", new = "camada_nome")
+ctb0065_layer[, camada_nome := as.character(camada_nome)]
+ctb0065_layer[, .N, by = camada_nome]
 
+# amostra_id
+# old: ID da amostra
+# new: amostra_id
+data.table::setnames(ctb0065_layer, old = "ID da amostra", new = "amostra_id")
+ctb0065_layer[, amostra_id := NA_character_]
+
+# perfil_id
+# old: Perfil
+# new: perfil_id
+data.table::setnames(ctb0065_layer, old = "Perfil", new = "perfil_id")
+ctb0065_layer[, perfil_id := as.character(perfil_id)]
+ctb0065_layer[, .N, by = perfil_id]
+
+# profund_sup
+# old: Profundidade inicial [cm]
+# new: profund_sup
+data.table::setnames(ctb0065_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+ctb0065_layer[, profund_sup := as.numeric(profund_sup)]
+summary(ctb0065_layer[, profund_sup])
+
+# profund_inf
+# old: Profundidade final [cm]
+# new: profund_inf
+data.table::setnames(ctb0065_layer, old = "Profundidade final [cm]", new = "profund_inf")
+ctb0065_layer[, profund_inf := as.numeric(profund_inf)]
+summary(ctb0065_layer[, profund_inf])
+
+# fracao_grossa
+# old: Fração grossa [> 2mm] (%)
+# new: fracao_grossa
+data.table::setnames(ctb0065_layer, old = "Fração grossa [> 2mm] (%)", new = "fracao_grossa")
+ctb0065_layer[, fracao_grossa := NA_real_]
+
+# fracao_fina
+# old: Fração fina [< 2mm~] (%)
+# new: fracao_fina
+#Fração Fina is missing for some -13, -10 and -10, -5 layers.
+data.table::setnames(ctb0065_layer, old = "Fração fina [< 2mm~] (%)", new = "fracao_fina")
+ctb0065_layer[, fracao_fina := as.numeric(fracao_fina) * 10]
+ctb0065_layer[is.na(fracao_fina), .(observacao_id, camada_nome, profund_sup, profund_inf, fracao_fina)]
+
+# areia_grossa
+# old: Areia grossa (%)
+# new: areia_grossa
+#Areia_grossa is missing for some -13, -10 and -10, -5 layers.
+data.table::setnames(ctb0065_layer, old = "Areia grossa (%)", new = "areia_grossa")
+ctb0065_layer[, areia_grossa := as.numeric(areia_grossa) * 10]
+ctb0065_layer[is.na(areia_grossa), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_grossa)]
+
+# areia_fina
+# old: Areia fina (%)
+# new: areia_fina
+#areia_fina is missing for some -13, -10 and -10, -5 layers.
+data.table::setnames(ctb0065_layer, old = "Areia fina (%)", new = "areia_fina")
+ctb0065_layer[, areia_fina := as.numeric(areia_fina) * 10]
+ctb0065_layer[is.na(areia_fina), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_fina)]
+
+# areia
+# criação da coluna areia 
+ctb0065_layer[, areia:= areia_grossa+areia_fina]
+
+# terrafina
+ctb0065_layer[, terrafina := NA_real_]
+
+# silte
+# old: Silte (%)
+# new: silte
+#Silte is missing for some -13, -10 and -10, -5 layers.
+data.table::setnames(ctb0065_layer, old = "Silte (%)", new = "silte")
+ctb0065_layer[, silte := as.numeric(silte) * 10]
+ctb0065_layer[is.na(silte), .(observacao_id, camada_nome, profund_sup, profund_inf, silte)]
+
+# argila
+# old: Argila (%)
+# new: argila
+#Argila is missing for some -13, -10 and -10, -5 layers.
+data.table::setnames(ctb0065_layer, old = "Argila (%)", new = "argila")
+ctb0065_layer[, argila := as.numeric(argila) * 10]
+ctb0065_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, argila)]
+
+# Check the particle size distribution
+# The sum of argila, silte and areia should be 1000 g/kg
+ctb0065_layer[, psd := round(argila + silte + areia_fina + areia_grossa)]
+psd_lims <- 900:1100
+# Check the limits
+ctb0065_layer[!psd %in% psd_lims & !is.na(psd), .N]
+# 0 layers have a sum of the particle size distribution outside the limits.
+# Print the rows with psd != 1000
+cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
+ctb0065_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
+
+# carbono
+# old: C (orgânico) (g/kg)
+# new: carbono
+data.table::setnames(ctb0065_layer, old = "C (orgânico) (g/kg)", new = "carbono")
+ctb0065_layer[, carbono := as.numeric(carbono)]
+summary(ctb0065_layer[, carbono])
+check_empty_layer(ctb0065_layer, "carbono")
+
+# ctc
+# old: CTC pH 7,0 (cmolc/kg)
+# new: ctc
+data.table::setnames(ctb0065_layer, old = "CTC pH 7,0 (cmolc/kg)", new = "ctc")
+ctb0065_layer[, ctc := as.numeric(ctc)]
+summary(ctb0065_layer[, ctc])
+check_empty_layer(ctb0065_layer, "ctc")
+
+# ph
+# old: H2O (pH)
+# new: ph
+data.table::setnames(ctb0065_layer, old = "H2O (pH)", new = "ph")
+ctb0065_layer[, ph := as.numeric(ph)]
+summary(ctb0065_layer[, ph])
+check_empty_layer(ctb0065_layer, "ph")
+
+# dsi
+# old: Densidade do solo (g/cm^3)
+# new: dsi
+data.table::setnames(ctb0065_layer, old = "Densidade do solo (g/cm^3)", new = "dsi")
+ctb0065_layer[, dsi := as.numeric(dsi)]
+summary(ctb0065_layer[, dsi])
+
+str(ctb0065_layer)
+
+# Merge ############################################################################################
+# events and layers
+ctb0065 <- merge(ctb0065_event, ctb0065_layer, all = TRUE)
+ctb0065[, dataset_id := "ctb0065"]
+# citation
+ctb0065 <- merge(ctb0065, ctb0065_citation, by = "dataset_id", all.x = TRUE)
+summary_soildata(ctb0065)
+#Layers: 36
+#Events: 8
+#Georeferenced events: 7
+
+# Plot using mapview
+if (FALSE) {
+  ctb0065_sf <- sf::st_as_sf(
+    ctb0065[coord_datum == 4326],
+    coords = c("coord_x", "coord_y"), crs = 4326
+  )
+  mapview::mapview(ctb0065_sf["argila"])
+}
+
+# Write to disk ####################################################################################
+ctb0065 <- select_output_columns(ctb0065)
+data.table::fwrite(ctb0065, "ctb0065/ctb0065.csv")
+data.table::fwrite(ctb0065_event, "ctb0065/ctb0065_event.csv")
+data.table::fwrite(ctb0065_layer, "ctb0065/ctb0065_layer.csv")
