@@ -360,6 +360,7 @@ select_output_columns <- function(data) {
     "pais_id", "estado_id", "municipio_id",
     "amostra_area",
     "taxon_sibcs", "taxon_st",
+    "pedregosidade", "rochosidade",
     "camada_nome", "amostra_id",
     "profund_sup", "profund_inf",
     "terrafina",

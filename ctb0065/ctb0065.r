@@ -75,15 +75,19 @@ ctb0065_event[, observacao_id := as.character(observacao_id)]
 any(table(ctb0065_event[, observacao_id]) > 1)
 
 
+#The year of data collection is missing, the author started 
+#the master's degree in 1992, so we estimate that he obtained the data collection in 1993.
+#It is necessary to contact the author to find out the actual year of collection.
 # data_ano
 # Ano (coleta) -> data_coleta_ano
 data.table::setnames(ctb0065_event, old = "Ano (coleta)", new = "data_ano")
-ctb0065_event[, data_ano := NA_character_]
-
-
+ctb0065_event[, data_ano := as.integer(data_ano)]
+ctb0065_event[, data_ano := 1993]
 # data_fonte
-ctb0065_event[!is.na(data_ano), data_fonte := "original"]
-ctb0065_event[, .N, by = data_fonte]
+ctb0065_event[, data_fonte := "estimativa"]
+ctb0065_event[, .N, by = data_ano]
+
+
 
 
 # coord_datum
@@ -144,6 +148,16 @@ ctb0065_event[, .N, by = taxon_sibcs]
 
 ctb0065_event[, taxon_st := NA_character_]
 
+# Pedregosidade (superficie)
+# Stoneness is missing in this document...
+
+ctb0065_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# Roughness is missing in this document, however, based on the estimated analysis, 
+# there is no roughness in this work.
+
+ctb0065_event[, rochosidade := ("Não Rochoso")]
 
 
 str(ctb0065_event)
@@ -172,7 +186,7 @@ ctb0065_layer[, .N, by = camada_nome]
 # old: ID da amostra
 # new: amostra_id
 data.table::setnames(ctb0065_layer, old = "ID da amostra", new = "amostra_id")
-ctb0065_layer[, amostra_id := NA_character_]
+ctb0065_layer[, amostra_id := NA_real_]
 
 # perfil_id
 # old: Perfil
@@ -195,19 +209,19 @@ data.table::setnames(ctb0065_layer, old = "Profundidade final [cm]", new = "prof
 ctb0065_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0065_layer[, profund_inf])
 
-# fracao_grossa
-# old: Fração grossa [> 2mm] (%)
-# new: fracao_grossa
-data.table::setnames(ctb0065_layer, old = "Fração grossa [> 2mm] (%)", new = "fracao_grossa")
-ctb0065_layer[, fracao_grossa := NA_real_]
+# camada_id
+ctb0065_layer <- ctb0065_layer[order(observacao_id, profund_sup, profund_inf)]
+ctb0065_layer[, camada_id := 1:.N, by = observacao_id]
+ctb0065_layer[, .N, by = camada_id]
+summary(ctb0065_layer[, camada_id])
 
-# fracao_fina
+# terrafina
 # old: Fração fina [< 2mm~] (%)
-# new: fracao_fina
-#Fração Fina is missing for some -13, -10 and -10, -5 layers.
-data.table::setnames(ctb0065_layer, old = "Fração fina [< 2mm~] (%)", new = "fracao_fina")
-ctb0065_layer[, fracao_fina := as.numeric(fracao_fina) * 10]
-ctb0065_layer[is.na(fracao_fina), .(observacao_id, camada_nome, profund_sup, profund_inf, fracao_fina)]
+# new: terrafina
+#terrafina is missing for some -13, -10 and -10, -5 layers.
+data.table::setnames(ctb0065_layer, old = "Fração fina [< 2mm~] (%)", new = "terrafina")
+ctb0065_layer[, terrafina := as.numeric(terrafina) * 10]
+ctb0065_layer[is.na(terrafina), .(observacao_id, camada_nome, profund_sup, profund_inf, terrafina)]
 
 # areia_grossa
 # old: Areia grossa (%)
@@ -255,9 +269,6 @@ ctb0065_layer[!psd %in% psd_lims & !is.na(psd), .N]
 # Print the rows with psd != 1000
 cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
 ctb0065_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
-
-# terrafina
-ctb0065_layer[, terrafina := silte + argila + areia]
 
 # carbono
 # old: C (orgânico) (g/kg)
