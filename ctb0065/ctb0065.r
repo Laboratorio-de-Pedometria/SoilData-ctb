@@ -134,8 +134,11 @@ data.table::setnames(ctb0065_event, old = "Área amostrada [m^2]", new = "amostr
 ctb0065_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0065_event[, amostra_area])
 
-# taxon_sibcs
-ctb0065_event[, taxon_sibcs := NA_character_]
+
+# Classificação de solo (1988) <- taxon_sibcs
+data.table::setnames(ctb0065_event, old = "Classificação do Solo (1988)", new = "taxon_sibcs")
+ctb0065_event[, taxon_sibcs := as.character(taxon_sibcs)]
+ctb0065_event[, .N, by = taxon_sibcs]
 
 # taxon_st_1999
 
@@ -226,9 +229,6 @@ ctb0065_layer[is.na(areia_fina), .(observacao_id, camada_nome, profund_sup, prof
 # criação da coluna areia 
 ctb0065_layer[, areia:= areia_grossa+areia_fina]
 
-# terrafina
-ctb0065_layer[, terrafina := NA_real_]
-
 # silte
 # old: Silte (%)
 # new: silte
@@ -255,6 +255,9 @@ ctb0065_layer[!psd %in% psd_lims & !is.na(psd), .N]
 # Print the rows with psd != 1000
 cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
 ctb0065_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
+
+# terrafina
+ctb0065_layer[, terrafina := silte + argila + areia]
 
 # carbono
 # old: C (orgânico) (g/kg)
