@@ -66,18 +66,18 @@ data.table::setnames(ctb0030_event, old = "Ano (coleta)", new = "data_ano")
 ctb0030_event[, data_ano := as.integer(data_ano)]
 ctb0030_event[, .N, by = data_ano]
 
-# data_fonte
+# ano_fonte
 # A data de coleta dos perfis de solo está especificada no documento de origem dos dados
-ctb0030_event[!is.na(data_ano), data_fonte := "original"]
-ctb0030_event[, .N, by = data_fonte]
+ctb0030_event[!is.na(data_ano), ano_fonte := "original"]
+ctb0030_event[, .N, by = ano_fonte]
 
 # There is one event missing the sampling year. It was obtained from Poelking (2007).
 # We assume it is 2006.
 ctb0030_event[is.na(data_ano) & observacao_id == "PERFIL-07", data_ano := 2006]
 ctb0030_event[, .N, by = data_ano]
-# data_fonte for this event is set to "estimativa"
-ctb0030_event[observacao_id == "PERFIL-07", data_fonte := "estimativa"]
-ctb0030_event[, .N, by = data_fonte]
+# ano_fonte for this event is set to "estimativa"
+ctb0030_event[observacao_id == "PERFIL-07", ano_fonte := "estimativa"]
+ctb0030_event[, .N, by = ano_fonte]
 
 # Longitude -> coord_x
 data.table::setnames(ctb0030_event, old = "Longitude", new = "coord_x")
@@ -150,6 +150,16 @@ ctb0030_event[, .N, by = taxon_sibcs]
 # taxon_st
 # Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
 ctb0030_event[, taxon_st := NA_character_]
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0030_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0030_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0030_event)
 

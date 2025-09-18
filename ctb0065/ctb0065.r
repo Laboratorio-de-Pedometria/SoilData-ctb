@@ -83,8 +83,8 @@ any(table(ctb0065_event[, observacao_id]) > 1)
 data.table::setnames(ctb0065_event, old = "Ano (coleta)", new = "data_ano")
 ctb0065_event[, data_ano := as.integer(data_ano)]
 ctb0065_event[, data_ano := 1993]
-# data_fonte
-ctb0065_event[, data_fonte := "estimativa"]
+# ano_fonte
+ctb0065_event[, ano_fonte := "estimativa"]
 ctb0065_event[, .N, by = data_ano]
 
 

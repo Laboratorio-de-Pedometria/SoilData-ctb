@@ -63,11 +63,11 @@ ctb0050_event[, data_ano := as.integer(format(data_ano, "%Y"))]
 ctb0050_event[, .N, by = data_ano]
 # Many events do not have a date. We will process them later.
 
-# data_fonte
+# ano_fonte
 # Para os eventos com data, a data de coleta no campo está especificada no documento de origem dos
 # dados
-ctb0050_event[!is.na(data_ano), data_fonte := "original"]
-ctb0050_event[, .N, by = data_fonte]
+ctb0050_event[!is.na(data_ano), ano_fonte := "original"]
+ctb0050_event[, .N, by = ano_fonte]
 
 # coord_x
 ctb0050_event[, coord_x := as.numeric(coord_x)]
@@ -135,6 +135,17 @@ ctb0050_event[, .N, by = taxon_sibcs]
 # taxon_st
 # Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset
 ctb0050_event[, taxon_st := NA_character_]
+
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0050_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0050_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0050_event)
 
@@ -285,7 +296,7 @@ ctb0050[
   by = observacao_id
 ]
 ctb0050[na_year == TRUE, .(observacao_id, data_ano)]
-ctb0050[is.na(data_fonte), data_fonte := "estimativa"]
+ctb0050[is.na(ano_fonte), ano_fonte := "estimativa"]
 
 summary_soildata(ctb0050)
 # Layers: 507

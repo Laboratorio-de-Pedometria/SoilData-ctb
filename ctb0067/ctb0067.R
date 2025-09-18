@@ -81,9 +81,9 @@ data.table::setnames(ctb0067_event, old = "Ano (coleta)", new = "data_ano")
 ctb0067_event[, data_ano := as.integer(data_ano)]
 ctb0067_event[, .N, by = data_ano]
 
-# data_fonte
-ctb0067_event[!is.na(data_ano), data_fonte := "original"]
-ctb0067_event[, .N, by = data_fonte]
+# ano_fonte
+ctb0067_event[!is.na(data_ano), ano_fonte := "original"]
+ctb0067_event[, .N, by = ano_fonte]
 
 
 # Longitude -> coord_x
@@ -156,6 +156,16 @@ ctb0067_event[, taxon_sibcs := NA_character_]
 # taxon_st_1999
 
 ctb0067_event[, taxon_st := NA_character_]
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0067_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0067_event[, rochosidade := ("Não Rochoso")]
 
 
 str(ctb0067_event)

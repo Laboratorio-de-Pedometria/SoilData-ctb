@@ -66,10 +66,10 @@ data.table::setnames(ctb0041_event, old = "Ano (coleta)", new = "data_ano")
 ctb0041_event[, data_ano := as.integer(data_ano)]
 ctb0041_event[, .N, by = data_ano]
 
-# data_fonte
+# ano_fonte
 # A data de coleta no campo está especificada no documento de origem dos dados
-ctb0041_event[!is.na(data_ano), data_fonte := "original"]
-ctb0041_event[, .N, by = data_fonte]
+ctb0041_event[!is.na(data_ano), ano_fonte := "original"]
+ctb0041_event[, .N, by = ano_fonte]
 
 # coord_x
 # (Long (grau)	+ Long (min) / 60 + Long (seg) / 3600) * -1 -> coord_x
@@ -153,6 +153,17 @@ ctb0041_event[, .N, by = taxon_sibcs]
 # taxon_st
 # Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
 ctb0041_event[, taxon_st := NA_character_]
+
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0041_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0041_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0041_event)
 

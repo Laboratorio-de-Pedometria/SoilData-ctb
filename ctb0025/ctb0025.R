@@ -69,10 +69,10 @@ ctb0025_event[, data_ano := as.Date(data_ano, origin = t0, format = "%Y-%m-%d")]
 ctb0025_event[, data_ano := as.integer(format(data_ano, "%Y"))]
 ctb0025_event[, .N, by = data_ano]
 
-# data_fonte
+# ano_fonte
 # A data de coleta dos perfis de solo está especificada no documento de origem dos dados.
-ctb0025_event[!is.na(data_ano), data_fonte := "original"]
-ctb0025_event[, .N, by = data_fonte]
+ctb0025_event[!is.na(data_ano), ano_fonte := "original"]
+ctb0025_event[, .N, by = ano_fonte]
 
 # Auger holes are missing data_ano. We set it to 2006 or 2007.
 ctb0025_event[is.na(data_ano), .(observacao_id, data_ano)]
@@ -82,10 +82,10 @@ ctb0025_event[
 ]
 ctb0025_event[, .N, by = data_ano]
 
-# data_fonte
+# ano_fonte
 # A data de coleta das tradagens não está especificada no documento de origem dos dados.
-ctb0025_event[is.na(data_fonte), data_fonte := "estimativa"]
-ctb0025_event[, .N, by = data_fonte]
+ctb0025_event[is.na(ano_fonte), ano_fonte := "estimativa"]
+ctb0025_event[, .N, by = ano_fonte]
 
 # coord_x
 # old: coord_longitude
@@ -184,6 +184,16 @@ ctb0025_event[, .N, by = sibcs]
 # taxon_st
 # A classificação do solo segundo o Soil Taxonomy não foi realizada.
 ctb0025_event[, taxon_st := NA_character_]
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0025_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0025_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0025_event)
 

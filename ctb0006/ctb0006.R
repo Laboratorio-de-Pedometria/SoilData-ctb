@@ -65,9 +65,9 @@ ctb0006_event[data_ano > 2014, data_ano := 2014]
 ctb0006_event[, data_ano := as.integer(data_ano)]
 ctb0006_event[, .N, by = data_ano]
 
-# data_fonte
-ctb0006_event[, data_fonte := "original"]
-ctb0006_event[, .N, by = data_fonte]
+# ano_fonte
+ctb0006_event[, ano_fonte := "original"]
+ctb0006_event[, .N, by = ano_fonte]
 
 # coord_datum
 # coord_sistema
@@ -149,6 +149,16 @@ ctb0006_event[, .N, by = sibcs]
 # taxon_st
 # A classificação do solo segundo o Soil Taxonomy não foi realizada.
 ctb0006_event[, taxon_st := NA_character_]
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0006_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0006_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0006_event)
 
