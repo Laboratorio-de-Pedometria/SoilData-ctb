@@ -198,7 +198,7 @@ ctb0067_layer[, .N, by = camada_nome]
 # old: ID da amostra
 # new: amostra_id
 data.table::setnames(ctb0067_layer, old = "ID da amostra", new = "amostra_id")
-ctb0067_layer[, amostra_id := NA_character_]
+ctb0067_layer[, amostra_id := NA_real_]
 
 # profund_sup
 # old: Profundidade inicial [cm]
@@ -247,7 +247,7 @@ ctb0067_layer[is.na(areia_grossa), .(observacao_id, camada_nome, profund_sup, pr
 # old: Areia fina (0,05-0,25 mm) [g kg⁻1]
 # new: areia_fina
 # areia_fina is missing for some layers...
-data.table::setnames(ctb0067_layer, old = "Areia fina (0,05-0,25 mm) [g kg⁻1]", new = "areia_grossa")
+data.table::setnames(ctb0067_layer, old = "Areia fina (0,05-0,25 mm) [g kg⁻1]", new = "areia_fina")
 ctb0067_layer[, areia_fina := as.numeric(areia_fina)]
 ctb0067_layer[is.na(areia_fina), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_fina)]
 
@@ -299,9 +299,10 @@ ctb0067[, dataset_id := "ctb0067"]
 # citation
 ctb0067 <- merge(ctb0067, ctb0067_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0067)
-#Layers: 36
-#Events: 8
-#Georeferenced events: 7
+
+#Layers: 274
+#Events: 31
+#Georeferenced events: 31
 
 # Plot using mapview
 if (FALSE) {
