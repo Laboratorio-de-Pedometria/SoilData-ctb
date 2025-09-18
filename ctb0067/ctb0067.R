@@ -150,22 +150,26 @@ data.table::setnames(ctb0067_event, old = "Área amostrada [m^2]", new = "amostr
 ctb0067_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0067_event[, amostra_area])
 
-# taxon_sibcs
-ctb0067_event[, taxon_sibcs := NA_character_]
+# SiBCS (2006) -> taxon_sibcs
+data.table::setnames(ctb0067_event, old = "SiBCS (2006)", new = "taxon_sibcs")
+ctb0067_event[, taxon_sibcs := as.character(taxon_sibcs)]
+ctb0067_event[, .N, by = taxon_sibcs]
 
 # taxon_st_1999
 
 ctb0067_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie)
-# review the work at another time
-
-ctb0067_event[, pedregosidade := ("Não Pedregoso")]
+# Pedregosidade (superficie) 
+data.table::setnames(ctb0067_event, old = "Pedegrosidade", new = "pedregosidade")
+ctb0067_event[, pedregosidade := as.character(pedregosidade)]
+ctb0067_event[, .N, by = pedregosidade]
 
 # Rochosidade (superficie)
-# review the work at another time
 
-ctb0067_event[, rochosidade := ("Não Rochoso")]
+data.table::setnames(ctb0067_event, old = "Rochosidade", new = "rochosidade")
+ctb0067_event[, rochosidade := as.character(rochosidade)]
+ctb0067_event[, .N, by = rochosidade]
+
 
 
 str(ctb0067_event)
@@ -196,13 +200,6 @@ ctb0067_layer[, .N, by = camada_nome]
 data.table::setnames(ctb0067_layer, old = "ID da amostra", new = "amostra_id")
 ctb0067_layer[, amostra_id := NA_character_]
 
-# perfil_id
-# old: Perfil
-# new: perfil_id
-data.table::setnames(ctb0067_layer, old = "Perfil", new = "perfil_id")
-ctb0067_layer[, perfil_id := as.character(perfil_id)]
-ctb0067_layer[, .N, by = perfil_id]
-
 # profund_sup
 # old: Profundidade inicial [cm]
 # new: profund_sup
@@ -216,3 +213,111 @@ summary(ctb0067_layer[, profund_sup])
 data.table::setnames(ctb0067_layer, old = "Profundidade final [cm]", new = "profund_inf")
 ctb0067_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0067_layer[, profund_inf])
+
+
+# terrafina
+# is missing on main document.
+ctb0067_layer[, terrafina := NA_real_] 
+
+# argila
+# old: Argila (<0,002mm) [g kg⁻1]
+# new: argila
+# argila is missing for some layers...
+data.table::setnames(ctb0067_layer, old = "Argila (<0,002mm) [g kg⁻1]", new = "argila")
+ctb0067_layer[, argila := as.numeric(argila)]
+ctb0067_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, argila)]
+
+# silte
+# old: Silte [g kg⁻1]
+# new: silte
+# silte is missing for some layers...
+data.table::setnames(ctb0067_layer, old = "Silte [g kg⁻1]", new = "silte")
+ctb0067_layer[, silte := as.numeric(silte)]
+ctb0067_layer[is.na(silte), .(observacao_id, camada_nome, profund_sup, profund_inf, silte)]
+
+# areia_grossa
+# old: Areia grossa (0,25-2mm) [g kg⁻1]
+# new: areia_grossa
+# areia_grossa is missing for some layers...
+data.table::setnames(ctb0067_layer, old = "Areia grossa (0,25-2mm) [g kg⁻1]", new = "areia_grossa")
+ctb0067_layer[, areia_grossa := as.numeric(areia_grossa)]
+ctb0067_layer[is.na(areia_grossa), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_grossa)]
+
+# areia_fina
+# old: Areia fina (0,05-0,25 mm) [g kg⁻1]
+# new: areia_fina
+# areia_fina is missing for some layers...
+data.table::setnames(ctb0067_layer, old = "Areia fina (0,05-0,25 mm) [g kg⁻1]", new = "areia_grossa")
+ctb0067_layer[, areia_fina := as.numeric(areia_fina)]
+ctb0067_layer[is.na(areia_fina), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_fina)]
+
+# areia
+# criação da coluna areia 
+ctb0067_layer[, areia:= areia_grossa+areia_fina]
+
+# Check the particle size distribution
+# The sum of argila, silte and areia should be 1000 g/kg
+ctb0067_layer[, psd := round(argila + silte + areia_fina + areia_grossa)]
+psd_lims <- 900:1100
+# Check the limits
+ctb0067_layer[!psd %in% psd_lims & !is.na(psd), .N]
+# 0 layers have a sum of the particle size distribution outside the limits.
+# Print the rows with psd != 1000
+cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
+ctb0067_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
+
+# carbono
+# old: C [g/kg]
+# new: carbono
+data.table::setnames(ctb0067_layer, old = "C [g/kg]", new = "carbono")
+ctb0067_layer[, carbono := as.numeric(carbono)]
+summary(ctb0067_layer[, carbono])
+check_empty_layer(ctb0067_layer, "carbono")
+
+# ctc
+# old: pH [cmolc kg⁻1]
+# new: ctc
+data.table::setnames(ctb0067_layer, old = "pH [cmolc kg⁻1]", new = "ctc")
+ctb0067_layer[, ctc := as.numeric(ctc)]
+summary(ctb0067_layer[, ctc])
+check_empty_layer(ctb0067_layer, "ctc")
+
+# pH
+# pH using water is missing in this document
+ctb0067_layer[, ph := NA_real_]
+
+# dsi
+# dis is missing in this document (need review)
+ctb0067_layer[, dsi := NA_real_]
+
+str(ctb0067_layer)
+
+# Merge ############################################################################################
+# events and layers
+ctb0067 <- merge(ctb0067_event, ctb0067_layer, all = TRUE)
+ctb0067[, dataset_id := "ctb0067"]
+# citation
+ctb0067 <- merge(ctb0067, ctb0067_citation, by = "dataset_id", all.x = TRUE)
+summary_soildata(ctb0067)
+#Layers: 36
+#Events: 8
+#Georeferenced events: 7
+
+# Plot using mapview
+if (FALSE) {
+  ctb0067_sf <- sf::st_as_sf(
+    ctb0067[coord_datum == 4326],
+    coords = c("coord_x", "coord_y"), crs = 4326
+  )
+  mapview::mapview(ctb0067_sf["argila"])
+}
+
+# Write to disk ####################################################################################
+ctb0067 <- select_output_columns(ctb0067)
+data.table::fwrite(ctb0067, "ctb0067/ctb0067.csv")
+data.table::fwrite(ctb0067_event, "ctb0067/ctb0067_event.csv")
+data.table::fwrite(ctb0067_layer, "ctb0067/ctb0067_layer.csv")
+
+
+
+
