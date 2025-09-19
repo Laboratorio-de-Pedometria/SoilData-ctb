@@ -129,7 +129,7 @@ summary(ctb0067_event[, coord_precisao])
 # Fonte (coord) -> coord_fonte
 data.table::setnames(ctb0067_event, old = "Fonte (coord)", new = "coord_fonte")
 ctb0067_event[, coord_fonte := NA_real_]
-summary(ctb0067_event[, coord_precisao])
+summary(ctb0067_event[, coord_fonte])
 
 
 # País -> pais_id
@@ -215,10 +215,6 @@ ctb0067_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0067_layer[, profund_inf])
 
 
-# terrafina
-# is missing on main document.
-ctb0067_layer[, terrafina := NA_real_] 
-
 # argila
 # old: Argila (<0,002mm) [g kg⁻1]
 # new: argila
@@ -254,6 +250,10 @@ ctb0067_layer[is.na(areia_fina), .(observacao_id, camada_nome, profund_sup, prof
 # areia
 # criação da coluna areia 
 ctb0067_layer[, areia:= areia_grossa+areia_fina]
+
+# terrafina
+# is missing on main document.
+ctb0067_layer[, terrafina := (areia+silte+argila)] 
 
 # Check the particle size distribution
 # The sum of argila, silte and areia should be 1000 g/kg
