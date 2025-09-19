@@ -90,12 +90,12 @@ ctb0069_event[, .N, by = ano_fonte]
 
 
 # Longitude -> coord_x
-data.table::setnames(ctb0069_event, old = "Longitude (m)", new = "coord_x")
+data.table::setnames(ctb0069_event, old = "Longitude", new = "coord_x")
 ctb0069_event[, coord_x := parzer::parse_lon(coord_x)]
 summary(ctb0069_event[, coord_x])
 
 # Latitude -> coord_y
-data.table::setnames(ctb0069_event, old = "Latitude (m)", new = "coord_y")
+data.table::setnames(ctb0069_event, old = "Latitude", new = "coord_y")
 ctb0069_event[, coord_y := parzer::parse_lat(coord_y)]
 summary(ctb0069_event[, coord_y])
 
@@ -144,7 +144,7 @@ ctb0069_event[, .N, by = taxon_sibcs]
 ctb0069_event[, taxon_st := NA_character_]
 
 # Pedregosidade (superficie) 
-data.table::setnames(ctb0069_event, old = "Pedregrosidade", new = "pedregosidade")
+data.table::setnames(ctb0069_event, old = "Pedregosidade", new = "pedregosidade")
 ctb0069_event[, pedregosidade := as.character(pedregosidade)]
 ctb0069_event[, .N, by = pedregosidade]
 

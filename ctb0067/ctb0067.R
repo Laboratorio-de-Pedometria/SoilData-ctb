@@ -11,7 +11,7 @@ if (!require("sf")) {
   library("sf")
 }
 if (!require("mapview")) {
-  install.packages("mapview")
+  install.packages("mapview", dependencies = TRUE)
   library("mapview")
 }
 if (!require("parzer")) {
@@ -160,7 +160,7 @@ ctb0067_event[, .N, by = taxon_sibcs]
 ctb0067_event[, taxon_st := NA_character_]
 
 # Pedregosidade (superficie) 
-data.table::setnames(ctb0067_event, old = "Pedegrosidade", new = "pedregosidade")
+data.table::setnames(ctb0067_event, old = "Pedregosidade", new = "pedregosidade")
 ctb0067_event[, pedregosidade := as.character(pedregosidade)]
 ctb0067_event[, .N, by = pedregosidade]
 
@@ -252,8 +252,9 @@ ctb0067_layer[is.na(areia_fina), .(observacao_id, camada_nome, profund_sup, prof
 ctb0067_layer[, areia:= areia_grossa+areia_fina]
 
 # terrafina
-# is missing on main document.
-ctb0067_layer[, terrafina := (areia+silte+argila)] 
+# is missing on main document. Pelas caracteristicas do solo, é estimado que seja 100% de terrafina
+# (nunca somar silte, areia, argila para tererafina)
+ctb0067_layer[, terrafina := (1000)] 
 
 # Check the particle size distribution
 # The sum of argila, silte and areia should be 1000 g/kg
@@ -267,6 +268,8 @@ cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
 ctb0067_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 
 # carbono
+# O trabalho possui Carbono Total para algumas amostras e para maioria existe o dado do Carbono g/kg
+# Foi utilizado o Carbono g/kg
 # old: C [g/kg]
 # new: carbono
 data.table::setnames(ctb0067_layer, old = "C [g/kg]", new = "carbono")
@@ -275,19 +278,23 @@ summary(ctb0067_layer[, carbono])
 check_empty_layer(ctb0067_layer, "carbono")
 
 # ctc
-# old: pH [cmolc kg⁻1]
+# old: T [cmolc kg⁻1]
 # new: ctc
-data.table::setnames(ctb0067_layer, old = "pH [cmolc kg⁻1]", new = "ctc")
+data.table::setnames(ctb0067_layer, old = "T [cmolc kg⁻1]", new = "ctc")
 ctb0067_layer[, ctc := as.numeric(ctc)]
 summary(ctb0067_layer[, ctc])
 check_empty_layer(ctb0067_layer, "ctc")
 
-# pH
-# pH using water is missing in this document
-ctb0067_layer[, ph := NA_real_]
+# ph
+# old: pH H2O [-]
+# new: ph
+data.table::setnames(ctb0067_layer, old = "pH H2O [-]", new = "ph")
+ctb0067_layer[, ph := as.numeric(ph)]
+summary(ctb0067_layer[, ph])
+check_empty_layer(ctb0067_layer, "ph")
 
 # dsi
-# dis is missing in this document (need review)
+# dsi is missing in this document (need review)
 ctb0067_layer[, dsi := NA_real_]
 
 str(ctb0067_layer)
