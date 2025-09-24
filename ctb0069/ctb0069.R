@@ -250,8 +250,11 @@ ctb0069_layer[, argila := as.numeric(argila)]
 ctb0069_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, argila)]
 
 # terrafina
-# Check later with Curator of Document
-ctb0069_layer[, terrafina := "Check Later"] 
+# old: T F S A (g/kg)
+# new: terrafina
+data.table::setnames(ctb0069_layer, old = "T F S A (g/kg)", new = "terrafina")
+ctb0069_layer[, terrafina := as.numeric(terrafina)]
+ctb0069_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, terrafina)]
 
 # Check the particle size distribution
 # The sum of argila, silte and areia should be 1000 g/kg
