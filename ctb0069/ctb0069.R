@@ -18,6 +18,10 @@ if (!require("parzer")) {
   install.packages("parzer")
   library("parzer")
 }
+if (!require("dplyr")) {
+  install.packages("dplyr")
+  library("dplyr")
+}
 
 # Source helper functions
 source("./helper.R")
@@ -118,9 +122,24 @@ summary(ctb0069_event[, coord_fonte])
 data.table::setnames(ctb0069_event, old = "País", new = "pais_id")
 ctb0069_event[, pais_id := "BR"]
 
+#Mapeamento dos estados para sigla
+
+mapa_siglas <- c(
+  "Acre" = "AC", "Alagoas" = "AL", "Amapá" = "AP", "Amazonas" = "AM",
+  "Bahia" = "BA", "Ceará" = "CE", "Distrito Federal" = "DF",
+  "Espírito Santo" = "ES", "Goiás" = "GO", "Maranhão" = "MA",
+  "Mato Grosso" = "MT", "Mato Grosso do Sul" = "MS", "Minas Gerais" = "MG",
+  "Pará" = "PA", "Paraíba" = "PB", "Paraná" = "PR", "Pernambuco" = "PE",
+  "Piauí" = "PI", "Rio de Janeiro" = "RJ", "Rio Grande do Norte" = "RN",
+  "Rio Grande do Sul" = "RS", "Rondônia" = "RO", "Roraima" = "RR",
+  "Santa Catarina" = "SC", "São Paulo" = "SP", "Sergipe" = "SE",
+  "Tocantins" = "TO"
+)
+
+#using the 'recode' function because in the original document the states are outside of UF
 # Estado (UF) -> estado_id
 data.table::setnames(ctb0069_event, old = "Estado (UF)", new = "estado_id")
-ctb0069_event[, estado_id := as.character(estado_id)]
+ctb0069_event[, estado_id := recode(estado_id, !!!mapa_siglas)]
 ctb0069_event[, .N, by = estado_id]
 
 
@@ -131,7 +150,7 @@ ctb0069_event[, .N, by = municipio_id]
 
 # Área do evento [m^2] -> amostra_area
 data.table::setnames(ctb0069_event, old = "Área do evento [m^2]", new = "amostra_area")
-ctb0069_event[, amostra_area := NA_character_]
+ctb0069_event[, amostra_area := NA_real_]
 summary(ctb0069_event[, amostra_area])
 
 # Classificação -> taxon_sibcs
@@ -159,3 +178,145 @@ ctb0069_event[, .N, by = rochosidade]
 str(ctb0069_event)
 
 
+
+# layers ###########################################################################################
+ctb0069_layer <- google_sheet(ctb0069_ids$gs_id, ctb0069_ids$gid_layer)
+str(ctb0069_layer)
+
+# Process fields
+
+# ID do evento -> observacao_id
+data.table::setnames(ctb0069_layer, old = "ID do evento", new = "observacao_id")
+ctb0069_layer[, observacao_id := as.character(observacao_id)]
+ctb0069_layer[, .N, by = observacao_id]
+
+# ID da camada -> camada_nome
+data.table::setnames(ctb0069_layer, old = "ID da camada", new = "camada_nome")
+ctb0069_layer[, camada_nome := as.character(camada_nome)]
+ctb0069_layer[, .N, by = camada_nome]
+
+# ID da amostra -> amostra_id
+# amostra_id is missing. We assume it is NA
+ctb0069_layer[, amostra_id := NA_character_]
+
+# profund_sup
+# old: Profundidade inicial [cm]
+# new: profund_sup
+data.table::setnames(ctb0069_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+ctb0069_layer[, profund_sup := as.numeric(profund_sup)]
+summary(ctb0069_layer[, profund_sup])
+
+# profund_inf
+# old: Profundidade final [cm]
+# new: profund_inf
+data.table::setnames(ctb0069_layer, old = "Profundidade final [cm]", new = "profund_inf")
+ctb0069_layer[, profund_inf := as.numeric(profund_inf)]
+summary(ctb0069_layer[, profund_inf])
+
+# areia_grossa
+# old: "Areia grossa 2 - 0,2 mm (g/kg)"
+# new: areia_grossa
+# areia_grossa is missing for some layers...
+data.table::setnames(ctb0069_layer, old = "Areia grossa 2 - 0,2 mm (g/kg)", new = "areia_grossa")
+ctb0069_layer[, areia_grossa := as.numeric(areia_grossa)]
+ctb0069_layer[is.na(areia_grossa), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_grossa)]
+
+# areia_fina
+# old: "Areia fina 0,2 - 0,05 mm (g/kg)"
+# new: areia_fina
+# areia_fina is missing for some layers...
+data.table::setnames(ctb0069_layer, old = "Areia fina 0,2 - 0,05 mm (g/kg)", new = "areia_fina")
+ctb0069_layer[, areia_fina := as.numeric(areia_fina)]
+ctb0069_layer[is.na(areia_fina), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_fina)]
+
+# areia
+# criação da coluna areia 
+ctb0069_layer[, areia:= areia_grossa+areia_fina]
+
+# silte
+# old: Silte 0,05 - 0,002 mm (g/kg)
+# new: silte
+# silte is missing for some layers...
+data.table::setnames(ctb0069_layer, old = "Silte 0,05 - 0,002 mm (g/kg)", new = "silte")
+ctb0069_layer[, silte := as.numeric(silte)]
+ctb0069_layer[is.na(silte), .(observacao_id, camada_nome, profund_sup, profund_inf, silte)]
+
+# argila
+# old: Argila > 0,002 mm (g/kg)
+# new: argila
+# argila is missing for some layers...
+data.table::setnames(ctb0069_layer, old = "Argila > 0,002 mm (g/kg)", new = "argila")
+ctb0069_layer[, argila := as.numeric(argila)]
+ctb0069_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, argila)]
+
+# terrafina
+# Check later with Curator of Document
+ctb0069_layer[, terrafina := "Check Later"] 
+
+# Check the particle size distribution
+# The sum of argila, silte and areia should be 1000 g/kg
+ctb0069_layer[, psd := round(argila + silte + areia_fina + areia_grossa)]
+psd_lims <- 900:1100
+# Check the limits
+ctb0069_layer[!psd %in% psd_lims & !is.na(psd), .N]
+# 0 layers have a sum of the particle size distribution outside the limits.
+# Print the rows with psd != 1000
+cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
+ctb0069_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
+
+# carbono
+# old: C (g/kg)
+# new: carbono
+data.table::setnames(ctb0069_layer, old = "C (g/kg)", new = "carbono")
+ctb0069_layer[, carbono := as.numeric(carbono)]
+summary(ctb0069_layer[, carbono])
+check_empty_layer(ctb0069_layer, "carbono")
+
+# ctc
+# old: Valor T (soma) (cmolc/kg)
+# new: ctc
+data.table::setnames(ctb0069_layer, old = "Valor T (soma) (cmolc/kg)", new = "ctc")
+ctb0069_layer[, ctc := as.numeric(ctc)]
+summary(ctb0069_layer[, ctc])
+check_empty_layer(ctb0069_layer, "ctc")
+
+# ph
+# old: pH Água
+# new: ph
+data.table::setnames(ctb0069_layer, old = "pH Água", new = "ph")
+ctb0069_layer[, ph := as.numeric(ph)]
+summary(ctb0069_layer[, ph])
+check_empty_layer(ctb0069_layer, "ph")
+
+# dsi
+# dsi is missing in this document 
+ctb0069_layer[, dsi := NA_real_]
+
+str(ctb0069_layer)
+
+# Merge ############################################################################################
+# events and layers
+ctb0069 <- merge(ctb0069_event, ctb0069_layer, all = TRUE)
+ctb0069[, dataset_id := "ctb0069"]
+# citation
+ctb0069 <- merge(ctb0069, ctb0069_citation, by = "dataset_id", all.x = TRUE)
+summary_soildata(ctb0069)
+
+#Layers: 56
+#Events: 15
+#Georeferenced events: 15
+
+# Plot using mapview
+if (FALSE) {
+  ctb0069_sf <- sf::st_as_sf(
+    ctb0069[coord_datum == 4326],
+    coords = c("coord_x", "coord_y"), crs = 4326
+  )
+  mapview::mapview(ctb0069_sf["argila"])
+}
+
+# Write to disk ####################################################################################
+ctb0069 <- select_output_columns(ctb0069)
+data.table::fwrite(ctb0069, "ctb0069/ctb0069.csv")
+data.table::fwrite(ctb0069_event, "ctb0069/ctb0069_event.csv")
+data.table::fwrite(ctb0069_layer, "ctb0069/ctb0069_layer.csv")
