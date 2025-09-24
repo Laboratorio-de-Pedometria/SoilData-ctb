@@ -261,7 +261,7 @@ ctb0065_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_
 
 # Check the particle size distribution
 # The sum of argila, silte and areia should be 1000 g/kg
-ctb0065_layer[, psd := round(argila + silte + areia_fina + areia_grossa)]
+ctb0065_layer[, psd := round(argila + silte + areia)]
 psd_lims <- 900:1100
 # Check the limits
 ctb0065_layer[!psd %in% psd_lims & !is.na(psd), .N]

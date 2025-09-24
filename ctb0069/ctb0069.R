@@ -32,8 +32,7 @@ source("./helper.R")
 # ctb0069
 # Diagnóstico agroambiental do entorno do Parque Nacional das Emas"
 # 
-# TRANSFORMAR EM PUBLICO PARA ADICIONAR O CAMINHO DO DOCUMENTO ABAIXO
-# https://docs.google.com/spreadsheets/????????????????????????????
+# https://docs.google.com/spreadsheets/d/1o0sFLwLcJtGhfhdxAI1z3AJTBuAjptSGBYj51NgIeV0/edit?usp=sharing
 
 
 ctb0069_ids <- soildata_catalog("ctb0069")
