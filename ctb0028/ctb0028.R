@@ -72,10 +72,10 @@ data.table::setnames(ctb0028_event, old = "Ano (coleta)", new = "data_ano")
 ctb0028_event[, data_ano := as.integer(data_ano)]
 ctb0028_event[, .N, by = data_ano]
 
-# data_fonte
+# ano_fonte
 # A data de coleta dos perfis de solo está especificada no documento de origem dos dados.
-ctb0028_event[!is.na(data_ano), data_fonte := "original"]
-ctb0028_event[, .N, by = data_fonte] 
+ctb0028_event[!is.na(data_ano), ano_fonte := "original"]
+ctb0028_event[, .N, by = ano_fonte] 
 
 # coord_x
 data.table::setnames(ctb0028_event, old = "Coordenada X [m]", new = "coord_x")
@@ -142,6 +142,16 @@ ctb0028_event[, .N, by = taxon_sibcs]
 # taxon_st
 # Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
 ctb0028_event[, taxon_st := NA_character_]
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0028_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0028_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0028_event)
 

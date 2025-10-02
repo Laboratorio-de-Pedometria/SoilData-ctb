@@ -58,9 +58,9 @@ ctb0020_event[, data_ano := as.Date(data_ano, origin = t0, format = "%Y-%m-%d")]
 ctb0020_event[, data_ano := as.integer(format(data_ano, "%Y"))]
 ctb0020_event[, .N, by = data_ano]
 
-# data_fonte
-ctb0020_event[, data_fonte := "original"]
-ctb0020_event[, .N, by = data_fonte]
+# ano_fonte
+ctb0020_event[, ano_fonte := "original"]
+ctb0020_event[, .N, by = ano_fonte]
 
 # coord_x
 # Longitude is recorded as character using the following format: "45°14'04\"
@@ -146,6 +146,16 @@ ctb0020_event[, .N, by = taxon_sibcs]
 # taxon_st
 # Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
 ctb0020_event[, taxon_st := NA_character_]
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0020_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0020_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0020_event)
 

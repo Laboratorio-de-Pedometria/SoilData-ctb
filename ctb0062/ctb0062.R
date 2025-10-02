@@ -66,9 +66,9 @@ data.table::setnames(ctb0062_event, old = "Ano (coleta)", new = "data_ano")
 ctb0062_event[, data_ano := as.integer(data_ano)]
 ctb0062_event[, .N, by = data_ano]
 
-# data_fonte
+# ano_fonte
 # Original
-ctb0062_event[, data_fonte := "original"]
+ctb0062_event[, ano_fonte := "original"]
 
 # Coord. X [m] -> coord_x
 data.table::setnames(ctb0062_event, old = "Coord. X [m]", new = "coord_x")
@@ -144,6 +144,16 @@ ctb0062_event[, taxon_sibcs := NA_character_]
 # taxon_st
 # Soil taxonomy is missing. We set it to NA_character_
 ctb0062_event[, taxon_st := NA_character_]
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0062_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0062_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0062_event)
 

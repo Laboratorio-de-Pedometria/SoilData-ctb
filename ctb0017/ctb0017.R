@@ -69,9 +69,9 @@ data.table::setnames(ctb0017_event, old = "Ano (coleta)", new = "data_ano")
 ctb0017_event[, data_ano := as.integer(data_ano)]
 ctb0017_event[, data_ano := 2009]
 
-# data_fonte = "estimativa"
+# ano_fonte = "estimativa"
 # A data de coleta não foi especificada, então realizamos uma estimativa.
-ctb0017_event[!is.na(data_ano) , data_fonte := "estimativa"]
+ctb0017_event[!is.na(data_ano) , ano_fonte := "estimativa"]
 
 # Longitude [grau] -> coord_x
 data.table::setnames(ctb0017_event, old = "Longitude [grau]", new = "coord_x")
@@ -130,6 +130,17 @@ ctb0017_event[, .N, by = taxon_sibcs]
 # taxon_st
 # Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
 ctb0017_event[, taxon_st := NA_character_]
+
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0017_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0017_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0017_event)
 

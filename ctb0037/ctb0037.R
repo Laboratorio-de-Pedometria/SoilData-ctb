@@ -65,10 +65,10 @@ ctb0037_event[, data_ano := as.Date(data_ano, origin = t0, format = "%Y-%m-%d")]
 ctb0037_event[, data_ano := as.numeric(format(data_ano, "%Y"))]
 ctb0037_event[, .N, by = data_ano]
 
-# data_fonte
+# ano_fonte
 # A data de coleta no campo está especificada no documento de origem dos dados
-ctb0037_event[!is.na(data_ano), data_fonte := "original"]
-ctb0037_event[, .N, by = data_fonte]
+ctb0037_event[!is.na(data_ano), ano_fonte := "original"]
+ctb0037_event[, .N, by = ano_fonte]
 
 # coord_x
 ctb0037_event[, coord_x := as.numeric(coord_x)]
@@ -121,6 +121,16 @@ ctb0037_event[, .N, by = taxon_sibcs]
 # taxon_st
 # Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
 ctb0037_event[, taxon_st := NA_character_]
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0037_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0037_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0037_event)
 

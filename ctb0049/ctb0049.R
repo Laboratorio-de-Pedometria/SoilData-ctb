@@ -66,10 +66,10 @@ data.table::setnames(ctb0049_event, old = "Ano (coleta)", new = "data_ano")
 ctb0049_event[, data_ano := as.integer(data_ano)]
 ctb0049_event[, .N, by = data_ano]
 
-# data_fonte
+# ano_fonte
 # A data de coleta no campo está especificada no documento de origem dos dados
-ctb0049_event[!is.na(data_ano), data_fonte := "original"]
-ctb0049_event[, .N, by = data_fonte]
+ctb0049_event[!is.na(data_ano), ano_fonte := "original"]
+ctb0049_event[, .N, by = ano_fonte]
 
 # Coord. X -> coord_x
 data.table::setnames(ctb0049_event, old = "Coord. X", new = "coord_x")
@@ -145,6 +145,16 @@ ctb0049_event[, .N, by = taxon_sibcs]
 # taxon_st
 # Soil taxonomy is missing in this dataset. We set it to NA_character_
 ctb0049_event[, taxon_st := NA_character_]
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0049_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0049_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0049_event)
 

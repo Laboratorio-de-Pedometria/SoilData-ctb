@@ -51,9 +51,9 @@ ctb0053_event[, data_ano := as.Date(data_ano, format = "%d/%m/%Y")]
 ctb0053_event[, data_ano := as.integer(format(data_ano, "%Y"))]
 ctb0053_event[, .N, by = data_ano]
 
-# data_fonte
+# ano_fonte
 # A data de coleta é informada no trabalho de origem dos dados.
-ctb0053_event[!is.na(data_ano), data_fonte := "original"]
+ctb0053_event[!is.na(data_ano), ano_fonte := "original"]
 
 # coord_x
 # old: E
@@ -156,6 +156,16 @@ ctb0053_event[, taxon_sibcs := NA_character_]
 # taxon_st
 # US Soil Taxonomy is missing. We set it to NA_character_
 ctb0053_event[, taxon_st := NA_character_]
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0053_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0053_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0053_event)
 
@@ -326,9 +336,9 @@ ctb0053[, observacao_id_new := NULL]
 ctb0053[, observacao_id]
 
 # Three layers have no corresponding event data (RO_365_GRANEL, RO_365_INDEFORMADA, and
-# RO_503_GRANEL). We set data_ano to the most frequent value in the dataset and set data_fonte =
+# RO_503_GRANEL). We set data_ano to the most frequent value in the dataset and set ano_fonte =
 # "estimativa"
-ctb0053[is.na(data_ano), data_fonte := "estimativa"]
+ctb0053[is.na(data_ano), ano_fonte := "estimativa"]
 ctb0053[is.na(data_ano), data_ano := as.integer(names(which.max(table(ctb0053$data_ano))))]
 
 # Set the dataset_id

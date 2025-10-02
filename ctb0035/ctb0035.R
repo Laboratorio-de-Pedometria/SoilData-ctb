@@ -59,8 +59,8 @@ data.table::setnames(ctb0035_event, old = "observacao_data", new = "data_ano")
 ctb0035_event[, data_ano := 2010]
 ctb0035_event[, .N, by = data_ano]
 
-# data_fonte
-ctb0035_event[, data_fonte := "estimativa"]
+# ano_fonte
+ctb0035_event[, ano_fonte := "estimativa"]
 
 # coord_x
 ctb0035_event[, coord_x := as.numeric(coord_x)]
@@ -142,6 +142,16 @@ ctb0035_event[, taxon_sibcs := NA_character_]
 # taxon_st
 # US Soil Taxonomy is missing
 ctb0035_event[, taxon_st := NA_character_]
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0035_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0035_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0035_event)
 

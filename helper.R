@@ -355,11 +355,12 @@ select_output_columns <- function(data) {
   target_columns <- c(
     "dataset_id", "dataset_titulo", "dataset_licenca",
     "observacao_id",
-    "data_ano", "data_fonte",
+    "data_ano", "ano_fonte",
     "coord_x", "coord_y", "coord_datum", "coord_fonte", "coord_precisao",
     "pais_id", "estado_id", "municipio_id",
     "amostra_area",
     "taxon_sibcs", "taxon_st",
+    "pedregosidade", "rochosidade",
     "camada_nome", "amostra_id",
     "profund_sup", "profund_inf",
     "terrafina",

@@ -61,18 +61,18 @@ ctb0051_event[, data_ano := as.Date(data_ano, origin = t0)]
 ctb0051_event[, data_ano := as.integer(format(data_ano, "%Y"))]
 ctb0051_event[, .N, by = data_ano]
 
-# data_fonte
-ctb0051_event[!is.na(data_ano), data_fonte := "original"]
-ctb0051_event[, .N, by = data_fonte]
+# ano_fonte
+ctb0051_event[!is.na(data_ano), ano_fonte := "original"]
+ctb0051_event[, .N, by = ano_fonte]
 
 # Events without date are those compiled from previous works and extra/fertility samples. We assume
 # that the later were collected in the same years as the complete soil profiles.
 ctb0051_event[is.na(data_ano) & is.na(observacao_fonte), data_ano := 1982]
 ctb0051_event[, .N, by = data_ano]
 
-# data_fonte
-ctb0051_event[is.na(data_fonte) & !is.na(data_ano), data_fonte := "estimativa"]
-ctb0051_event[, .N, by = data_fonte]
+# ano_fonte
+ctb0051_event[is.na(ano_fonte) & !is.na(data_ano), ano_fonte := "estimativa"]
+ctb0051_event[, .N, by = ano_fonte]
 
 # coord_x
 ctb0051_event[, coord_x := as.numeric(coord_x)]
@@ -147,6 +147,16 @@ ctb0051_event[, .N, by = taxon_sibcs]
 # taxon_st
 # Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset
 ctb0051_event[, taxon_st := NA_character_]
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0051_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0051_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0051_event)
 
