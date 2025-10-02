@@ -302,8 +302,8 @@ ctb0073_layer[, argila := as.numeric(argila)]
 ctb0073_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, argila)]
 
 # terrafina
-# Não existe fração fina na tabela apenas fração grossa porém esta N/A
-ctb0073_layer[, terrafina := as.character("Check Later")]
+# Não existe fração fina na tabela apenas fração grossa portanto esta N/A
+ctb0073_layer[, terrafina := NA_character_]
 
 # Check the particle size distribution
 # The sum of argila, silte and areia should be 1000 g/kg
