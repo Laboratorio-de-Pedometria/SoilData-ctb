@@ -72,10 +72,10 @@ data.table::setnames(ctb0021_event, old = "Ano (coleta)", new = "data_ano")
 ctb0021_event[, data_ano := as.integer(data_ano)]
 ctb0021_event[, .N, by = data_ano]
 
-# data_fonte
+# ano_fonte
 # A data de coleta está especificada no documento de origem dos dados.
-ctb0021_event[, data_fonte := "original"]
-ctb0021_event[, .N, by = data_fonte]
+ctb0021_event[, ano_fonte := "original"]
+ctb0021_event[, .N, by = ano_fonte]
 
 # coord_x
 # (Long (grau) + Long (min) / 60 + Long (seg) / 3600) * -1
@@ -165,6 +165,16 @@ ctb0021_event[, .N, by = taxon_sibcs]
 data.table::setnames(ctb0021_event, old = "Soil Taxonomy", new = "taxon_st")
 ctb0021_event[, taxon_st := as.character(taxon_st)]
 ctb0021_event[, .N, by = taxon_st]
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0021_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0021_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0021_event)
 

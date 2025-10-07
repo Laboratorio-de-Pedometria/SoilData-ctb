@@ -217,8 +217,8 @@ data.table::setnames(ctb0052_event, old = "data", new = "data_ano")
 ctb0052_event[, data_ano := as.integer(data_ano)]
 ctb0052_event[, .N, by = data_ano]
 
-# data_fonte = original
-ctb0052_event[, data_fonte := "original"]
+# ano_fonte = original
+ctb0052_event[, ano_fonte := "original"]
 
 # coord_x
 ctb0052_event[, coord_x := as.numeric(coord_x)]
@@ -324,6 +324,16 @@ ctb0052_event[, .N, by = taxon_sibcs]
 # taxon_st
 # US Soil Taxonomy classification is missing. We set it to NA_character_
 ctb0052_event[, taxon_st := NA_character_]
+
+# Pedregosidade (superficie)
+# review the work at another time
+
+ctb0052_event[, pedregosidade := ("Não Pedregoso")]
+
+# Rochosidade (superficie)
+# review the work at another time
+
+ctb0052_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0052_event)
 
