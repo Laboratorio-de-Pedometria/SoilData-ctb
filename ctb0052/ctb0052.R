@@ -9,9 +9,6 @@ if (!require("data.table")) {
 if (!require("sf")) {
   install.packages("sf")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-}
 
 # Source helper functions
 source("./helper.R")
@@ -181,12 +178,12 @@ ctb0052_points <- merge(
   ctb0052_points, ponto_cos,
   by = c("id_ponto", "camada", "amostra_id"), all = TRUE
 )
-# # Depth from "camada" (eg. 0-20) to "profund_sup" and "profund_inf"
-# ctb0052_points[, profund_sup := strsplit(camada, "-")[[1]][1], by = .I]
-# ctb0052_points[, profund_sup := as.numeric(profund_sup)]
-# ctb0052_points[, profund_inf := strsplit(camada, "-")[[1]][2], by = .I]
-# ctb0052_points[, profund_inf := as.numeric(profund_inf)]
-# str(ctb0052_points)
+# Depth from "camada" (eg. 0-20) to "profund_sup" and "profund_inf"
+ctb0052_points[, profund_sup := strsplit(camada, "-")[[1]][1], by = .I]
+ctb0052_points[, profund_sup := as.numeric(profund_sup)]
+ctb0052_points[, profund_inf := strsplit(camada, "-")[[1]][2], by = .I]
+ctb0052_points[, profund_inf := as.numeric(profund_inf)]
+str(ctb0052_points)
 
 # MERGE
 # Merge profiles and points by "id_ponto", "camada", and "amostra_id"
@@ -220,23 +217,26 @@ ctb0052_event[, .N, by = data_ano]
 # ano_fonte = original
 ctb0052_event[, ano_fonte := "original"]
 
+# Longitude
 # coord_x
+# Longitude is given in UTM coordinates (EPSG:31982)
 ctb0052_event[, coord_x := as.numeric(coord_x)]
 summary(ctb0052_event[, coord_x])
 
+# Latitude
 # coord_y
+# Latitude is given in UTM coordinates (EPSG:31982)
 ctb0052_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0052_event[, coord_y])
 
-# coord_datum
-# OLD: datum
-# NEW: coord_datum
-# SIRGAS 2000 22 S -> EPSG:31982
+# Coordinate reference system
+# old: datum
+# new: coord_datum
+# The coordinates are given in UTM zone 22S (EPSG:31982). We convert them to WGS84 (EPSG:4326).
 data.table::setnames(ctb0052_event, old = "datum", new = "coord_datum")
 ctb0052_event[, coord_datum := gsub("SIRGAS 2000 22 S", 31982, coord_datum)]
 ctb0052_event[, coord_datum := as.integer(coord_datum)]
 ctb0052_event[, .N, by = coord_datum]
-
 # transform coordinates from EPSG:31982 to EPSG:4326
 ctb0052_event_sf <- sf::st_as_sf(
   ctb0052_event[coord_datum == 31982],
@@ -249,13 +249,14 @@ ctb0052_event[coord_datum == 31982, coord_y := ctb0052_event_sf[, 2]]
 ctb0052_event[coord_datum == 31982, coord_datum := 4326]
 rm(ctb0052_event_sf)
 ctb0052_event[, .N, by = coord_datum]
+summary(ctb0052_event[, .(coord_x, coord_y)])
 
 # check for duplicated coordinates
 ctb0052_event[, coord_duplicated := .N > 1, by = .(coord_y, coord_x)]
 ctb0052_event[coord_duplicated == TRUE & !is.na(coord_x), .(observacao_id, coord_x, coord_y)]
 ctb0052_event[, coord_duplicated := NULL]
 
-# coord_fonte
+# Source of coordinates
 # old: Fonte das coordenadas
 # new: coord_fonte
 data.table::setnames(ctb0052_event, old = "Fonte das coordenadas", new = "coord_fonte")
@@ -326,14 +327,10 @@ ctb0052_event[, .N, by = taxon_sibcs]
 ctb0052_event[, taxon_st := NA_character_]
 
 # Pedregosidade (superficie)
-# review the work at another time
-
-ctb0052_event[, pedregosidade := ("Não Pedregoso")]
+ctb0052_event[, pedregosidade := NA_character_]
 
 # Rochosidade (superficie)
-# review the work at another time
-
-ctb0052_event[, rochosidade := ("Não Rochoso")]
+ctb0052_event[, rochosidade := NA_character_]
 
 str(ctb0052_event)
 
