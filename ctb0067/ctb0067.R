@@ -98,7 +98,7 @@ summary(ctb0067_event[, coord_y])
 
 
 # Datum (coord) -> coord_datum
-# SIRGAS 2000 / UTM zone 23S
+# UTM zone 23S
 data.table::setnames(ctb0067_event, old = "Datum (coord)", new = "coord_datum")
 ctb0067_event[coord_datum == "UTM zona 23S", coord_datum := 32723]
 ctb0067_event[, coord_datum := as.integer(coord_datum)]

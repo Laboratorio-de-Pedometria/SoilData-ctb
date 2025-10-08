@@ -18,10 +18,7 @@ if (!require("parzer")) {
   install.packages("parzer")
   library("parzer")
 }
-if (!require("dplyr")) {
-  install.packages("dplyr")
-  library("dplyr")
-}
+
 
 # Source helper functions
 source("./helper.R")
@@ -103,7 +100,34 @@ ctb0069_event[, coord_y := parzer::parse_lat(coord_y)]
 summary(ctb0069_event[, coord_y])
 
 # Datum (coord) -> coord_datum
-ctb0069_event[, coord_datum := NA_character_]
+# Define o datum de origem como SIRGAS 2000 (EPSG: 4674)
+# O "L" garante que o número seja tratado como um inteiro (integer).
+data.table::setnames(ctb0069_event, old = "Datum (coord)", new = "coord_datum")
+ctb0069_event[, coord_datum := NULL]
+ctb0069_event[, coord_datum := "N/A"]
+ctb0069_event[coord_datum == "N/A", coord_datum := 4674L]
+ctb0069_event[, coord_datum := as.integer(coord_datum)]
+
+#  Converte o data.table para um objeto espacial (sf)
+# Informamos que o sistema de coordenadas (CRS) original é 4674
+ctb0069_event_sf <- sf::st_as_sf(
+  ctb0069_event,
+  coords = c("coord_x", "coord_y"),
+  crs = 4674 # Define o CRS de origem como SIRGAS 2000
+)
+
+#  Transforma as coordenadas para WGS84 (EPSG: 4326)
+ctb0069_event_sf_wgs84 <- sf::st_transform(ctb0069_event_sf, 4326)
+
+#  Extrai as novas coordenadas (já em WGS84) do objeto sf
+new_coords <- sf::st_coordinates(ctb0069_event_sf_wgs84)
+
+#  Atualiza a tabela original com as coordenadas convertidas e o novo datum
+ctb0069_event[, coord_x := new_coords[, 1]] # Novas longitudes
+ctb0069_event[, coord_y := new_coords[, 2]] # Novas latitudes
+ctb0069_event[, coord_datum := 4326L]      # Novo datum: WGS84
+
+summary(ctb0069_event[, .(coord_datum, coord_x, coord_y)])
 
 
 # Precisão (coord) -> coord_precisao

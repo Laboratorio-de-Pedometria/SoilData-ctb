@@ -88,14 +88,6 @@ ctb0065_event[, ano_fonte := "estimativa"]
 ctb0065_event[, .N, by = data_ano]
 
 
-
-
-# coord_datum
-# Datum (coord) -> coord_datum
-data.table::setnames(ctb0065_event, old = "Datum (coord)", new = "coord_datum")
-ctb0065_event[, coord_datum := NA_real_]
-
-
 # Missing seconds precision on Longitude / Latitude
 # The parzer library was added to convert the characters into values appropriate for the coordinate table.
 # Longitude -> coord_x
@@ -110,6 +102,33 @@ summary(ctb0065_event[, coord_y])
 
 # Check for duplicate coordinates
 any(ctb0065_event[, .N, by = .(coord_x, coord_y)][, N] > 1)
+
+data.table::setnames(ctb0065_event, old = "Datum (coord)", new = "coord_datum")
+#Inferimos que os "#N/A" na planilha possam ser SAD69...
+# DELETA a coluna 'coord_datum' para eliminar qualquer problema de tipo
+# (factor, logical, etc.).
+ctb0065_event[, coord_datum := NULL]
+ctb0065_event[, coord_datum := "N/A"]
+ctb0065_event[coord_datum == "N/A", coord_datum := 4618L]
+ctb0065_event[, coord_datum := as.integer(coord_datum)]
+ctb0065_event[, .N, by = coord_datum]
+
+# Transform coordinates to WGS84
+# Filtra apenas os dados em SAD69 (4618) para a transformação
+ctb0065_event_sf <- sf::st_as_sf(
+  ctb0065_event[coord_datum == 4618],
+  coords = c("coord_x", "coord_y"), crs = 4618
+)
+# Transforma de SAD69 (4618) para WGS84 (4326)
+ctb0065_event_sf <- sf::st_transform(ctb0065_event_sf, 4326)
+ctb0065_event_sf <- sf::st_coordinates(ctb0065_event_sf)
+
+# Atualiza a tabela original com as novas coordenadas e o novo datum
+ctb0065_event[coord_datum == 4618, coord_x := ctb0065_event_sf[, 1]]
+ctb0065_event[coord_datum == 4618, coord_y := ctb0065_event_sf[, 2]]
+ctb0065_event[coord_datum == 4618, coord_datum := 4326]
+
+summary(ctb0065_event[, .(coord_datum, coord_x, coord_y)])
 
 # Precisão (coord) [m] -> coord_precisao
 # Coordinates were attributed with little knowledge of the precision. We set it to NA_real_

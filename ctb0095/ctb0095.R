@@ -18,10 +18,7 @@ if (!require("parzer")) {
   install.packages("parzer")
   library("parzer")
 }
-if (!require("dplyr")) {
-  install.packages("dplyr")
-  library("dplyr")
-}
+
 
 # Source helper functions
 source("./helper.R")
@@ -108,10 +105,10 @@ summary(ctb0095_event[, coord_y])
 ctb0095_event[, .N, by = .(coord_x, coord_y)][N > 1]
 
 # Datum (coord) -> coord_datum
-# is missing in this document
+# Como o parzer converte para o padrão de graus decimais, o datum é WGS84.
 data.table::setnames(ctb0095_event, old = "Datum (coord)", new = "coord_datum")
-ctb0095_event[, coord_datum := NA_real_]
-
+ctb0095_event[, coord_datum := NULL]
+ctb0095_event[, coord_datum := 4326]
 
 # Precisão (coord) -> coord_precisao
 # We set it to NA_real_

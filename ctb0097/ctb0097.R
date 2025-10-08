@@ -18,10 +18,7 @@ if (!require("parzer")) {
   install.packages("parzer")
   library("parzer")
 }
-if (!require("dplyr")) {
-  install.packages("dplyr")
-  library("dplyr")
-}
+
 
 # Source helper functions
 source("./helper.R")
@@ -107,7 +104,7 @@ summary(ctb0097_event[, coord_y])
 ctb0097_event[, .N, by = .(coord_x, coord_y)][N > 1]
 
 # Datum (coord) -> coord_datum
-
+# DATUM == WGS84 already.
 data.table::setnames(ctb0097_event, old = "Datum (coord)", new = "coord_datum")
 ctb0097_event[, coord_datum := as.character(coord_datum)]
 

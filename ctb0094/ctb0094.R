@@ -105,11 +105,38 @@ summary(ctb0094_event[, coord_y])
 # Check for duplicate coordinates
 ctb0094_event[, .N, by = .(coord_x, coord_y)][N > 1]
 
-# Datum (coord) -> coord_datum
-# SIRGAS 2000
+# DATUM -> coord_datum
 data.table::setnames(ctb0094_event, old = "Datum (coord)", new = "coord_datum")
-ctb0094_event[, coord_datum := as.character(coord_datum)]
 
+# Identifica as linhas que possuem coordenadas válidas para transformação
+idx_transform <- which(!is.na(ctb0094_event$coord_x) & !is.na(ctb0094_event$coord_y))
+
+if (length(idx_transform) > 0) {
+
+  # Cria um objeto espacial (sf) a partir das coordenadas UTM.
+  # A área de estudo (Sudoeste do Paraná) está na zona UTM 22S.
+  # O datum original é SIRGAS 2000. O código EPSG correspondente é 31982.
+  utm_sirgas_sf <- sf::st_as_sf(
+    ctb0094_event[idx_transform, ],
+    coords = c("coord_x", "coord_y"),
+    crs = 31982, # CRS de Origem: SIRGAS 2000 / UTM zone 22S
+    remove = FALSE
+  )
+  
+  # Reprojeta (transforma) as coordenadas para WGS84 (EPSG:4326)
+  wgs84_sf <- sf::st_transform(utm_sirgas_sf, crs = 4326)
+  
+  # Extrai as novas coordenadas geográficas (Longitude, Latitude)
+  transformed_coords <- sf::st_coordinates(wgs84_sf)
+  
+  # Atualiza a tabela original com as coordenadas convertidas e o novo datum
+  ctb0094_event[idx_transform, `:=`(
+    coord_x = transformed_coords[, "X"],
+    coord_y = transformed_coords[, "Y"],
+    coord_datum = 4326
+  )]
+}
+summary(ctb0094_event[, .(coord_x, coord_y)])
 
 # Precisão (coord) -> coord_precisao
 # We set it to NA_real_ (missing)

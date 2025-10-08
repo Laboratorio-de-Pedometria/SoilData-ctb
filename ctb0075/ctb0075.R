@@ -18,10 +18,6 @@ if (!require("parzer")) {
   install.packages("parzer")
   library("parzer")
 }
-if (!require("dplyr")) {
-  install.packages("dplyr")
-  library("dplyr")
-}
 
 # Source helper functions
 source("./helper.R")
@@ -97,13 +93,13 @@ ctb0075_event[, .N, by = ano_fonte]
 # coord_x
 # Longitude -> coord_x
 data.table::setnames(ctb0075_event, old = "Longitude", new = "coord_x")
-ctb0075_event[, coord_x := as.numeric(coord_x)]
+ctb0075_event[, coord_x := parzer::parse_lon(coord_x)]
 summary(ctb0075_event[, coord_x])
 
 # coord_y
 # Latitude-> coord_y
 data.table::setnames(ctb0075_event, old = "Latitude", new = "coord_y")
-ctb0075_event[, coord_y := as.numeric(coord_y)]
+ctb0075_event[, coord_y := parzer::parse_lat(coord_y)]
 summary(ctb0075_event[, coord_y])
 
 # Check for duplicate coordinates
@@ -112,7 +108,7 @@ ctb0075_event[, .N, by = .(coord_x, coord_y)][N > 1]
 # Datum (coord) -> coord_datum
 # old: Datum (coord)
 # new: coord_datum
-data.table::setnames(ctb0075_event, old = "Datum (coord)", new = "coord_datum")
+data.table::setnames(ctb0075_event, old = "DATUM", new = "coord_datum")
 ctb0075_event[, coord_datum := as.character(coord_datum)]
 summary(ctb0075_event[, coord_datum])
 
@@ -192,18 +188,20 @@ str(ctb0075_layer)
 
 # Process fields
 
-# ID do evento -> observacao_id
-data.table::setnames(ctb0075_layer, old = "ID do evento", new = "observacao_id")
+# Identificação do evento -> observacao_id
+data.table::setnames(ctb0075_layer, old = "Identificação do evento", new = "observacao_id")
 ctb0075_layer[, observacao_id := as.character(observacao_id)]
 ctb0075_layer[, .N, by = observacao_id]
 
-# ID da camada -> camada_nome
-# camada_nome is missing in this document
-ctb0075_layer[, camada_nome := NA_character_]
+# Identificação da camada -> camada_nome
+data.table::setnames(ctb0075_layer, old = "Identificação da camada", new = "camada_nome")
+ctb0075_layer[, camada_nome := as.character(camada_nome)]
+ctb0075_layer[, .N, by = camada_nome]
 
-# ID da amostra -> amostra_id
-# amostra_id is missing. We assume it is NA
-ctb0075_layer[, amostra_id := NA_character_]
+# Identificação da amostra -> amostra_id
+data.table::setnames(ctb0075_layer, old = "Identificação da amostra", new = "amostra_id")
+ctb0075_layer[, amostra_id := as.character(amostra_id)]
+ctb0075_layer[, .N, by = amostra_id]
 
 # profund_sup
 # old: Profundidade inicial [cm]
@@ -263,7 +261,7 @@ ctb0075_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 # carbono
 # old: C [g/kg]
 # new: carbono
-data.table::setnames(ctb0075_layer, old = "C [g/kg]", new = "carbono")
+data.table::setnames(ctb0075_layer, old = "C [g/Kg]", new = "carbono")
 ctb0075_layer[, carbono := as.numeric(carbono)]
 summary(ctb0075_layer[, carbono])
 check_empty_layer(ctb0075_layer, "carbono")
@@ -277,9 +275,9 @@ summary(ctb0075_layer[, ctc])
 check_empty_layer(ctb0075_layer, "ctc")
 
 # ph
-# old: pH H_2O
+# old: pH H2O
 # new: ph
-data.table::setnames(ctb0075_layer, old = "pH H_2O", new = "ph")
+data.table::setnames(ctb0075_layer, old = "pH H2O", new = "ph")
 ctb0075_layer[, ph := as.numeric(ph)]
 summary(ctb0075_layer[, ph])
 check_empty_layer(ctb0075_layer, "ph")
