@@ -9,9 +9,6 @@ if (!require("data.table")) {
 if (!require("sf")) {
   install.packages("sf")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-}
 
 # Source helper functions
 source("./helper.R")
@@ -134,8 +131,9 @@ data.table::setnames(ctb0028_event, old = "Área amostrada [m^2]", new = "amostr
 ctb0028_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0028_event[, amostra_area])
 
-# taxon_sibcs
-data.table::setnames(ctb0028_event, old = "Classificação do solo", new = "taxon_sibcs")
+# old: SiBCS (2006)
+# new: taxon_sibcs
+data.table::setnames(ctb0028_event, old = "SiBCS (2006)", new = "taxon_sibcs")
 ctb0028_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0028_event[, .N, by = taxon_sibcs]
 
