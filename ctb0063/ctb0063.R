@@ -9,9 +9,6 @@ if (!require("data.table")) {
 if (!require("sf")) {
   install.packages("sf")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-}
 
 # Source helper functions
 source("./helper.R")
@@ -74,8 +71,10 @@ ctb0063_event[, .N, by = observacao_id][N > 1]
 data.table::setnames(ctb0063_event, old = "Ano (coleta)", new = "data_ano")
 ctb0063_event[, data_ano := as.integer(data_ano)]
 ctb0063_event[, data_ano := 2000]
-ctb0063_event[, data_fonte := "estimativa"]
 ctb0063_event[, .N, by = data_ano]
+
+# ano_fonte
+ctb0063_event[, ano_fonte := "estimativa"]
 
 # Longitude -> coord_x
 # 2025-05-25 The coordinates are missing
@@ -141,6 +140,14 @@ ctb0063_event[, .N, by = taxon_sibcs]
 # taxon_st
 # Classificação do solo pelo Soil Taxonomy não está disponível neste dataset.
 ctb0063_event[, taxon_st := NA_character_]
+
+# pedregosidade
+# Missing. We set it to NA.
+ctb0063_event[, pedregosidade := NA_character_]
+
+# rochosidade
+# Missing. We set it to NA.
+ctb0063_event[, rochosidade := NA_character_]
 
 str(ctb0063_event)
 
