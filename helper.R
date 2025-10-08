@@ -371,5 +371,12 @@ select_output_columns <- function(data) {
   if (length(missing_cols) > 0) {
     stop(paste("Missing columns:", paste(missing_cols, collapse = ", ")))
   }
+  # Check if spatial coordinates are in decimal degrees (WGS84). If not, raise an error,
+  # warning the user to convert them before proceeding.
+  if (any(data$coord_x < -180 | data$coord_x > 180 |
+          data$coord_y < -90 | data$coord_y > 90)) {
+    stop("Spatial coordinates (coord_x, coord_y) must be in decimal degrees (WGS84).\n"
+    "Please convert them before proceeding.")
+  } 
   return(data[, ..target_columns])
 }
