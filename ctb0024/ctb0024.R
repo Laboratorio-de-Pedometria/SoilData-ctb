@@ -19,7 +19,7 @@ source("./helper.R")
 # Google Sheet #####################################################################################
 # ctb0024
 # Dados de "Influência da heterogeneidade ambiental sobre comunidades e populações de palmeiras em
-# florestas de terra firme na Amazônia Oriental"
+# florestas de terra firme na Amazônia Oriental"pedrec
 # https://drive.google.com/drive/u/1/folders/1m9y-L8eU4h2wgjHAvj5yZEinVwtZnrJ-
 gs <- "1CGXEGhpy91v6kxtFQBVnpRQ9qCuV2aRoS72A97y6RiQ"
 gid_citation <- 0
@@ -159,14 +159,15 @@ ctb0024_event[, taxon_sibcs := NA_character_]
 ctb0024_event[, taxon_st := NA_character_]
 
 # Pedregosidade (superficie)
-# review the work at another time
+# this document don't  have pedregosidade info
 
-ctb0024_event[, pedregosidade := ("Não Pedregoso")]
+ctb0024_event[, pedregosidade := NA_character_]
 
 # Rochosidade (superficie)
-# review the work at another time
+# this document don't  have rochosidade info
 
-ctb0024_event[, rochosidade := ("Não Rochoso")]
+ctb0024_event[, rochosidade := NA_character_]
+
 
 str(ctb0024_event)
 

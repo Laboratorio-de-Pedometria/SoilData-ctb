@@ -133,14 +133,14 @@ ctb0017_event[, taxon_st := NA_character_]
 
 
 # Pedregosidade (superficie)
-# review the work at another time
-
-ctb0017_event[, pedregosidade := ("Não Pedregoso")]
+data.table::setnames(ctb0017_event, old = "Pedregosidade", new = "pedregosidade")
+ctb0017_event[, pedregosidade := as.character(pedregosidade)]
+ctb0017_event[, .N, by = pedregosidade]
 
 # Rochosidade (superficie)
-# review the work at another time
-
-ctb0017_event[, rochosidade := ("Não Rochoso")]
+data.table::setnames(ctb0017_event, old = "rochosidade", new = "rochosidade")
+ctb0017_event[, rochosidade := as.character(rochosidade)]
+ctb0017_event[, .N, by = rochosidade]
 
 str(ctb0017_event)
 

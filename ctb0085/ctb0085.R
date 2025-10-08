@@ -112,7 +112,7 @@ data.table::setnames(ctb0085_event, old = "Datum (coord)", new = "coord_datum")
 ctb0085_event[, coord_datum := NA_real_]
 
 # Precisão (coord) -> coord_precisao
-# We set it to NA_real_
+# 
 data.table::setnames(ctb0085_event, old = "Precisão (coord)", new = "coord_precisao")
 ctb0085_event[, coord_precisao := as.character(coord_precisao)]
 summary(ctb0085_event[, coord_precisao])

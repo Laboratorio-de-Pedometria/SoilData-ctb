@@ -151,13 +151,13 @@ ctb0065_event[, taxon_st := NA_character_]
 # Pedregosidade (superficie)
 # Stoneness is missing in this document...
 
-ctb0065_event[, pedregosidade := ("Não Pedregoso")]
+ctb0065_event[, pedregosidade := NA_character_]
 
 # Rochosidade (superficie)
 # Roughness is missing in this document, however, based on the estimated analysis, 
 # there is no roughness in this work.
 
-ctb0065_event[, rochosidade := ("Não Rochoso")]
+ctb0065_event[, rochosidade := NA_character_]
 
 
 str(ctb0065_event)

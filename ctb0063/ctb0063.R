@@ -142,6 +142,16 @@ ctb0063_event[, .N, by = taxon_sibcs]
 # Classificação do solo pelo Soil Taxonomy não está disponível neste dataset.
 ctb0063_event[, taxon_st := NA_character_]
 
+# Pedregosidade (superficie)
+# this document don't  have pedregosidade info
+
+ctb0063_event[, pedregosidade := NA_character_]
+
+# Rochosidade (superficie)
+# this document don't  have rochosidade info
+
+ctb0063_event[, rochosidade := NA_character_]
+
 str(ctb0063_event)
 
 # layer ############################################################################################

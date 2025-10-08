@@ -148,14 +148,14 @@ ctb0020_event[, .N, by = taxon_sibcs]
 ctb0020_event[, taxon_st := NA_character_]
 
 # Pedregosidade (superficie)
-# review the work at another time
-
-ctb0020_event[, pedregosidade := ("Não Pedregoso")]
+# Não tenho acesso a este trabalho após a inserção das variaveis pedregosidade e rochosidade
+# Logo, irei colocar NA_character_ para as variaveis.
+ctb0020_event[, pedregosidade := NA_character_]
 
 # Rochosidade (superficie)
-# review the work at another time
-
-ctb0020_event[, rochosidade := ("Não Rochoso")]
+# Não tenho acesso a este trabalho após a inserção das variaveis pedregosidade e rochosidade
+# Logo, irei colocar NA_character_ para as variaveis.
+ctb0020_event[, rochosidade := NA_character_]
 
 str(ctb0020_event)
 

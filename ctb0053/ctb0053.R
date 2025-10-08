@@ -158,14 +158,14 @@ ctb0053_event[, taxon_sibcs := NA_character_]
 ctb0053_event[, taxon_st := NA_character_]
 
 # Pedregosidade (superficie)
-# review the work at another time
+# OwnCloud nao tenho acesso
 
-ctb0053_event[, pedregosidade := ("Não Pedregoso")]
+ctb0052_event[, pedregosidade := NA_character_]
 
 # Rochosidade (superficie)
-# review the work at another time
+# OwnCloud nao tenho acesso
 
-ctb0053_event[, rochosidade := ("Não Rochoso")]
+ctb0052_event[, rochosidade := NA_character_]
 
 str(ctb0053_event)
 
