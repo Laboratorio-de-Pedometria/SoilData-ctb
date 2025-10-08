@@ -123,12 +123,12 @@ ctb0039_event[, taxon_st := NA_character_]
 # Não tenho acesso a este trabalho após a inserção das variaveis pedregosidade e rochosidade
 # Logo, irei colocar NA_character_ para as variaveis.
 
-ctb0006_event[, pedregosidade := NA_character_]
+ctb0039_event[, pedregosidade := NA_character_]
 
 # Rochosidade (superficie)
 # review the work at another time
 
-ctb0006_event[, rochosidade := NA_character_]
+ctb0039_event[, rochosidade := NA_character_]
 
 str(ctb0039_event)
 

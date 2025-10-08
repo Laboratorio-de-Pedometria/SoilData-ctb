@@ -19,7 +19,7 @@ source("./helper.R")
 # Google Sheet #####################################################################################
 # ctb0024
 # Dados de "Influência da heterogeneidade ambiental sobre comunidades e populações de palmeiras em
-# florestas de terra firme na Amazônia Oriental"pedrec
+# florestas de terra firme na Amazônia Oriental"
 # https://drive.google.com/drive/u/1/folders/1m9y-L8eU4h2wgjHAvj5yZEinVwtZnrJ-
 gs <- "1CGXEGhpy91v6kxtFQBVnpRQ9qCuV2aRoS72A97y6RiQ"
 gid_citation <- 0

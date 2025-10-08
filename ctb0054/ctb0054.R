@@ -146,12 +146,12 @@ ctb0054_event[, taxon_st := NA_character_]
 # Pedregosidade (superficie)
 # this document don't  have pedregosidade info
 
-ctb0007_event[, pedregosidade := NA_character_]
+ctb0054_event[, pedregosidade := NA_character_]
 
 # Rochosidade (superficie)
 # this document don't  have rochosidade info
 
-ctb0007_event[, rochosidade := NA_character_]
+ctb0054_event[, rochosidade := NA_character_]
 
 str(ctb0054_event)
 

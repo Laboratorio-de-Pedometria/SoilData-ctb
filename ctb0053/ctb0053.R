@@ -160,12 +160,12 @@ ctb0053_event[, taxon_st := NA_character_]
 # Pedregosidade (superficie)
 # OwnCloud nao tenho acesso
 
-ctb0052_event[, pedregosidade := NA_character_]
+ctb0053_event[, pedregosidade := NA_character_]
 
 # Rochosidade (superficie)
 # OwnCloud nao tenho acesso
 
-ctb0052_event[, rochosidade := NA_character_]
+ctb0053_event[, rochosidade := NA_character_]
 
 str(ctb0053_event)
 
