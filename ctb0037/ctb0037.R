@@ -129,7 +129,6 @@ ctb0037_event[, pedregosidade := ("Não Pedregoso")]
 
 # Rochosidade (superficie)
 # review the work at another time
-
 ctb0037_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0037_event)
