@@ -9,12 +9,6 @@ if (!require("data.table")) {
 if (!require("sf")) {
   install.packages("sf")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-}
-if (!require("dplyr")) {
-  install.packages("dplyr")
-}
 
 # Source helper functions
 source("./helper.R")
@@ -146,30 +140,15 @@ ctb0028_event[, .N, by = taxon_sibcs]
 # Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
 ctb0028_event[, taxon_st := NA_character_]
 
+# pedregosidade
+data.table::setnames(ctb0028_event, old = "Pedregosidade", new = "pedregosidade")
+ctb0028_event[, pedregosidade := as.character(pedregosidade)]
 
-data.table::setnames(ctb0028_event, old = "Pedregosidade / Rochosidade", new = "texto_analise")
+# rochosidade
+data.table::setnames(ctb0028_event, old = "Rochosidade", new = "rochosidade")
+ctb0028_event[, rochosidade := as.character(rochosidade)]
 
 
-ctb0028_event[, descricao_tratada := tolower(gsub("/", " ", texto_analise))]
-
-
-ctb0028_event[, pedregosidade := case_when(
-  grepl("não pedregoso", descricao_tratada) ~ "Não pedregoso",
-  grepl("extremamente pedregoso|extremamente/", descricao_tratada) ~ "Extremamente pedregoso",
-  grepl("ligeiramente pedregoso", descricao_tratada) ~ "Ligeiramente pedregoso",
-  grepl("pedregoso", descricao_tratada) ~ "Pedregoso",
-  grepl("#n/a|ausente|moderadamente drenado", descricao_tratada) ~ "Não aplicável",
-  TRUE ~ "Não pedregoso"
-)]
-
-ctb0028_event[, rochosidade := case_when(
-  grepl("não rochoso", descricao_tratada) ~ "Não rochoso",
-  grepl("extremamente rochoso|extremamente/", descricao_tratada) ~ "Extremamente rochoso",
-  grepl("ligeiramente rochoso", descricao_tratada) ~ "Ligeiramente rochoso",
-  grepl("rochoso|rocha|afloramento", descricao_tratada) ~ "Rochoso",
-  grepl("#n/a|ausente|moderadamente drenado", descricao_tratada) ~ "Não aplicável",
-  TRUE ~ "Não rochoso"
-)]
 
 
 str(ctb0028_event)

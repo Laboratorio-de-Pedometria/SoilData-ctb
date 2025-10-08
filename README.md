@@ -29,37 +29,18 @@ O repositório segue uma regra simples de "uma pasta por estudo":
 
 Para adicionar um novo script de processamento para um novo estudo, por favor, siga estes passos:
 
-### 1. Configure seu Ambiente com `renv`
+### 1. Política de Dependências (Instalação de Pacotes)
 
-Este projeto usa o pacote `renv` para garantir um ambiente R reprodutível. Isso garante que todos os contribuidores usem exatamente as mesmas versões dos pacotes.
+**O colaborador deve, sempre que possível, utilizar os pacotes já disponíveis no projeto.** A adição de novas dependências deve ser evitada para manter o projeto leve e consistente.
 
-Para começar, abra o R na raiz deste repositório e execute:
-
-```R
-# Instale o renv, caso ainda não o tenha
-if (!require("renv")) {
-  install.packages("renv")
-}
-
-# Inicialize o ambiente do projeto (lê o arquivo renv.lock)
-renv::restore()
-```
-
-### 2. Política de Dependências (Instalação de Pacotes)
-
-**O colaborador deve, sempre que possível, utilizar os pacotes já disponíveis no projeto (`renv.lock`).** A adição de novas dependências deve ser evitada para manter o projeto leve e consistente.
-
-Se a instalação de um novo pacote for **absolutamente necessária**, o colaborador deve primeiro **justificar a necessidade ao desenvolvedor principal** @samuel-rosa. Somente após a aprovação, o novo pacote poderá ser instalado e adicionado ao `renv`:
+Se a instalação de um novo pacote for **absolutamente necessária**, o colaborador deve primeiro **justificar a necessidade ao desenvolvedor principal** @samuel-rosa. Somente após a aprovação, o novo pacote poderá ser instalado:
 
 ```R
 # Após a aprovação, instale o pacote
 install.packages("novo_pacote")
-
-# Atualize o arquivo de lock para incluir a nova dependência
-renv::snapshot()
 ```
 
-### 3. Crie uma Nova Pasta para o Estudo
+### 2. Crie uma Nova Pasta para o Estudo
 
 Crie uma nova pasta para o estudo, seguindo uma das regras abaixo para a nomeação:
 
@@ -69,7 +50,7 @@ Crie uma nova pasta para o estudo, seguindo uma das regras abaixo para a nomeaç
 * **Se o estudo ainda NÃO possui um código oficial**, crie um código temporário com o prefixo `tmp` seguido de quatro dígitos.
     * *Exemplo: `tmp0001`*
 
-### 4. Use um Script Existente como Exemplo
+### 3. Use um Script Existente como Exemplo
 
 Em vez de começar do zero, procure um script de um estudo já processado que seja semelhante ao seu novo estudo. O script `ctb0004/ctb0004.R` é um bom exemplo inicial.
 
@@ -77,7 +58,7 @@ Copie o script selecionado para a nova pasta do estudo e renomeie-o para corresp
 
 **Exemplo:** Copie `ctb0004/ctb0004.R` para `tmp0001/` e renomeie para `tmp0001.R`.
 
-### 5. Curadoria e Controle de Qualidade dos Dados
+### 4. Curadoria e Controle de Qualidade dos Dados
 
 O script de processamento é a principal ferramenta para validar os dados. Se, durante o desenvolvimento, você encontrar um erro ou uma inconsistência nos dados brutos:
 
@@ -88,15 +69,15 @@ O script de processamento é a principal ferramenta para validar os dados. Se, d
 
 O objetivo é que o script processe dados já validados, mas que o trabalho de desenvolvimento não pare enquanto a curadoria está em andamento.
 
-### 6. Desenvolva seu Script
+### 5. Desenvolva seu Script
 
 Com os dados devidamente curados (ou com as pendências documentadas), modifique o script para realizar o processamento necessário.
 
-### 7. Execute e Teste
+### 6. Execute e Teste
 
 Execute seu script para garantir que ele funcione sem erros e produza os arquivos de saída corretos dentro da pasta do estudo.
 
-### 8. Envie um Pull Request
+### 7. Envie um Pull Request
 
 Assim que seu script estiver completo e testado, faça o commit das suas alterações e abra um Pull Request para revisão.
 

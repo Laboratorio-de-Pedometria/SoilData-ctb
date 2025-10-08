@@ -11,10 +11,6 @@ if (!require("sf")) {
   install.packages("sf")
   library("sf")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
-}
 
 # Source helper functions
 source("./helper.R")
@@ -143,8 +139,8 @@ summary(ctb0004_event[, amostra_area])
 # taxon_sibcs
 ctb0004_event[, taxon_sibcs := NA_character_]
 
-# taxon_st_1999 -> taxon_st
-data.table::setnames(ctb0004_event, old = "taxon_st_1999", new = "taxon_st")
+# Soil Taxonomy [1999] -> taxon_st
+data.table::setnames(ctb0004_event, old = "Soil Taxonomy [1999]", new = "taxon_st")
 ctb0004_event[, taxon_st := as.character(taxon_st)]
 ctb0004_event[, .N, by = taxon_st]
 

@@ -10,17 +10,9 @@ if (!require("sf")) {
   install.packages("sf")
   library("sf")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
-}
 if (!require("parzer")) {
   install.packages("parzer")
   library("parzer")
-}
-if (!require("dplyr")) {
-  install.packages("dplyr")
-  library("dplyr")
 }
 
 # Source helper functions
@@ -252,7 +244,7 @@ ctb0083_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 # new: carbono
 data.table::setnames(ctb0083_layer, old = "C [g/dm]", new = "carbono")
 ctb0083_layer[, carbono := as.numeric(carbono)]
-ctb0080_layer[is.na(carbono), .(observacao_id, camada_nome, profund_sup, profund_inf, carbono)]
+ctb0083_layer[is.na(carbono), .(observacao_id, camada_nome, profund_sup, profund_inf, carbono)]
 summary(ctb0083_layer[, carbono])
 
 # ctc

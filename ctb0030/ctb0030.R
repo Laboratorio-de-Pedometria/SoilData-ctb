@@ -9,9 +9,6 @@ if (!require("data.table")) {
 if (!require("sf")) {
   install.packages("sf")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-}
 
 # Source helper functions
 source("./helper.R")
@@ -142,8 +139,9 @@ data.table::setnames(ctb0030_event, old = "Área do evento [m^2]", new = "amostr
 ctb0030_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0030_event[, amostra_area])
 
-# Classificação do solo -> taxon_sibcs
-data.table::setnames(ctb0030_event, old = "Classificação do solo", new = "taxon_sibcs")
+# old: SiBCS (2006)
+# new: taxon_sibcs
+data.table::setnames(ctb0030_event, old = "SiBCS (2006)", new = "taxon_sibcs")
 ctb0030_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0030_event[, .N, by = taxon_sibcs]
 
@@ -249,7 +247,7 @@ ctb0030_layer[psd != 1000, silte := round(silte / psd * 1000)]
 ctb0030_layer[psd != 1000, areia := round(areia / psd * 1000)]
 ctb0030_layer[, psd := argila + silte + areia]
 ctb0030_layer[psd != 1000, ]
-ctb0044_layer[, psd := NULL]
+ctb0030_layer[, psd := NULL]
 
 # C Orgânico [g/kg] -> carbono
 data.table::setnames(ctb0030_layer, old = "C Orgânico [g/kg]", new = "carbono")

@@ -129,9 +129,7 @@ ctb0037_event[, taxon_st := NA_character_]
 ctb0037_event[, pedregosidade := NA_character_]
 
 # Rochosidade (superficie)
-# review the work at another time
-
-ctb0037_event[, rochosidade := NA_character_]
+ctb0037_event[, rochosidade := ("Não Rochoso")]
 
 str(ctb0037_event)
 

@@ -9,9 +9,6 @@ if (!require("data.table")) {
 if (!require("sf")) {
   install.packages("sf")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-}
 
 # Source helper functions
 source("./helper.R")
@@ -168,16 +165,16 @@ ctb0062_layer[, observacao_id := as.character(observacao_id)]
 ctb0062_layer[, .N, by = observacao_id]
 
 # ID da camada -> camada_nome
-# Soil layers are named using a combination of letters and numbers. It is not evident what the
-# designation means, but it is obvious that it is not related to genetic soil horizons. We reset
-# the layer names to the depth limits.
 data.table::setnames(ctb0062_layer, old = "ID da camada", new = "camada_nome")
 ctb0062_layer[, camada_nome := as.character(camada_nome)]
 ctb0062_layer[, .N, by = camada_nome]
 
-# ID da amostra -> amostra_id
-# The sample id is missing. We set it to NA_character_
-ctb0062_layer[, amostra_id := NA_character_]
+# Sample ID
+# old: ID da amostra
+# new: amostra_id
+data.table::setnames(ctb0062_layer, old = "ID da amostra", new = "amostra_id")
+ctb0062_layer[, amostra_id := as.character(amostra_id)]
+ctb0062_layer[, .N, by = amostra_id][N > 1]
 
 # Profundidade inicial [cm] -> profund_sup
 data.table::setnames(ctb0062_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
