@@ -108,7 +108,7 @@ ctb0075_event[, .N, by = .(coord_x, coord_y)][N > 1]
 # Datum (coord) -> coord_datum
 # old: Datum (coord)
 # new: coord_datum
-data.table::setnames(ctb0075_event, old = "DATUM", new = "coord_datum")
+data.table::setnames(ctb0075_event, old = "Datum (coord)", new = "coord_datum")
 ctb0075_event[, coord_datum := as.character(coord_datum)]
 summary(ctb0075_event[, coord_datum])
 

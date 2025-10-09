@@ -287,7 +287,7 @@ ctb0094_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 # new: carbono
 # (as.numeric(carbono)/100)*1000 --> g/kg
 data.table::setnames(ctb0094_layer, old = "Matéria orgânica  [%]", new = "carbono")
-ctb0094_layer[, carbono := (as.numeric(carbono)/100)*1000]
+ctb0094_layer[, carbono := ((as.numeric(carbono)/100)*1000)/1.724]
 ctb0094_layer[is.na(carbono), .(observacao_id, camada_nome, profund_sup, profund_inf, carbono)]
 summary(ctb0094_layer[, carbono])
 

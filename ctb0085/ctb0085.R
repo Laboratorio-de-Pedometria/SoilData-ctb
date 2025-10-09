@@ -161,7 +161,6 @@ if (length(idx_utm) > 0) {
   ctb0085_event[idx_utm, coord_datum := 4326]
 }
 
-# Processa outras colunas conforme o script original
 # Precisão (coord) -> coord_precisao
 data.table::setnames(ctb0085_event, old = "Precisão (coord)", new = "coord_precisao", skip_absent = TRUE)
 ctb0085_event[, coord_precisao := as.character(coord_precisao)]
@@ -192,7 +191,7 @@ ctb0085_event[, pais_id := "BR"]
 
 # Estado (UF) -> estado_id
 data.table::setnames(ctb0085_event, old = "Estado (UF)", new = "estado_id")
-ctb0085_event[, estado_id := recode(estado_id, !!!mapa_siglas)]
+ctb0085_event[, estado_id := as.character(estado_id)]
 ctb0085_event[, .N, by = estado_id]
 
 

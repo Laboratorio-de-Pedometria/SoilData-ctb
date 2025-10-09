@@ -20,6 +20,7 @@ if (!require("parzer")) {
 }
 
 
+
 # Source helper functions
 source("./helper.R")
 
@@ -145,24 +146,12 @@ summary(ctb0069_event[, coord_fonte])
 data.table::setnames(ctb0069_event, old = "País", new = "pais_id")
 ctb0069_event[, pais_id := "BR"]
 
-#Mapeamento dos estados para sigla
 
-mapa_siglas <- c(
-  "Acre" = "AC", "Alagoas" = "AL", "Amapá" = "AP", "Amazonas" = "AM",
-  "Bahia" = "BA", "Ceará" = "CE", "Distrito Federal" = "DF",
-  "Espírito Santo" = "ES", "Goiás" = "GO", "Maranhão" = "MA",
-  "Mato Grosso" = "MT", "Mato Grosso do Sul" = "MS", "Minas Gerais" = "MG",
-  "Pará" = "PA", "Paraíba" = "PB", "Paraná" = "PR", "Pernambuco" = "PE",
-  "Piauí" = "PI", "Rio de Janeiro" = "RJ", "Rio Grande do Norte" = "RN",
-  "Rio Grande do Sul" = "RS", "Rondônia" = "RO", "Roraima" = "RR",
-  "Santa Catarina" = "SC", "São Paulo" = "SP", "Sergipe" = "SE",
-  "Tocantins" = "TO"
-)
 
 #using the 'recode' function because in the original document the states are outside of UF
 # Estado (UF) -> estado_id
 data.table::setnames(ctb0069_event, old = "Estado (UF)", new = "estado_id")
-ctb0069_event[, estado_id := recode(estado_id, !!!mapa_siglas)]
+ctb0069_event[, estado_id := as.character(estado_id)]
 ctb0069_event[, .N, by = estado_id]
 
 
