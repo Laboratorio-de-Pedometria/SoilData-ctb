@@ -126,9 +126,9 @@ if (length(idx_gms) > 0) {
   lat_dd[ctb0085_event[idx_gms, lat_h] == "S"] <- -lat_dd[ctb0085_event[idx_gms, lat_h] == "S"]
   
   # Atribui os valores convertidos às colunas finais
-  ctb0085_event[idx_gms, coord_x := lon_dd]
-  ctb0085_event[idx_gms, coord_y := lat_dd]
-  ctb0085_event[idx_gms, coord_datum := "WGS84"]
+  ctb0085_event[idx_gms, coord_x := lat_dd]
+  ctb0085_event[idx_gms, coord_y := lon_dd]
+  ctb0085_event[idx_gms, coord_datum := "4326"]
 }
 
 # 2. Processa as coordenadas em UTM
@@ -174,20 +174,6 @@ ctb0085_event[, coord_fonte := as.character(coord_fonte)]
 # País -> pais_id
 data.table::setnames(ctb0085_event, old = "País", new = "pais_id")
 ctb0085_event[, pais_id := "BR"]
-
-# #Mapeamento dos estados para sigla se necessário utilizar a função 'recode'
- mapa_siglas <- c(
-   "Acre" = "AC", "Alagoas" = "AL", "Amapá" = "AP", "Amazonas" = "AM",
-   "Bahia" = "BA", "Ceará" = "CE", "Distrito Federal" = "DF",
-   "Espírito Santo" = "ES", "Goiás" = "GO", "Maranhão" = "MA",
-   "Mato Grosso" = "MT", "Mato Grosso do Sul" = "MS", "Minas Gerais" = "MG",
-   "Pará" = "PA", "Paraíba" = "PB", "Paraná" = "PR", "Pernambuco" = "PE",
-   "Piauí" = "PI", "Rio de Janeiro" = "RJ", "Rio Grande do Norte" = "RN",
-   "Rio Grande do Sul" = "RS", "Rondônia" = "RO", "Roraima" = "RR",
-   "Santa Catarina" = "SC", "São Paulo" = "SP", "Sergipe" = "SE",
-   "Tocantins" = "TO"
-  )
-
 
 # Estado (UF) -> estado_id
 data.table::setnames(ctb0085_event, old = "Estado (UF)", new = "estado_id")
@@ -365,7 +351,7 @@ summary_soildata(ctb0085)
 
 #Layers: 103
 #Events: 27
-#Georeferenced events: 21
+#Georeferenced events: 26
 
 
 # Plot using mapview
