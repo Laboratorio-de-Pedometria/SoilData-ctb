@@ -3,9 +3,8 @@
 rm(list = ls())
 
 # Install and load required packages
-if (!require("data.table")) {
+if (!requireNamespace("data.table")) {
   install.packages("data.table")
-  library("data.table")
 }
 if (!require("openxlsx")) {
   install.packages("openxlsx")
@@ -14,10 +13,6 @@ if (!require("openxlsx")) {
 if (!require("sf")) {
   install.packages("sf")
   library("sf")
-}
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
 }
 
 # Source helper functions
@@ -55,6 +50,7 @@ str(ctb0025_event)
 # Process fields
 # observacao_id
 ctb0025_event[, observacao_id := as.character(observacao_id)]
+# check for duplicate observacao_id
 ctb0025_event[, .N, by = observacao_id][N > 1]
 
 # evento_tipo
@@ -62,7 +58,9 @@ ctb0025_event[grepl("Perfil", observacao_id), evento_tipo := "Perfil"]
 ctb0025_event[grepl("Ponto", observacao_id), evento_tipo := "Tradagem"]
 ctb0025_event[, .N, by = evento_tipo]
 
-# observacao_data -> data_ano
+# old: observacao_data
+# new: data_ano
+# observacao_data is in Excel date format. Convert to R Date format and then extract year.
 data.table::setnames(ctb0025_event, old = "observacao_data", new = "data_ano")
 t0 <- "1899-12-30"
 ctb0025_event[, data_ano := as.Date(data_ano, origin = t0, format = "%Y-%m-%d")]
@@ -70,31 +68,29 @@ ctb0025_event[, data_ano := as.integer(format(data_ano, "%Y"))]
 ctb0025_event[, .N, by = data_ano]
 
 # ano_fonte
-# A data de coleta dos perfis de solo está especificada no documento de origem dos dados.
+# The year of data collection for soil profiles is specified in the original data source document.
 ctb0025_event[!is.na(data_ano), ano_fonte := "original"]
 ctb0025_event[, .N, by = ano_fonte]
 
-# Auger holes are missing data_ano. We set it to 2006 or 2007.
+# Auger holes are missing data_ano. We set it to a value sampled from data_ano of soil profiles.
 ctb0025_event[is.na(data_ano), .(observacao_id, data_ano)]
-ctb0025_event[
-  is.na(data_ano),
-  data_ano := sample(c(2006, 2007), sum(is.na(data_ano)), replace = TRUE)
+years <- ctb0025_event[!is.na(data_ano), unique(data_ano)]
+ctb0025_event[is.na(data_ano),
+  data_ano := sample(years, sum(is.na(data_ano)), replace = TRUE)
 ]
 ctb0025_event[, .N, by = data_ano]
 
 # ano_fonte
-# A data de coleta das tradagens não está especificada no documento de origem dos dados.
+# For auger holes, the year of data collection is not specified in the original data source document.
 ctb0025_event[is.na(ano_fonte), ano_fonte := "estimativa"]
 ctb0025_event[, .N, by = ano_fonte]
 
-# coord_x
 # old: coord_longitude
 # new: coord_x
 data.table::setnames(ctb0025_event, old = "coord_longitude", new = "coord_x")
 ctb0025_event[, coord_x := as.numeric(coord_x)]
 summary(ctb0025_event[, coord_x])
 
-# coord_y
 # old: coord_latitude
 # new: coord_y
 data.table::setnames(ctb0025_event, old = "coord_latitude", new = "coord_y")
@@ -113,16 +109,17 @@ ctb0025_event_sf <- sf::st_as_sf(
   coords = c("coord_x", "coord_y"), crs = 4326
 )
 ctb0025_event_sf <- sf::st_transform(ctb0025_event_sf, 32724)
-ctb0025_event_sf <- sf::st_jitter(ctb0025_event_sf, amount = 30)
+amount <- 30  # meters
+ctb0025_event_sf <- sf::st_jitter(ctb0025_event_sf, amount = amount)
 ctb0025_event_sf <- sf::st_transform(ctb0025_event_sf, 4326)
 ctb0025_event_sf <- sf::st_coordinates(ctb0025_event_sf)
 ctb0025_event[observacao_id == "Perfil-3", coord_x := ctb0025_event_sf[, 1]]
 ctb0025_event[observacao_id == "Perfil-3", coord_y := ctb0025_event_sf[, 2]]
 rm(ctb0025_event_sf)
 
-# coord_datum
 # old: coord_datum_epsg
 # new: coord_datum
+# ctb0025_event has coord_datum_epsg = EPSG:4674 (SIRGAS 2000). We convert to EPSG:4326 (WGS 84)
 data.table::setnames(ctb0025_event, old = "coord_datum_epsg", new = "coord_datum")
 ctb0025_event[, coord_datum := gsub("EPSG:", "", coord_datum)]
 ctb0025_event[, coord_datum := as.integer(coord_datum)]
@@ -143,6 +140,9 @@ ctb0025_event[, .N, by = coord_fonte]
 # coord_precisao is missing. Because coord_fonte is GPS, we assume it is 30 m
 ctb0025_event[, coord_precisao := as.numeric(coord_precisao)]
 ctb0025_event[!is.na(coord_fonte), coord_precisao := 30]
+summary(ctb0025_event[, coord_precisao])
+# For Perfil-3, we added a jitter of 30 m to the coordinates. So we set coord_precisao to 60 m.
+ctb0025_event[observacao_id == "Perfil-3", coord_precisao := coord_precisao + amount]
 summary(ctb0025_event[, coord_precisao])
 
 # pais_id
@@ -182,19 +182,20 @@ ctb0025_event[, sibcs_suborder := NULL]
 ctb0025_event[, .N, by = sibcs]
 
 # taxon_st
-# A classificação do solo segundo o Soil Taxonomy não foi realizada.
+# The soil classification according to Soil Taxonomy was not performed.
 ctb0025_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie)
-# Não tenho acesso a este trabalho após a inserção das variaveis pedregosidade e rochosidade
-# Logo, irei colocar NA_character_ para as variaveis.
+# old: geo_pedregosidade
+# new: pedregosidade
+data.table::setnames(ctb0025_event, old = "geo_pedregosidade", new = "pedregosidade")
+ctb0025_event[, pedregosidade := as.character(pedregosidade)]
+ctb0025_event[, .N, by = pedregosidade]
 
-ctb0025_event[, pedregosidade := NA_character_]
-
-# Rochosidade (superficie)
-# review the work at another time
-
-ctb0025_event[, rochosidade := NA_character_]
+# old: geo_rochosidade
+# new: rochosidade
+data.table::setnames(ctb0025_event, old = "geo_rochosidade", new = "rochosidade")
+ctb0025_event[, rochosidade := as.character(rochosidade)]
+ctb0025_event[, .N, by = rochosidade]
 
 str(ctb0025_event)
 
@@ -239,17 +240,22 @@ ctb0025_layer[, .N, by = camada_id]
 data.table::setnames(ctb0025_layer, old = "terrafina_peneira", new = "terrafina")
 ctb0025_layer[, terrafina := as.numeric(terrafina)]
 summary(ctb0025_layer[, terrafina])
-ctb0025_layer[is.na(terrafina), .(observacao_id, camada_nome, terrafina)]
+# terrafina is missing for 15 layers: R, CR, and C/R. Curiously, terrafina was determined for some
+# R layers described as "altered rock".
+check_empty_layer(ctb0025_layer, "terrafina")
 
-# argila_naoh_densimetro -> argila
+# old: argila_naoh_densimetro
+# new: argila
 data.table::setnames(ctb0025_layer, old = "argila_naoh_densimetro", new = "argila")
 ctb0025_layer[, argila := as.numeric(argila)]
+# argila has some suspicious value: 32 g/kg for Perfil-88, camada Ap.
 ctb0025_layer[
   observacao_id == "Perfil-88" & camada_nome == "Ap",
   argila := ifelse(argila == 32, 320, argila)
 ]
 summary(ctb0025_layer[, argila])
-ctb0025_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, argila)]
+# argila is missing for 18 layers: R, CR, C/R, and C.
+check_empty_layer(ctb0025_layer, "argila")
 
 # silte_0002mm0050mm_calc -> silte
 # O conteúdo de silte_0002mm0050mm_calc registrado para a mesma camada é de 30 g/kg.
@@ -265,6 +271,8 @@ ctb0025_layer[
   silte := ifelse(silte == 32, 320, silte)
 ]
 summary(ctb0025_layer[, silte])
+# silte is missing for 18 layers: R, CR, C/R, and C.
+check_empty_layer(ctb0025_layer, "silte")
 
 # areia
 # areia_0200mm2000mm_calc + areia_0050mm0200mm_peneira
@@ -277,24 +285,35 @@ ctb0025_layer[
 ]
 ctb0025_layer[, areia := areia + as.numeric(areia_0050mm0200mm_peneira)]
 summary(ctb0025_layer[, areia])
+# areia is missing for 18 layers: R, CR, C/R, and C.
+check_empty_layer(ctb0025_layer, "areia")
 
 # carbono_cromo_xxx_mohr -> carbono
 data.table::setnames(ctb0025_layer, old = "carbono_cromo_xxx_mohr", new = "carbono")
 ctb0025_layer[, carbono := as.numeric(carbono)]
 summary(ctb0025_layer[, carbono])
+# carbono is missing for 18 layers: R, CR, C/R, and C, the same layers as argila, silte, and areia.
+check_empty_layer(ctb0025_layer, "carbono")
 
 # ctc_soma_calc -> ctc
 data.table::setnames(ctb0025_layer, old = "ctc_soma_calc", new = "ctc")
 ctb0025_layer[, ctc := as.numeric(ctc)]
 summary(ctb0025_layer[, ctc])
+# ctc is missing for 18 layers: R, CR, C/R, and C, the same layers as argila, silte, areia, and carbono.
+check_empty_layer(ctb0025_layer, "ctc")
 
 # ph_h2o_25_eletrodo -> ph
 data.table::setnames(ctb0025_layer, old = "ph_h2o_25_eletrodo", new = "ph")
 ctb0025_layer[, ph := as.numeric(ph)]
 summary(ctb0025_layer[, ph])
+# ph is missing for 18 layers: R, CR, C/R, and C, the same layers as argila, silte, areia, carbono, and ctc.
+check_empty_layer(ctb0025_layer, "ph")
 
 # dsi
+# The soil bulk density (dsi) was not determined.
 ctb0025_layer[, dsi := NA_real_]
+
+str(ctb0025_layer)
 
 # Merge ########################################################################################### 
 
@@ -332,8 +351,13 @@ ctb0025 <- merge(ctb0025_event, ctb0025_layer, all = TRUE)
 
 # Data imputation
 get_cols <- c(
-  "camada_nome", "camada_id", "amostra_id", "profund_sup", "profund_inf",
-  "terrafina", "argila", "silte", "areia", "carbono", "ctc", "ph", "dsi"
+  "camada_nome", "camada_id", "amostra_id",
+  "profund_sup", "profund_inf",
+  "terrafina", "argila", "silte", "areia",
+  "carbono",
+  "ctc",
+  "ph",
+  "dsi"
 )
 auger_holes <- unique(ctb0025$observacao_id[ctb0025$has_layer == FALSE])
 for (i in auger_holes) {
