@@ -130,7 +130,7 @@ any_missing_layer <- function(layer_data) {
   layer_data <- layer_data[order(observacao_id, profund_sup, profund_inf)]
   # Check for each observacao_id if there is a missing layer
   missing_layers <- layer_data[
-    shift(profund_inf) != profund_sup & profund_sup > 0,
+    data.table::shift(profund_inf) != profund_sup & profund_sup > 0,
     .(observacao_id, camada_nome, profund_sup, profund_inf)
   ]
   if (nrow(missing_layers) > 0) {
@@ -195,7 +195,7 @@ add_missing_layer <- function(
   # Create a new data.table to store the missing layers
   missing_layers <- x[, .(
     depth_top = depth_bottom[-.N],
-    depth_bottom = shift(depth_top, type = "lead")[-.N]
+    depth_bottom = data.table::shift(depth_top, type = "lead")[-.N]
   ), by = event_id][depth_top != depth_bottom]
 
   # Combine the original data with the missing layers
