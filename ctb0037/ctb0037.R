@@ -15,10 +15,6 @@ if (!require("openxlsx")) {
   install.packages("openxlsx")
   library("openxlsx")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
-}
 
 # Source helper functions
 source("./helper.R")
@@ -55,10 +51,13 @@ str(ctb0037_event)
 # Process fields
 # observacao_id
 ctb0037_event[, observacao_id := as.character(observacao_id)]
+# check for duplicated observacao_id
 ctb0037_event[, .N, by = observacao_id][N > 1]
 
-# data_ano
 # observacao_data
+# data_ano
+# The date of collection in the field is specified in the source document of the data. It is in
+# Excel date format (days since 1899-12-30).
 data.table::setnames(ctb0037_event, old = "observacao_data", new = "data_ano")
 t0 <- "1899-12-30"
 ctb0037_event[, data_ano := as.Date(data_ano, origin = t0, format = "%Y-%m-%d")]
@@ -66,7 +65,7 @@ ctb0037_event[, data_ano := as.numeric(format(data_ano, "%Y"))]
 ctb0037_event[, .N, by = data_ano]
 
 # ano_fonte
-# A data de coleta no campo está especificada no documento de origem dos dados
+# The date of collection in the field is specified in the source document of the data.
 ctb0037_event[!is.na(data_ano), ano_fonte := "original"]
 ctb0037_event[, .N, by = ano_fonte]
 
@@ -112,24 +111,27 @@ ctb0037_event[, .N, by = municipio_id]
 ctb0037_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0037_event[, amostra_area])
 
+# taxon_sibcs_2018
 # taxon_sibcs
-# taxon_sibcs_2018 -> taxon_sibcs
 data.table::setnames(ctb0037_event, old = "taxon_sibcs_2018", new = "taxon_sibcs")
 ctb0037_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0037_event[, .N, by = taxon_sibcs]
 
 # taxon_st
-# Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
+# The Soil Taxonomy classification is not available in this dataset.
 ctb0037_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie)
-# Não tenho acesso a este trabalho após a inserção das variaveis pedregosidade e rochosidade
-# Logo, irei colocar NA_character_ para as variaveis.
+# old: geo_pedregosidade_k2
+# new: pedregosidade
+data.table::setnames(ctb0037_event, old = "geo_pedregosidade_k2", new = "pedregosidade")
+ctb0037_event[, pedregosidade := as.character(pedregosidade)]
+ctb0037_event[, .N, by = pedregosidade]
 
-ctb0037_event[, pedregosidade := NA_character_]
-
-# Rochosidade (superficie)
-ctb0037_event[, rochosidade := ("Não Rochoso")]
+# geo_rochosidade_k2
+# new: rochosidade
+data.table::setnames(ctb0037_event, old = "geo_rochosidade_k2", new = "rochosidade")
+ctb0037_event[, rochosidade := as.character(rochosidade)]
+ctb0037_event[, .N, by = rochosidade]
 
 str(ctb0037_event)
 
@@ -171,41 +173,56 @@ ctb0037_layer[, camada_id := 1:.N, by = observacao_id]
 ctb0037_layer[, .N, by = camada_id]
 
 # terrafina
-# terra fina is missing. We assume it is 1000 g/kg
+# The study does not provide data for the fine earth fraction. However, analysis of the source
+# document and expert knowledge indicate that the soil is composed entirely of fine earth, i.e.,
+# terrafina = 1000 g kg-1.
 ctb0037_layer[, terrafina := 1000]
 
-# areia_naoh_peneira -> areia
+# areia_naoh_peneira
+# areia
 data.table::setnames(ctb0037_layer, old = "areia_naoh_peneira", new = "areia")
 ctb0037_layer[, areia := as.numeric(areia)]
 summary(ctb0037_layer[, areia])
+check_empty_layer(ctb0037_layer, "areia")
 
-# argila_naoh_pipeta -> argila
+# argila_naoh_pipeta
+# argila
 data.table::setnames(ctb0037_layer, old = "argila_naoh_pipeta", new = "argila")
 ctb0037_layer[, argila := as.numeric(argila)]
 summary(ctb0037_layer[, argila])
+check_empty_layer(ctb0037_layer, "argila")
 
 # silte = 1000 - areia - argila
 ctb0037_layer[, silte := 1000 - areia - argila]
 summary(ctb0037_layer[, silte])
+check_empty_layer(ctb0037_layer, "silte")
 
-# carbono_forno_1min950_cgdct -> carbono_seco
-# carbono_cromo_30min150_mohr -> carbono_umido
+# carbono_forno_1min950_cgdct
+# carbono
 data.table::setnames(ctb0037_layer, old = "carbono_forno_1min950_cgdct", new = "carbono")
-data.table::setnames(ctb0037_layer, old = "carbono_cromo_30min150_mohr", new = "carbono_umido")
 ctb0037_layer[, carbono := as.numeric(carbono)]
+# carbono_cromo_30min150_mohr
+# carbono_umido
+data.table::setnames(ctb0037_layer, old = "carbono_cromo_30min150_mohr", new = "carbono_umido")
 ctb0037_layer[, carbono_umido := as.numeric(carbono_umido)]
-carbono_lm <- lm(carbono ~ carbono_umido, data = ctb0037_layer)
+# carbono_umido is available for all samples, while our target variable is carbono. We will
+# impute missing values of carbono using a linear model fitted with carbono_umido as predictor.
+carbono_lm <- lm(carbono ~ carbono_umido + I(carbono_umido^2), data = ctb0037_layer)
 summary(carbono_lm)
 ctb0037_layer[
   is.na(carbono),
   carbono := predict(carbono_lm, newdata = ctb0037_layer[is.na(carbono), .(carbono_umido)])
 ]
 summary(ctb0037_layer[, carbono])
+check_empty_layer(ctb0037_layer, "carbono")
 
-# ph_h2o_25_eletrodo -> ph
+# ph_h2o_25_eletrodo
+# ph
 data.table::setnames(ctb0037_layer, old = "ph_h2o_25_eletrodo", new = "ph")
 ctb0037_layer[, ph := as.numeric(ph)]
 summary(ctb0037_layer[, ph])
+# 459 layers are missing ph values.
+check_empty_layer(ctb0037_layer, "ph")
 
 # ctc = calcio_kcl_eaa + magnesio_kcl_eaa + potassio_mehlich1_eeac + sodio_mehlich1_eeac +
 #       acidez_caoac2ph7_naoh
@@ -213,11 +230,16 @@ ctb0037_layer[, ctc := as.numeric(calcio_kcl_eaa) + as.numeric(magnesio_kcl_eaa)
 ctb0037_layer[, ctc := ctc + as.numeric(potassio_mehlich1_eeac) + as.numeric(sodio_mehlich1_eeac)]
 ctb0037_layer[, ctc := ctc + as.numeric(acidez_caoac2ph7_naoh)]
 summary(ctb0037_layer[, ctc])
+# 841 layers are missing ctc values.
+check_empty_layer(ctb0037_layer, "ctc")
 
-# dsi_cilindro -> dsi
+# dsi_cilindro
+# dsi
 data.table::setnames(ctb0037_layer, old = "dsi_cilindro", new = "dsi")
 ctb0037_layer[, dsi := as.numeric(dsi)]
 summary(ctb0037_layer[, dsi])
+# 390 layers are missing dsi values.
+check_empty_layer(ctb0037_layer, "dsi")
 
 str(ctb0037_layer)
 
