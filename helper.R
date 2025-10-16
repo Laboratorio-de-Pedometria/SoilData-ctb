@@ -374,15 +374,15 @@ select_output_columns <- function(data) {
   # Check if spatial coordinates are in decimal degrees (WGS84). If not, raise an error,
   # warning the user to convert them before proceeding.
   if (any(data$coord_x < -180 | data$coord_x > 180 | data$coord_y < -90 | data$coord_y > 90, na.rm = TRUE)) {
-    stop("Spatial coordinates (coord_x, coord_y) must be in decimal degrees (WGS84).\n"
-    "Please convert them before proceeding.")
+    stop(paste0("Spatial coordinates (coord_x, coord_y) must be in decimal degrees (WGS84).\n",
+    "Please convert them before proceeding."))
   }
   # Check if the sample points that have spatial coordinates (coord_x, coord_y) fall within the
   # bounding box of the Brazilian territory.
   bb <- c(-73.9872354804, -33.7683777809, -34.7299934555, 5.24448639569)
   if (any(data$coord_x < bb[1] | data$coord_x > bb[2] | data$coord_y < bb[3] | data$coord_y > bb[4], na.rm = TRUE)) {
-    stop("Some spatial coordinates (coord_x, coord_y) fall outside the bounding box of Brazil.\n"
-    "Please check and correct them before proceeding.")
-  } 
+    stop(paste0("Some spatial coordinates (coord_x, coord_y) fall outside the bounding box of Brazil.\n",
+                 "Please check and correct them before proceeding."))
+  }
   return(data[, ..target_columns])
 }
