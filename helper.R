@@ -139,9 +139,12 @@ any_missing_layer <- function(layer_data) {
       "Check the source dataset if this is correct or if there has been an error ",
       "when recording the layer depth limits."
     )
+    # Return the missing layers
+    return(missing_layers)
+  } else {
+    message("No missing layers were found.")
+    return(NULL)
   }
-  # Return the missing layers
-  return(missing_layers)
 }
 check_missing_layer <- any_missing_layer
 
