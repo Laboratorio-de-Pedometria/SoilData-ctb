@@ -85,51 +85,37 @@ ctb0082_event[, .N, by = data_ano]
 ctb0082_event[!is.na(data_ano), ano_fonte := "Original"]
 ctb0082_event[, .N, by = ano_fonte]
 
-
 # Longitude -> coord_x
-data.table::setnames(ctb0082_event, old = "Longitude", new = "coord_x")
+data.table::setnames(ctb0082_event, old = "Longitude", new = "coord_x", skip_absent = TRUE)
+# A função parzer::parse_lon converte o texto (ex: 42°15'36.3" W) para graus decimais (WGS84)
 ctb0082_event[, coord_x := parzer::parse_lon(coord_x)]
 summary(ctb0082_event[, coord_x])
 
 # Latitude -> coord_y
-data.table::setnames(ctb0082_event, old = "Latitude", new = "coord_y")
+data.table::setnames(ctb0082_event, old = "Latitude", new = "coord_y", skip_absent = TRUE)
+# A função parzer::parse_lat faz o mesmo para a latitude
 ctb0082_event[, coord_y := parzer::parse_lat(coord_y)]
 summary(ctb0082_event[, coord_y])
 
-# Check for duplicate coordinates
-ctb0082_event[, .N, by = .(coord_x, coord_y)][N > 1]
-
 # Datum (coord) -> coord_datum
-# coord_datum is missing in this document.
 data.table::setnames(ctb0082_event, old = "Datum (coord)", new = "coord_datum")
-ctb0082_event[, coord_datum := NA_real_]
+# Removendo os #N/A da planilha 
+ctb0082_event[, coord_datum := NULL]
+# Como o parzer converte para o padrão de graus decimais, o datum é WGS84.
+ctb0082_event[, coord_datum := "WGS84"]
 
 # Precisão (coord) -> coord_precisao
-# We set it to NA_real_
-ctb0082_event[, coord_precisao := NA_real_]
-summary(ctb0082_event[, coord_precisao])
+data.table::setnames(ctb0082_event, old = "Precisão (coord)", new = "coord_precisao", skip_absent = TRUE)
+ctb0082_event[, coord_precisao := as.character(coord_precisao)]
 
 # Fonte (coord) -> coord_fonte
-data.table::setnames(ctb0082_event, old = "Fonte (coord)", new = "coord_fonte")
+data.table::setnames(ctb0082_event, old = "Fonte (coord)", new = "coord_fonte", skip_absent = TRUE)
 ctb0082_event[, coord_fonte := as.character(coord_fonte)]
-summary(ctb0082_event[, coord_fonte])
+
 
 # País -> pais_id
 data.table::setnames(ctb0082_event, old = "País", new = "pais_id")
 ctb0082_event[, pais_id := "BR"]
-
-# #Mapeamento dos estados para sigla se necessário utilizar a função 'recode'
-# mapa_siglas <- c(
-#   "Acre" = "AC", "Alagoas" = "AL", "Amapá" = "AP", "Amazonas" = "AM",
-#   "Bahia" = "BA", "Ceará" = "CE", "Distrito Federal" = "DF",
-#   "Espírito Santo" = "ES", "Goiás" = "GO", "Maranhão" = "MA",
-#   "Mato Grosso" = "MT", "Mato Grosso do Sul" = "MS", "Minas Gerais" = "MG",
-#   "Pará" = "PA", "Paraíba" = "PB", "Paraná" = "PR", "Pernambuco" = "PE",
-#   "Piauí" = "PI", "Rio de Janeiro" = "RJ", "Rio Grande do Norte" = "RN",
-#   "Rio Grande do Sul" = "RS", "Rondônia" = "RO", "Roraima" = "RR",
-#   "Santa Catarina" = "SC", "São Paulo" = "SP", "Sergipe" = "SE",
-#   "Tocantins" = "TO"
-# )
 
 
 # Estado (UF) -> estado_id

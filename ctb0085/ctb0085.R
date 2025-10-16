@@ -14,14 +14,7 @@ if (!require("mapview")) {
   install.packages("mapview")
   library("mapview")
 }
-if (!require("parzer")) {
-  install.packages("parzer")
-  library("parzer")
-}
-if (!require("dplyr")) {
-  install.packages("dplyr")
-  library("dplyr")
-}
+
 
 # Source helper functions
 source("./helper.R")
@@ -93,56 +86,98 @@ ctb0085_event[!is.na(data_ano), ano_fonte := "Original"]
 ctb0085_event[, .N, by = ano_fonte]
 
 
-# Longitude -> coord_x
-data.table::setnames(ctb0085_event, old = "Longitude (m)", new = "coord_x")
-ctb0085_event[, coord_x := as.numeric(coord_x)]
-summary(ctb0085_event[, coord_x])
 
-# Latitude -> coord_y
-data.table::setnames(ctb0085_event, old = "Latitude (m)", new = "coord_y")
-ctb0085_event[, coord_y := as.numeric(coord_y)]
-summary(ctb0085_event[, coord_y])
 
-# Check for duplicate coordinates
-ctb0085_event[, .N, by = .(coord_x, coord_y)][N > 1]
 
-# Datum (coord) -> coord_datum
-# coord_datum is missing in this document.
-data.table::setnames(ctb0085_event, old = "Datum (coord)", new = "coord_datum")
-ctb0085_event[, coord_datum := NA_real_]
+# Renomeia colunas de coordenadas originais para facilitar o manuseio
+data.table::setnames(ctb0085_event,
+  old = c("Long (graus)", "Long (min)", "Long (seg)", "Long (hem)",
+          "Lat (grau)", "Lat (min)", "Lat (seg)", "Lat (hem)",
+          "Longitude (m)", "Latitude (m)", "Datum (coord)"),
+  new = c("lon_g", "lon_m", "lon_s", "lon_h",
+          "lat_g", "lat_m", "lat_s", "lat_h",
+          "coord_x_utm", "coord_y_utm", "coord_datum_original"),
+  skip_absent = TRUE
+)
+
+# Converte colunas para numérico, tratando erros que possam surgir
+cols_to_numeric <- c("lon_g", "lon_m", "lon_s", "lat_g", "lat_m", "lat_s",
+                     "coord_x_utm", "coord_y_utm")
+for (col in cols_to_numeric) {
+  ctb0085_event[, (col) := suppressWarnings(as.numeric(get(col)))]
+}
+
+# Inicializa as colunas de coordenadas finais
+ctb0085_event[, `:=`(coord_x = NA_real_, coord_y = NA_real_, coord_datum = NA_character_)]
+
+# 1. Processa as coordenadas em Graus, Minutos e Segundos (GMS)
+#----------------------------------------------------------------
+# Filtra as linhas que estão no formato GMS
+idx_gms <- which(ctb0085_event$coord_datum_original == "GMS")
+
+if (length(idx_gms) > 0) {
+  # Converte GMS para Graus Decimais (GD)
+  # A fórmula é: GD = Graus + (Minutos / 60) + (Segundos / 3600)
+  # O sinal negativo é aplicado para hemisférios Sul (S) e Oeste (W)
+  lon_dd <- with(ctb0085_event[idx_gms, ], lon_g + lon_m/60 + lon_s/3600)
+  lon_dd[ctb0085_event[idx_gms, lon_h] == "W"] <- -lon_dd[ctb0085_event[idx_gms, lon_h] == "W"]
+  
+  lat_dd <- with(ctb0085_event[idx_gms, ], lat_g + lat_m/60 + lat_s/3600)
+  lat_dd[ctb0085_event[idx_gms, lat_h] == "S"] <- -lat_dd[ctb0085_event[idx_gms, lat_h] == "S"]
+  
+  # Atribui os valores convertidos às colunas finais
+  ctb0085_event[idx_gms, coord_x := lat_dd]
+  ctb0085_event[idx_gms, coord_y := lon_dd]
+  ctb0085_event[idx_gms, coord_datum := "4326"]
+}
+
+# 2. Processa as coordenadas em UTM
+#----------------------------------------------------------------
+# Filtra as linhas que estão no formato UTM e possuem dados válidos
+idx_utm <- which(ctb0085_event$coord_datum_original == "UTM" &
+                 !is.na(ctb0085_event$coord_x_utm) &
+                 !is.na(ctb0085_event$coord_y_utm))
+
+if (length(idx_utm) > 0) {
+  # Cria um objeto espacial (sf) com os dados UTM
+  # O município de Bandeirantes-MS está na zona UTM 21S.
+  # O código EPSG para WGS84 / UTM zona 21S é 32721.
+  utm_sf <- sf::st_as_sf(
+    ctb0085_event[idx_utm, ],
+    coords = c("coord_x_utm", "coord_y_utm"),
+    crs = 32721, # WGS84 / UTM zone 21S
+    remove = FALSE
+  )
+  
+  # Reprojeta as coordenadas para WGS84 (EPSG:4326)
+  wgs84_sf <- sf::st_transform(utm_sf, crs = 4326)
+  
+  # Extrai as coordenadas convertidas
+  coords_wgs84 <- sf::st_coordinates(wgs84_sf)
+  
+  # Atribui os valores convertidos às colunas finais
+  ctb0085_event[idx_utm, coord_x := coords_wgs84[, "X"]]
+  ctb0085_event[idx_utm, coord_y := coords_wgs84[, "Y"]]
+  ctb0085_event[idx_utm, coord_datum := 4326]
+}
 
 # Precisão (coord) -> coord_precisao
-# We set it to NA_real_
-data.table::setnames(ctb0085_event, old = "Precisão (coord)", new = "coord_precisao")
+data.table::setnames(ctb0085_event, old = "Precisão (coord)", new = "coord_precisao", skip_absent = TRUE)
 ctb0085_event[, coord_precisao := as.character(coord_precisao)]
-summary(ctb0085_event[, coord_precisao])
 
 # Fonte (coord) -> coord_fonte
-data.table::setnames(ctb0085_event, old = "Fonte (coord)", new = "coord_fonte")
+data.table::setnames(ctb0085_event, old = "Fonte (coord)", new = "coord_fonte", skip_absent = TRUE)
 ctb0085_event[, coord_fonte := as.character(coord_fonte)]
-summary(ctb0085_event[, coord_fonte])
+
+
 
 # País -> pais_id
 data.table::setnames(ctb0085_event, old = "País", new = "pais_id")
 ctb0085_event[, pais_id := "BR"]
 
-# #Mapeamento dos estados para sigla se necessário utilizar a função 'recode'
- mapa_siglas <- c(
-   "Acre" = "AC", "Alagoas" = "AL", "Amapá" = "AP", "Amazonas" = "AM",
-   "Bahia" = "BA", "Ceará" = "CE", "Distrito Federal" = "DF",
-   "Espírito Santo" = "ES", "Goiás" = "GO", "Maranhão" = "MA",
-   "Mato Grosso" = "MT", "Mato Grosso do Sul" = "MS", "Minas Gerais" = "MG",
-   "Pará" = "PA", "Paraíba" = "PB", "Paraná" = "PR", "Pernambuco" = "PE",
-   "Piauí" = "PI", "Rio de Janeiro" = "RJ", "Rio Grande do Norte" = "RN",
-   "Rio Grande do Sul" = "RS", "Rondônia" = "RO", "Roraima" = "RR",
-   "Santa Catarina" = "SC", "São Paulo" = "SP", "Sergipe" = "SE",
-   "Tocantins" = "TO"
-  )
-
-
 # Estado (UF) -> estado_id
 data.table::setnames(ctb0085_event, old = "Estado (UF)", new = "estado_id")
-ctb0085_event[, estado_id := recode(estado_id, !!!mapa_siglas)]
+ctb0085_event[, estado_id := as.character(estado_id)]
 ctb0085_event[, .N, by = estado_id]
 
 
@@ -316,7 +351,7 @@ summary_soildata(ctb0085)
 
 #Layers: 103
 #Events: 27
-#Georeferenced events: 21
+#Georeferenced events: 26
 
 
 # Plot using mapview

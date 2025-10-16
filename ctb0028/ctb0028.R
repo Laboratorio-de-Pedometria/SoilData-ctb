@@ -131,8 +131,7 @@ data.table::setnames(ctb0028_event, old = "Área amostrada [m^2]", new = "amostr
 ctb0028_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0028_event[, amostra_area])
 
-# old: SiBCS (2006)
-# new: taxon_sibcs
+# taxon_sibcs
 data.table::setnames(ctb0028_event, old = "SiBCS (2006)", new = "taxon_sibcs")
 ctb0028_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0028_event[, .N, by = taxon_sibcs]
@@ -141,15 +140,16 @@ ctb0028_event[, .N, by = taxon_sibcs]
 # Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
 ctb0028_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie)
-# review the work at another time
+# pedregosidade
+data.table::setnames(ctb0028_event, old = "Pedregosidade", new = "pedregosidade")
+ctb0028_event[, pedregosidade := as.character(pedregosidade)]
 
-ctb0028_event[, pedregosidade := ("Não Pedregoso")]
+# rochosidade
+data.table::setnames(ctb0028_event, old = "Rochosidade", new = "rochosidade")
+ctb0028_event[, rochosidade := as.character(rochosidade)]
 
-# Rochosidade (superficie)
-# review the work at another time
 
-ctb0028_event[, rochosidade := ("Não Rochoso")]
+
 
 str(ctb0028_event)
 

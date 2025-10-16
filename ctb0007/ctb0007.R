@@ -152,14 +152,14 @@ ctb0007_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0007_event[, taxon_st := NA_character_]
 
 # Pedregosidade (superficie)
-# review the work at another time
+# this document don't  have pedregosidade info
 
-ctb0007_event[, pedregosidade := ("Não Pedregoso")]
+ctb0007_event[, pedregosidade := NA_character_]
 
 # Rochosidade (superficie)
-# review the work at another time
+# this document don't  have rochosidade info
 
-ctb0007_event[, rochosidade := ("Não Rochoso")]
+ctb0007_event[, rochosidade := NA_character_]
 
 str(ctb0007_event)
 

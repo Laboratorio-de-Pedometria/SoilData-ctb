@@ -89,20 +89,42 @@ ctb0083_event[, .N, by = ano_fonte]
 # Longitude -> coord_x
 data.table::setnames(ctb0083_event, old = "Coordenadas UTM X", new = "coord_x")
 ctb0083_event[, coord_x := as.numeric(coord_x)]
-summary(ctb0083_event[, coord_x])
 
 # Latitude -> coord_y
 data.table::setnames(ctb0083_event, old = "Coordenadas UTM Y", new = "coord_y")
 ctb0083_event[, coord_y := as.numeric(coord_y)]
-summary(ctb0083_event[, coord_y])
-
-# Check for duplicate coordinates
-ctb0083_event[, .N, by = .(coord_x, coord_y)][N > 1]
 
 # Datum (coord) -> coord_datum
-# coord_datum is missing in this document.
 data.table::setnames(ctb0083_event, old = "Datum (coord)", new = "coord_datum")
-ctb0083_event[, coord_datum := as.character(coord_datum)]
+ctb0083_event[coord_datum == "SAD-69", coord_datum := 29192]
+ctb0083_event[, coord_datum := as.integer(coord_datum)]
+
+# --- MODIFICAÇÃO PRINCIPAL AQUI ---
+# Remove as linhas com NA e sobrescreve o data.table original
+ctb0083_event <- na.omit(ctb0083_event, cols = c("coord_x", "coord_y"))
+
+# Converte o data.table para um objeto espacial (sf)
+# Agora usamos o 'ctb0083_event' original, pois ele já foi limpo
+ctb0083_event_sf <- sf::st_as_sf(
+  ctb0083_event,
+  coords = c("coord_x", "coord_y"),
+  crs = 29192 # Define o CRS de origem como SAD 69 / UTM Zone 22S
+)
+
+# Transforma as coordenadas para WGS84 (EPSG: 4326)
+ctb0083_event_sf_wgs84 <- sf::st_transform(ctb0083_event_sf, 4326)
+
+# Extrai as novas coordenadas do objeto sf
+new_coords <- sf::st_coordinates(ctb0083_event_sf_wgs84)
+
+# Atualiza a tabela original com as coordenadas convertidas e o novo datum
+ctb0083_event[, coord_x := new_coords[, 1]] # Novas longitudes
+ctb0083_event[, coord_y := new_coords[, 2]] # Novas latitudes
+ctb0083_event[, coord_datum := 4326L]       # Novo datum: WGS84
+
+# Verifica o resultado final
+summary(ctb0083_event[, .(coord_datum, coord_x, coord_y)])
+
 
 # Precisão (coord) -> coord_precisao
 #

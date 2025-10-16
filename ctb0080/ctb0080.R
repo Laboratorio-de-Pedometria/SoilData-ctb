@@ -18,10 +18,7 @@ if (!require("parzer")) {
   install.packages("parzer")
   library("parzer")
 }
-if (!require("dplyr")) {
-  install.packages("dplyr")
-  library("dplyr")
-}
+
 
 # Source helper functions
 source("./helper.R")
@@ -112,7 +109,30 @@ ctb0080_event[, .N, by = .(coord_x, coord_y)][N > 1]
 
 # DATUM -> coord_datum
 data.table::setnames(ctb0080_event, old = "DATUM", new = "coord_datum")
-ctb0080_event[, coord_datum := as.character(coord_datum)]
+ctb0080_event[coord_datum == "SAD69 / UTM zona 21S", coord_datum := 29191]
+
+# Converte a coluna do datum para o tipo numérico (inteiro)
+ctb0080_event[, coord_datum := as.integer(coord_datum)]
+
+# Cria um objeto 'sf' (simple features) com os dados a serem transformados
+ctb0080_event_sf <- sf::st_as_sf(
+  ctb0080_event[coord_datum == 29191],
+  coords = c("coord_x", "coord_y"),
+  crs = 29191 # Informa o sistema de coordenadas de origem
+)
+
+# Transforma as coordenadas para WGS84 (padrão GPS, EPSG: 4326)
+ctb0080_event_sf <- sf::st_transform(ctb0080_event_sf, 4326)
+
+# Extrai as novas coordenadas (Longitude e Latitude) do objeto 'sf'
+new_coords <- sf::st_coordinates(ctb0080_event_sf)
+
+# Atualiza o data.table original com as novas coordenadas e o novo datum
+ctb0080_event[coord_datum == 29191, coord_x := new_coords[, 1]] # Longitude
+ctb0080_event[coord_datum == 29191, coord_y := new_coords[, 2]] # Latitude
+ctb0080_event[coord_datum == 29191, coord_datum := 4326]       # Novo datum: WGS84
+
+
 
 # Precisão (coord) -> coord_precisao
 # We set it to NA_real_
@@ -239,12 +259,10 @@ ctb0080_layer[is.na(areia_fina), .(observacao_id, camada_nome, profund_sup, prof
 
               
 # areia
-# criação da coluna areia 
-cols_areia <- c("areia_grossa", "areia_fina")
-
-# Criação da coluna areia, somando as frações e tratando NAs como 0
-# na.rm = TRUE (NA remove) remove os NAs antes de somar
-ctb0080_layer[, areia := rowSums(.SD, na.rm = TRUE), .SDcols = cols_areia]
+data.table::setnames(ctb0080_layer, old = "Areia [g/kg]", new = "areia")
+# Utilizo NULL para limpar os "#N/A" factors.
+ctb0080_layer[, areia := NULL]
+ctb0080_layer[, areia := (areia_fina + areia_grossa)]
 
 
 # silte

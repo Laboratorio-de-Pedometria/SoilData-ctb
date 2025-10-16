@@ -87,33 +87,33 @@ ctb0067_event[, .N, by = ano_fonte]
 
 
 # Longitude -> coord_x
-data.table::setnames(ctb0067_event, old = "Longitude (m)", new = "coord_x")
+data.table::setnames(ctb0067_event, old = "X [m]", new = "coord_x")
 ctb0067_event[, coord_x := as.numeric(coord_x)]
 summary(ctb0067_event[, coord_x])
 
 # Latitude -> coord_y
-data.table::setnames(ctb0067_event, old = "Latitude (m)", new = "coord_y")
+data.table::setnames(ctb0067_event, old = "Y [m]", new = "coord_y")
 ctb0067_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0067_event[, coord_y])
 
 
 # Datum (coord) -> coord_datum
-# SIRGAS 2000 / UTM zone 23S
+# UTM zone 23S
 data.table::setnames(ctb0067_event, old = "Datum (coord)", new = "coord_datum")
-ctb0067_event[coord_datum == "UTM zona 23S", coord_datum := 32723]
+ctb0067_event[coord_datum == "UTM zona 23S", coord_datum := 31983]
 ctb0067_event[, coord_datum := as.integer(coord_datum)]
 ctb0067_event[, .N, by = coord_datum]
 
 # Transform coordinates to WGS84
 ctb0067_event_sf <- sf::st_as_sf(
-  ctb0067_event[coord_datum == 32723],
-  coords = c("coord_x", "coord_y"), crs = 32723
+  ctb0067_event[coord_datum == 31983],
+  coords = c("coord_x", "coord_y"), crs = 31983
 )
 ctb0067_event_sf <- sf::st_transform(ctb0067_event_sf, 4326)
 ctb0067_event_sf <- sf::st_coordinates(ctb0067_event_sf)
-ctb0067_event[coord_datum == 32723, coord_x := ctb0067_event_sf[, 1]]
-ctb0067_event[coord_datum == 32723, coord_y := ctb0067_event_sf[, 2]]
-ctb0067_event[coord_datum == 32723, coord_datum := 4326]
+ctb0067_event[coord_datum == 31983, coord_x := ctb0067_event_sf[, 1]]
+ctb0067_event[coord_datum == 31983, coord_y := ctb0067_event_sf[, 2]]
+ctb0067_event[coord_datum == 31983, coord_datum := 4326]
 rm(ctb0067_event_sf)
 summary(ctb0067_event[, .(coord_datum, coord_x, coord_y)])
 
@@ -312,7 +312,7 @@ summary_soildata(ctb0067)
 #Georeferenced events: 31
 
 # Plot using mapview
-if (FALSE) {
+if (TRUE) {
   ctb0067_sf <- sf::st_as_sf(
     ctb0067[coord_datum == 4326],
     coords = c("coord_x", "coord_y"), crs = 4326
