@@ -103,13 +103,14 @@ ctb0035_event_sf <- sf::st_as_sf(ctb0035_event[coord_duplicated == TRUE & coord_
 )
 ctb0035_event_sf <- sf::st_transform(ctb0035_event_sf, crs = 32722)
 set.seed(1984)
-ctb0035_event_sf <- sf::st_jitter(ctb0035_event_sf, amount = 30)
+amount <- 30
+ctb0035_event_sf <- sf::st_jitter(ctb0035_event_sf, amount = amount)
 ctb0035_event_sf <- sf::st_transform(ctb0035_event_sf, crs = 4326)
 ctb0035_event_sf <- sf::st_coordinates(ctb0035_event_sf)
 ctb0035_event[coord_duplicated == TRUE & coord_datum == 4326, coord_x := ctb0035_event_sf[, 1]]
 ctb0035_event[coord_duplicated == TRUE & coord_datum == 4326, coord_y := ctb0035_event_sf[, 2]]
 rm(ctb0035_event_sf)
-ctb0035_event[, coord_duplicated := NULL]
+# ctb0035_event[, coord_duplicated := NULL]
 ctb0035_event[, .N, by = .(coord_y, coord_x)][N > 1]
 
 # coord_fonte
@@ -143,15 +144,12 @@ ctb0035_event[, taxon_sibcs := NA_character_]
 # US Soil Taxonomy is missing
 ctb0035_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie)
-# Não tenho acesso a este trabalho após a inserção das variaveis pedregosidade e rochosidade
-# Logo, irei colocar NA_character_ para as variaveis.
-
+# pedregosidade
+# The study does not report stoniness
 ctb0035_event[, pedregosidade := NA_character_]
 
-# Rochosidade (superficie)
-# review the work at another time
-
+# rochosidade
+# The study does not report rockiness
 ctb0035_event[, rochosidade := NA_character_]
 
 str(ctb0035_event)
@@ -192,18 +190,24 @@ ctb0035_layer[, camada_id := 1:.N, by = observacao_id]
 ctb0035_layer[, .N, by = camada_id]
 
 # terrafina
-# terrafina is missing. We assume it is 1000 g/kg
-ctb0035_layer[, terrafina := 1000]
+# The study does not report data on the fine earth fraction (< 2mm). We set it to NA_real_
+ctb0035_layer[, terrafina := NA_real_]
 
-# Argila -> argila
+# old: Argila
+# new: argila
 data.table::setnames(ctb0035_layer, old = "Argila", new = "argila")
 ctb0035_layer[, argila := as.numeric(argila) * 10]
 summary(ctb0035_layer[, argila])
+# Check for empty layers
+check_empty_layer(ctb0035_layer, "argila")
 
-# Silte -> silte
+# old: Silte
+# new: silte
 data.table::setnames(ctb0035_layer, old = "Silte", new = "silte")
 ctb0035_layer[, silte := as.numeric(silte) * 10]
 summary(ctb0035_layer[, silte])
+# Check for empty layers
+check_empty_layer(ctb0035_layer, "silte")
 
 # Areia Grossa + Areia Fina -> areia
 data.table::setnames(ctb0035_layer, old = "Areia.Grossa", new = "areia_grossa")
@@ -211,23 +215,36 @@ data.table::setnames(ctb0035_layer, old = "Areia.Fina", new = "areia_fina")
 ctb0035_layer[, areia := as.numeric(areia_grossa) + as.numeric(areia_fina)]
 ctb0035_layer[, areia := areia * 10]
 summary(ctb0035_layer[, areia])
+# Check for empty layers
+check_empty_layer(ctb0035_layer, "areia")
 
-# MOS -> carbono
+# old: MOS
+# new: carbono
+# carbono = MOS * 0.58 * 10
 data.table::setnames(ctb0035_layer, old = "MOS", new = "carbono")
 ctb0035_layer[, carbono := as.numeric(carbono) * 0.58 * 10]
 summary(ctb0035_layer[, carbono])
+# Check for empty layers
+check_empty_layer(ctb0035_layer, "carbono")
 
-# pH.H2O -> ph
+# old: pH.H2O
+# new: ph
 data.table::setnames(ctb0035_layer, old = "pH.H2O", new = "ph")
 ctb0035_layer[, ph := as.numeric(ph)]
 summary(ctb0035_layer[, ph])
+# Check for empty layers
+check_empty_layer(ctb0035_layer, "ph")
 
-# T -> ctc
+# old: T
+# new: ctc
 data.table::setnames(ctb0035_layer, old = "T", new = "ctc")
 ctb0035_layer[, ctc := as.numeric(ctc)]
 summary(ctb0035_layer[, ctc])
+# Check for empty layers
+check_empty_layer(ctb0035_layer, "ctc")
 
 # dsi
+# The study does not report data on the soil bulk density
 ctb0035_layer[, dsi := NA_real_]
 
 str(ctb0035_layer)
@@ -247,7 +264,7 @@ if (FALSE) {
 }
 # Some observations with neighboring IDs (e.g. 90 and 91 or 216 and 217) that have the same
 # coordinates have similar values for argila, carbono, and ctc. However, this is not true for all
-# observations. We will keep them for now and add some noise to the coordinates (jitter).
+# observations. We will keep them for now.
 summary_soildata(ctb0035)
 # Layers: 685
 # Events: 685
