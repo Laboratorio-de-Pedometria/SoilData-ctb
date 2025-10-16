@@ -56,7 +56,12 @@ str(ctb0030_event)
 # ID do evento -> observacao_id
 data.table::setnames(ctb0030_event, old = "ID do evento", new = "observacao_id")
 ctb0030_event[, observacao_id := as.character(observacao_id)]
+# check for duplicate observacao_id
 ctb0030_event[, .N, by = observacao_id][N > 1]
+
+# The study contains one soil profile from Poelking (2007), as regiteted in "Fonte dos dados".
+# We will drop this profile from the dataset after the merge.
+ctb0030_event[, .N, by = "Fonte dos dados"]
 
 # Ano (coleta) -> data_ano
 data.table::setnames(ctb0030_event, old = "Ano (coleta)", new = "data_ano")
@@ -64,24 +69,20 @@ ctb0030_event[, data_ano := as.integer(data_ano)]
 ctb0030_event[, .N, by = data_ano]
 
 # ano_fonte
-# A data de coleta dos perfis de solo está especificada no documento de origem dos dados
+# The sampling year is specified in the source document for most of the profiles.
 ctb0030_event[!is.na(data_ano), ano_fonte := "original"]
 ctb0030_event[, .N, by = ano_fonte]
-
 # There is one event missing the sampling year. It was obtained from Poelking (2007).
-# We assume it is 2006.
-ctb0030_event[is.na(data_ano) & observacao_id == "PERFIL-07", data_ano := 2006]
-ctb0030_event[, .N, by = data_ano]
-# ano_fonte for this event is set to "estimativa"
-ctb0030_event[observacao_id == "PERFIL-07", ano_fonte := "estimativa"]
-ctb0030_event[, .N, by = ano_fonte]
+# We will ignore it, as it is not part of the original study.
 
 # Longitude -> coord_x
+# We have coordinates in geographic and UTM. 
 data.table::setnames(ctb0030_event, old = "Longitude", new = "coord_x")
 ctb0030_event[, coord_x := as.numeric(coord_x)]
 summary(ctb0030_event[, coord_x])
 
 # Latitude -> coord_y
+# We have coordinates in geographic and UTM.
 data.table::setnames(ctb0030_event, old = "Latitude", new = "coord_y")
 ctb0030_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0030_event[, coord_y])
@@ -93,7 +94,7 @@ ctb0030_event[, coord_datum := as.integer(coord_datum)]
 ctb0030_event[, .N, by = coord_datum]
 
 # Harmonize CRS
-# Two events have CRS 32722
+# Two events have CRS 32722 (UTM 22S). We will convert them to 4326 (WGS84).
 ctb0030_event_sf <- ctb0030_event[coord_datum == "32722", ]
 ctb0030_event_sf <- sf::st_as_sf(ctb0030_event_sf, coords = c("coord_x", "coord_y"), crs = 32722)
 ctb0030_event_sf <- sf::st_transform(ctb0030_event_sf, crs = 4326)
@@ -118,8 +119,8 @@ data.table::setnames(ctb0030_event, old = "Precisão (coord) [m]", new = "coord_
 ctb0030_event[, coord_precisao := as.numeric(coord_precisao)]
 summary(ctb0030_event[, coord_precisao])
 
-# pais_id
 # País
+# pais_id
 data.table::setnames(ctb0030_event, old = "País", new = "pais_id")
 ctb0030_event[, pais_id := as.character(pais_id)]
 ctb0030_event[, .N, by = pais_id]
@@ -146,16 +147,18 @@ ctb0030_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0030_event[, .N, by = taxon_sibcs]
 
 # taxon_st
-# Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
+# The soil classification according to Soil Taxonomy is not available in this dataset.
 ctb0030_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie)
+# Pedregosidade
+# pedregosidade
 data.table::setnames(ctb0030_event, old = "Pedregosidade", new = "pedregosidade")
 ctb0030_event[, pedregosidade := as.character(pedregosidade)]
 ctb0030_event[, .N, by = pedregosidade]
 
-# Rochosidade (superficie)
-data.table::setnames(ctb0030_event, old = "rochosidade", new = "rochosidade")
+# Rochosidade
+# rochosidade
+data.table::setnames(ctb0030_event, old = "Rochosidade", new = "rochosidade")
 ctb0030_event[, rochosidade := as.character(rochosidade)]
 ctb0030_event[, .N, by = rochosidade]
 
@@ -202,46 +205,67 @@ ctb0030_layer <- ctb0030_layer[order(observacao_id, profund_sup, profund_inf)]
 ctb0030_layer[, camada_id := 1:.N, by = observacao_id]
 ctb0030_layer[, .N, by = camada_id]
 
-# terrafina
-# terra fina is missing. We assume it is NA for most of the layers.
-# We set it to 1000 for the layers that are known to be terra fina after carefull analysis of the 
+# old: Terra fina [g/kg]
+# new: terrafina
+data.table::setnames(ctb0030_layer, old = "Terra fina [g/kg]", new = "terrafina")
+ctb0030_layer[, terrafina := as.numeric(terrafina)]
+# The fine earth fraction is reported in the source document. However, for some layers, we can infer
+# it from the soil texture, soil classification and additional information in the source document.
+# We set it to 1000 for the layers that are known to be terra fina after carefull analysis of the
 # source document.
-ctb0030_layer[, terrafina := NA_real_]
-ctb0030_layer[observacao_id == "PERFIL-01", terrafina := 1000]
-ctb0030_layer[observacao_id == "PERFIL-03", terrafina := 1000]
-ctb0030_layer[observacao_id == "PERFIL-06" & camada_nome %in% c("A", "E", "B"), terrafina := 1000]
+# Argissolo Bruno-Acinzentado Alítico abrúptico
+ctb0030_layer[observacao_id == "PERFIL-01", terrafina := ifelse(is.na(terrafina), 1000, terrafina)]
+# Argissolo Vermelho Alítico típico
+ctb0030_layer[observacao_id == "PERFIL-03", terrafina := ifelse(is.na(terrafina), 1000, terrafina)]
+# Planossolo Háplico Alítico típico
+ctb0030_layer[
+  observacao_id == "PERFIL-06" & camada_nome %in% c("A", "E", "B"),
+  terrafina := ifelse(is.na(terrafina), 1000, terrafina)
+]
+summary(ctb0030_layer[, terrafina])
+# Check for missing terrafina
+check_empty_layer(ctb0030_layer, "terrafina")
 
 # Argila [g/kg] -> argila
 data.table::setnames(ctb0030_layer, old = "Argila (<0,002 mm) [g/kg]", new = "argila")
 ctb0030_layer[, argila := as.numeric(argila)]
 summary(ctb0030_layer[, argila])
+# Check for missing argila
+check_empty_layer(ctb0030_layer, "argila")
 
 # Silte [g/kg] -> silte
 data.table::setnames(ctb0030_layer, old = "Silte (0,05-0,002 mm) [g/kg]", new = "silte")
 ctb0030_layer[, silte := as.numeric(silte)]
 summary(ctb0030_layer[, silte])
+# Check for missing silte
+check_empty_layer(ctb0030_layer, "silte")
 
 # Areia Total [g/kg] -> areia
 data.table::setnames(ctb0030_layer, old = "Areia Total [g/kg]", new = "areia")
 ctb0030_layer[, areia := as.numeric(areia)]
 summary(ctb0030_layer[, areia])
+# Check for missing areia
+check_empty_layer(ctb0030_layer, "areia")
 
 # Check the particle size distribution
 ctb0030_layer[, psd := argila + silte + areia]
-psd_lims <- 990:1010
+psd_lims <- 900:1100
 ctb0030_layer[!psd %in% psd_lims & !is.na(psd), .N]
-# 24 layers with psd not in the range 990-1010
+# 16 layers with psd not in the range 900-1100
 # Print the rows with psd not in the range
 cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
 ctb0030_layer[!psd %in% psd_lims & !is.na(psd), ][, ..cols]
-# The following profules have layers with psd not in the range:
-# PERFIL-01 (all layers), PERFIL-02 (all layers), PERFIL-03 (all layers), PERFIL-04 (all layers),
-# PERFIL-05 (all layers), PERFIL-06 (all layers). All of these profiles were sampled and a anlysed
-# by the study author. The soil profiles with no issues were compiled from a previous study. Also,
-# for a given soil profile, the sum of the particle size distribution is approximatelly the same
-# accross all layers: ~70% for PERFIL-01, ~88% for PERFIL-02, ~90% for PERFIL-03, ~66% for PERFIL-04,
-# ~94% for PERFIL-06. We could not find the source of the error. So we assume that the errors is
-# distributed proportionally across all particle size fractions.
+# The following profiles have layers with psd not in the range:
+# PERFIL-01 (all seven layers), PERFIL-02 (all two layers), PERFIL-03 (three out of six layers),
+# PERFIL-04 (all three layers), PERFIL-05 (all layers). PERFIL-06 also has some inconsistencies,
+# but the psd is within the range. All of these profiles were sampled and analysed by the study
+# author. The soil profiles with no issues were compiled from previous studies.
+# We note that, for a given soil profile, the sum of the particle size distribution is
+# approximately the same across all layers: ~70% for PERFIL-01, ~88% for PERFIL-02, ~90% for
+# PERFIL-03, ~66% for PERFIL-04, and ~59% for PERFIL-05. We could not find the source of the error
+# even after careful analysis of the source document. Given the pattern of the errors, it seems to
+# be a systematic error during the laboratory analysis or data transcription.
+# We will correct the particle size distribution values by adjusting the individual fractions.
 ctb0030_layer[psd != 1000, argila := round(argila / psd * 1000)]
 ctb0030_layer[psd != 1000, silte := round(silte / psd * 1000)]
 ctb0030_layer[psd != 1000, areia := round(areia / psd * 1000)]
@@ -253,18 +277,25 @@ ctb0030_layer[, psd := NULL]
 data.table::setnames(ctb0030_layer, old = "C Orgânico [g/kg]", new = "carbono")
 ctb0030_layer[, carbono := as.numeric(carbono)]
 summary(ctb0030_layer[, carbono])
+# Check for missing carbono
+check_empty_layer(ctb0030_layer, "carbono")
 
 # CTC pH 7 [cmolc/kg] -> ctc
 data.table::setnames(ctb0030_layer, old = "CTC pH 7 [cmolc/kg]", new = "ctc")
 ctb0030_layer[, ctc := as.numeric(ctc)]
 summary(ctb0030_layer[, ctc])
+# Check for missing ctc
+check_empty_layer(ctb0030_layer, "ctc")
 
 # pH H2O (1:1) -> ph
 data.table::setnames(ctb0030_layer, old = "pH H2O (1:1)", new = "ph")
 ctb0030_layer[, ph := as.numeric(ph)]
 summary(ctb0030_layer[, ph])
+# Check for missing ph
+check_empty_layer(ctb0030_layer, "ph")
 
 # dsi
+# The dataset does not contain data on the bulk soil density.
 ctb0030_layer[, dsi := NA_real_]
 
 str(ctb0030_layer)
@@ -279,6 +310,9 @@ summary_soildata(ctb0030)
 # Layers: 46
 # Events: 11
 # Georeferenced events: 11
+
+# Keep only original study profiles
+ctb0030 <- ctb0030[`Fonte dos dados` == "Original", ]
 
 # Plot using mapview
 if (FALSE) {
