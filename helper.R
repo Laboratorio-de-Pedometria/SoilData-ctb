@@ -180,13 +180,19 @@ add_missing_layer <- function(
   # Check for each event_id if it is missing the top layer, i.e. min(depth_top) > 0
   x[, missing_top := min(depth_top) > 0, by = event_id]
   
-  # If the top layer is missing, add a row to the data.table
-  # For the new row, set depth_top = 0 and depth_bottom = min(depth_top)
-  x <- rbind(x, x[missing_top == TRUE, .(
-      event_id = event_id,
-      depth_top = 0,
-      depth_bottom = min(depth_top)
-    )], fill = TRUE)
+  # If the top layer is missing
+  if (any(x$missing_top)) {
+    message("Missing top layer found. Adding a new row with depth_top = 0.")
+    # Add a row to the data.table. Then, for the new row, set
+    # depth_top = 0 and depth_bottom = min(depth_top)
+    x <- rbind(x, x[missing_top == TRUE, .(
+        event_id = event_id,
+        depth_top = 0,
+        depth_bottom = min(depth_top)
+      )], fill = TRUE)
+  } else {
+    message("No missing top layer found.")
+  }
   x[, missing_top := NULL]
   
   # Order x by profile_id and depth_top
@@ -290,7 +296,13 @@ fill_empty_layer <- function(y, x) {
   }
   # Standard output message when conditions for interpolation are not met
   no_interpolation_message <-
-    "Conditions not met. Spline interpolation not applied. Returning original vector."
+    "NA values found. Conditions not met. Spline interpolation not applied. Returning original vector."
+  
+  # If no NA, return y
+  if (all(!is.na(y))) {
+    message("No NA values found. Returning original vector.")
+    return(y)
+  }
 
   # If only one point, return it
   if (length(y) == 1) {
@@ -328,7 +340,7 @@ fill_empty_layer <- function(y, x) {
     return(y)
   }
   # Else, return spline
-  message("Conditions met. Spline interpolation applied.")
+  message("NA values found. Conditions met. Spline interpolation applied.")
   spline(y = y, x = x, xout = x, method = "natural")$y
 }
 
