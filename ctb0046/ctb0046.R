@@ -12,9 +12,6 @@ if (!require("sf")) {
 if (!require("openxlsx")) {
   install.packages("openxlsx")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-}
 
 # Source helper functions
 source("./helper.R")
@@ -54,8 +51,9 @@ str(ctb0046_event)
 ctb0046_event[, observacao_id := as.character(observacao_id)]
 ctb0046_event[, .N, by = observacao_id][N > 1]
 
-# data_ano
 # observacao_data
+# data_ano
+# The date is given as Excel serial date numbers (days since 1899-12-30)
 data.table::setnames(ctb0046_event, old = "observacao_data", new = "data_ano")
 t0 <- "1899-12-30"
 ctb0046_event[, data_ano := as.Date(data_ano, origin = t0)]
@@ -63,7 +61,7 @@ ctb0046_event[, data_ano := as.integer(format(data_ano, "%Y"))]
 ctb0046_event[, .N, by = data_ano]
 
 # ano_fonte
-# A data de coleta no campo está especificada no documento de origem dos dados
+# The year of data collection is not explicitly given in the source document.
 ctb0046_event[, ano_fonte := "original"]
 ctb0046_event[, .N, by = ano_fonte]
 
@@ -126,18 +124,20 @@ ctb0046_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0046_event[, .N, by = taxon_sibcs]
 
 # taxon_st
-# Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
+# The Soil Taxonomy classification is not available in this dataset.
 ctb0046_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie)
-# this document don't  have pedregosidade info
+# old: geo_pedregosidade
+# new: pedregosidade
+data.table::setnames(ctb0046_event, old = "geo_pedregosidade", new = "pedregosidade")
+ctb0046_event[, pedregosidade := as.character(pedregosidade)]
+ctb0046_event[, .N, by = pedregosidade]
 
-ctb0046_event[, pedregosidade := NA_character_]
-
-# Rochosidade (superficie)
-# this document don't  have rochosidade info
-
-ctb0046_event[, rochosidade := NA_character_]
+# geo_rochosidade
+# rochosidade
+data.table::setnames(ctb0046_event, old = "geo_rochosidade", new = "rochosidade")
+ctb0046_event[, rochosidade := as.character(rochosidade)]
+ctb0046_event[, .N, by = rochosidade]
 
 str(ctb0046_event)
 
@@ -187,16 +187,17 @@ ctb0046_layer <- add_missing_layer(ctb0046_layer)
 ctb0046_layer[, profund_mid := (profund_sup + profund_inf) / 2]
 summary(ctb0046_layer[, profund_mid])
 
-# terrafina
 # old: terrafina_xxx
-# these are all sandy soils, so we can assume terrafina = 1000 g/kg
+# terrafina
 data.table::setnames(ctb0046_layer, old = "terrafina_xxx", new = "terrafina")
 ctb0046_layer[, terrafina := as.numeric(terrafina)]
-ctb0046_layer[is.na(terrafina), terrafina := 1000]
 summary(ctb0046_layer[, terrafina])
+check_empty_layer(ctb0046_layer, "terrafina")
+# these are all sandy soils, so we can assume terrafina = 1000 g/kg
+ctb0046_layer[is.na(terrafina), terrafina := 1000]
 
-# argila
 # argila_naoh_xxx
+# argila
 data.table::setnames(ctb0046_layer, old = "argila_naoh_xxx", new = "argila")
 ctb0046_layer[, argila := as.numeric(argila)]
 summary(ctb0046_layer[, argila])
@@ -204,9 +205,10 @@ summary(ctb0046_layer[, argila])
 # event (observacao_id). Use mid depth as predictor.
 ctb0046_layer[, argila := fill_empty_layer(y = argila, x = profund_mid), by = observacao_id]
 summary(ctb0046_layer[, argila])
+check_empty_layer(ctb0046_layer, "argila")
 
-# silte
 # silte_0002mm0050mm_calc
+# silte
 data.table::setnames(ctb0046_layer, old = "silte_0002mm0050mm_calc", new = "silte")
 ctb0046_layer[, silte := as.numeric(silte)]
 summary(ctb0046_layer[, silte])
@@ -214,6 +216,7 @@ summary(ctb0046_layer[, silte])
 # event (observacao_id). Use mid depth as predictor.
 ctb0046_layer[, silte := fill_empty_layer(y = silte, x = profund_mid), by = observacao_id]
 summary(ctb0046_layer[, silte])
+check_empty_layer(ctb0046_layer, "silte")
 
 # areia
 # areia_0250mm2000mm_xxx + areia_0100mm0250mm_xxx + areia_0050mm0100mm_xxx
@@ -229,6 +232,7 @@ summary(ctb0046_layer[, areia])
 # event (observacao_id). Use mid depth as predictor.
 ctb0046_layer[, areia := fill_empty_layer(y = areia, x = profund_mid), by = observacao_id]
 summary(ctb0046_layer[, areia])
+check_empty_layer(ctb0046_layer, "areia")
 
 # Check the particle size distribution
 # The sum of the particle size distribution should be 1000.
@@ -240,8 +244,8 @@ ctb0046_layer[!psd %in% psd_lims & !is.na(psd), .N]
 cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
 ctb0046_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 # These are typos in the source document. Follows the correction:
-ctb0046_layer[observacao_id == "PERFIL-01" & camada_nome == "CA", areia == 540 + 320 + 130]
-ctb0046_layer[observacao_id == "PERFIL-01" & camada_nome == "C2", areia == 470 + 330 + 90]
+ctb0046_layer[observacao_id == "PERFIL-01" & camada_nome == "CA", areia := 540 + 320 + 130]
+ctb0046_layer[observacao_id == "PERFIL-01" & camada_nome == "C2", areia := 470 + 330 + 90]
 # For the remaining layers, we will correct them by distributing the error evenly.
 ctb0046_layer[psd != 1000, argila := round(argila / psd * 1000)]
 ctb0046_layer[psd != 1000, silte := round(silte / psd * 1000)]
@@ -260,6 +264,7 @@ summary(ctb0046_layer[, carbono])
 # event (observacao_id). Use mid depth as predictor.
 ctb0046_layer[, carbono := fill_empty_layer(y = carbono, x = profund_mid), by = observacao_id]
 summary(ctb0046_layer[, carbono])
+check_empty_layer(ctb0046_layer, "carbono")
 
 # ph
 # ph_h2o_25_eletrodo
@@ -270,6 +275,7 @@ summary(ctb0046_layer[, ph])
 # event (observacao_id). Use mid depth as predictor.
 ctb0046_layer[, ph := fill_empty_layer(y = ph, x = profund_mid), by = observacao_id]
 summary(ctb0046_layer[, ph])
+check_empty_layer(ctb0046_layer, "ph")
 
 # ctc
 # ctc_soma_calc
@@ -280,6 +286,7 @@ summary(ctb0046_layer[, ctc])
 # event (observacao_id). Use mid depth as predictor.
 ctb0046_layer[, ctc := fill_empty_layer(y = ctc, x = profund_mid), by = observacao_id]
 summary(ctb0046_layer[, ctc])
+check_empty_layer(ctb0046_layer, "ctc")
 
 # dsi
 # densidade_solo_xxx
@@ -290,6 +297,7 @@ summary(ctb0046_layer[, dsi])
 # event (observacao_id). Use mid depth as predictor.
 ctb0046_layer[, dsi := fill_empty_layer(y = dsi, x = profund_mid), by = observacao_id]
 summary(ctb0046_layer[, dsi])
+check_empty_layer(ctb0046_layer, "dsi")
 
 str(ctb0046_layer)
 
