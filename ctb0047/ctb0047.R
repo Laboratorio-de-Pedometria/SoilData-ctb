@@ -12,9 +12,6 @@ if (!require("sf")) {
 if (!require("openxlsx")) {
   install.packages("openxlsx")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-}
 
 # Source helper functions
 source("./helper.R")
@@ -51,17 +48,17 @@ str(ctb0047_event)
 # Process fields
 # observacao_id
 ctb0047_event[, observacao_id := as.character(observacao_id)]
+# Check for duplicated observacao_id
 any(table(ctb0047_event[, observacao_id]) > 1)
 
 # data_ano
 # observacao_data
 data.table::setnames(ctb0047_event, old = "observacao_data", new = "data_ano")
-ctb0047_event[, .N, by = data_ano]
-ctb0047_event[, data_ano := as.integer(2011)]
+ctb0047_event[, data_ano := as.integer(data_ano)]
 ctb0047_event[, .N, by = data_ano]
 
 # ano_fonte
-# A data de coleta no campo está especificada no documento de origem dos dados
+# The year of data collection is explicitly stated in the source document of the data.
 ctb0047_event[, ano_fonte := "original"]
 ctb0047_event[, .N, by = ano_fonte]
 
@@ -121,18 +118,28 @@ ctb0047_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0047_event[, .N, by = taxon_sibcs]
 
 # taxon_st
-# Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
+# The Soil Taxonomy classification is not available in this dataset.
 ctb0047_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie)
-# this document don't  have pedregosidade info
+# pedregosidade
+# The stoniness information is not available in this dataset. However, we can make inferences based
+# on the soil class: if Latossolo or Nitossolo, we assume pedregosidade = "ausente"; otherwise, we
+# set it to NA.
+ctb0047_event[, pedregosidade := ifelse(
+  grepl("Latossolo|Nitossolo", taxon_sibcs),
+  "ausente", NA_character_
+)]
+ctb0047_event[, .N, by = pedregosidade]
 
-ctb0047_event[, pedregosidade := NA_character_]
-
-# Rochosidade (superficie)
-# this document don't  have rochosidade info
-
-ctb0047_event[, rochosidade := NA_character_]
+# rochosidade
+# The rockiness information is not available in this dataset. However, we can make inferences based
+# on the soil class: if Latossolo or Nitossolo, we assume rochosidade = "ausente"; otherwise, we
+# set it to NA.
+ctb0047_event[, rochosidade := ifelse(
+  grepl("Latossolo|Nitossolo", taxon_sibcs),
+  "ausente", NA_character_
+)]
+ctb0047_event[, .N, by = rochosidade]
 
 str(ctb0047_event)
 
@@ -172,47 +179,64 @@ ctb0047_layer[, camada_id := as.integer(camada_id)]
 ctb0047_layer[, .N, by = camada_id]
 
 # terrafina
-# terrafina is missing. We assume it is 1000 g/kg because all layers are Ap, Bt, or Bw
-ctb0047_layer[, terrafina := 1000]
+# The content of fine earth fraction is not available in this dataset. However, we can make
+# inferences based on the soil class and horizon type: if Latossolo or Nitossolo and horizon is Ap,
+# Bt, or Bw, we assume terrafina = 1000 g/kg; otherwise, we set it to NA. We will do this later 
+# after merging with event data.
+ctb0047_layer[, terrafina := NA_real_]
 
 # argila
 # argila_xxx_xxx * 10
 data.table::setnames(ctb0047_layer, old = "argila_xxx_xxx", new = "argila")
 ctb0047_layer[, argila := as.numeric(argila) * 10]
 summary(ctb0047_layer[, argila])
+check_empty_layer(ctb0047_layer, "argila")
 
 # silte
 # silte_xxx_xxx * 10
 data.table::setnames(ctb0047_layer, old = "silte_xxx_xxx", new = "silte")
 ctb0047_layer[, silte := as.numeric(silte) * 10]
 summary(ctb0047_layer[, silte])
+check_empty_layer(ctb0047_layer, "silte")
 
 # areia
 # areia_xxx_xxx * 10
 data.table::setnames(ctb0047_layer, old = "areia_xxx_xxx", new = "areia")
 ctb0047_layer[, areia := as.numeric(areia) * 10]
 summary(ctb0047_layer[, areia])
+check_empty_layer(ctb0047_layer, "areia")
+
+# Check the sum of argila, silte, and areia
+ctb0047_layer[, psd := argila + silte + areia]
+psd_limits <- c(900, 1100)
+if (any(ctb0047_layer[, psd < psd_limits[1] | psd > psd_limits[2]], na.rm = TRUE)) {
+  warning("Some layers have the sum of argila, silte, and areia outside the expected range (900-1100 g/kg).")
+}
+ctb0047_layer[, psd := NULL]
 
 # carbono
 # carbono_xxx_xxx_xxx * 10
 data.table::setnames(ctb0047_layer, old = "carbono_xxx_xxx_xxx", new = "carbono")
 ctb0047_layer[, carbono := as.numeric(carbono) * 10]
 summary(ctb0047_layer[, carbono])
+check_empty_layer(ctb0047_layer, "carbono")
 
 # ph
 # ph_h2o_xxx_xxx
 data.table::setnames(ctb0047_layer, old = "ph_h2o_xxx_xxx", new = "ph")
 ctb0047_layer[, ph := as.numeric(ph)]
 summary(ctb0047_layer[, ph])
+check_empty_layer(ctb0047_layer, "ph")
 
 # ctc
 # ctc_xxx_xxx
 data.table::setnames(ctb0047_layer, old = "ctc_xxx_xxx", new = "ctc")
 ctb0047_layer[, ctc := as.numeric(ctc)]
 summary(ctb0047_layer[, ctc])
+check_empty_layer(ctb0047_layer, "ctc")
 
 # dsi
-# Densidade do solo não está disponível neste dataset.
+# The soil bulk density information is not available in this dataset.
 ctb0047_layer[, dsi := NA_real_]
 
 str(ctb0047_layer)
@@ -221,6 +245,13 @@ str(ctb0047_layer)
 # events and layers
 ctb0047 <- merge(ctb0047_event, ctb0047_layer, all = TRUE)
 ctb0047[, dataset_id := "ctb0047"]
+
+# terrafina
+ctb0047[grepl("Latossolo|Nitossolo", taxon_sibcs) & 
+          camada_nome %in% c("Ap", "Bt", "Bw"), terrafina := 1000]
+summary(ctb0047[, terrafina])
+check_empty_layer(ctb0047, "terrafina")
+
 # citation
 ctb0047 <- merge(ctb0047, ctb0047_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0047)
