@@ -15,10 +15,6 @@ if (!require("openxlsx")) {
   install.packages("openxlsx")
   library("openxlsx")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
-}
 
 # Source helper functions
 source("./helper.R")
@@ -30,8 +26,6 @@ source("./helper.R")
 file_path <- path.expand("~/ownCloud/febr-repo/processamento/ctb0038/2022-02-02-ctb0038.xlsx")
 
 # Soil profile descriptions are missing: the data is available in the dissertation.
-# Data on soil organic carbon, soil classification and 
-# Must check with authors.
 
 # citation #########################################################################################
 ctb0038_citation <- openxlsx::read.xlsx(file_path, sheet = "identificacao")
@@ -60,6 +54,7 @@ str(ctb0038_event)
 # Process fields
 # observacao_id
 ctb0038_event[, observacao_id := as.character(observacao_id)]
+# check for duplicated ids
 ctb0038_event[, .N, by = observacao_id][N > 1]
 
 # data_ano
@@ -69,7 +64,7 @@ ctb0038_event[, data_ano := as.integer(data_ano)]
 ctb0038_event[, .N, by = data_ano]
 
 # ano_fonte
-# A data de coleta no campo está especificada no documento de origem dos dados
+# The year of data collection in the field is specified in the source document of the data set.
 ctb0038_event[!is.na(data_ano), ano_fonte := "original"]
 ctb0038_event[, .N, by = ano_fonte]
 
@@ -81,8 +76,8 @@ summary(ctb0038_event[, coord_x])
 ctb0038_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0038_event[, coord_y])
 
-# coord_datum
 # coord_sistema
+# coord_datum
 data.table::setnames(ctb0038_event, old = "coord_sistema", new = "coord_datum")
 ctb0038_event[, coord_datum := gsub("EPSG:", "", coord_datum)]
 ctb0038_event[, .N, by = coord_datum]
@@ -96,6 +91,7 @@ ctb0038_event[coord_datum == "31981", coord_x := ctb0038_event_sf[, 1]]
 ctb0038_event[coord_datum == "31981", coord_y := ctb0038_event_sf[, 2]]
 ctb0038_event[coord_datum == 31981, coord_datum := 4326]
 ctb0038_event[, coord_datum := as.integer(coord_datum)]
+ctb0038_event[, .N, by = coord_datum]
 rm(ctb0038_event_sf)
 
 # check for duplicated coordinates
@@ -130,18 +126,15 @@ ctb0038_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0038_event[, .N, by = taxon_sibcs]
 
 # taxon_st
-# Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
+# The Soil Taxonomy classification is not available in this dataset.
 ctb0038_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie)
-# Não tenho acesso a este trabalho após a inserção das variaveis pedregosidade e rochosidade
-# Logo, irei colocar NA_character_ para as variaveis.
+# pedregosidade
+# The information on the stoniness of the profiles is not available in this dataset.
+ctb0038_event[, pedregosidade := NA_character_]
 
-ctb0038event[, pedregosidade := NA_character_]
-
-# Rochosidade (superficie)
-# review the work at another time
-
+# rochosidade
+# The information on the rockiness of the profiles is not available in this dataset.
 ctb0038_event[, rochosidade := NA_character_]
 
 str(ctb0038_event)
@@ -169,6 +162,7 @@ ctb0038_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0038_layer[, profund_sup])
 
 # profund_inf
+# check for equal depths. If equal and R, add 20 cm to profund_inf
 ctb0038_layer[, profund_inf := as.numeric(profund_inf)]
 ctb0038_layer[profund_inf == profund_sup & camada_nome == "R", profund_inf := profund_sup + 20]
 summary(ctb0038_layer[, profund_inf])
@@ -187,8 +181,9 @@ ctb0038_layer <- ctb0038_layer[order(observacao_id, profund_sup, profund_inf)]
 ctb0038_layer[, camada_id := 1:.N, by = observacao_id]
 ctb0038_layer[, .N, by = camada_id]
 
-# terrafina
-# terrafina_xxx * 10
+# old: terrafina_xxx
+# new: terrafina
+# terrafina = terrafina_xxx * 10
 data.table::setnames(ctb0038_layer, old = "terrafina_xxx", new = "terrafina")
 ctb0038_layer[, terrafina := as.numeric(terrafina) * 10]
 summary(ctb0038_layer[, terrafina])
@@ -227,9 +222,9 @@ check_empty_layer(ctb0038_layer, "areia")
 ctb0038_layer[, areia := fill_empty_layer(y = areia, x = profund_mid), by = observacao_id]
 check_empty_layer(ctb0038_layer, "areia")
 
-# carbono
-# Carbono
-data.table::setnames(ctb0038_layer, old = "Carbono", new = "carbono")
+# old: Carbono.%
+# new: carbono
+data.table::setnames(ctb0038_layer, old = "Carbono.%", new = "carbono")
 ctb0038_layer[, carbono := as.numeric(carbono)]
 summary(ctb0038_layer[, carbono])
 check_empty_layer(ctb0038_layer, "carbono")
