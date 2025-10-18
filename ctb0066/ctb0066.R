@@ -23,7 +23,8 @@ source("./helper.R")
 # Dados de "ASSOCIAÇÕES ENTRE OS SOLOS, OS AMBIENTES SEDIMENTARES QUATERNÁRIOS E AS FITOFISIONOMIAS DE
 # PLANÍCIE COSTEIRA E BAIXA ENCOSTA NAS BACIAS DOS RIOS ITAGUARÉ E GUARATUBA (BERTIOGA-SP)"
 # 
-# https://drive.google.com/drive/u/0/folders/1HsBKA6yMB0zu4omBKpb6PkiVeBBoVAJW
+# Google Drive: https://drive.google.com/drive/u/0/folders/1HsBKA6yMB0zu4omBKpb6PkiVeBBoVAJW
+# NotebookLM: https://notebooklm.google.com/notebook/04228dea-024b-4176-95f5-22cd4a6281d4
 ctb0066_ids <- soildata_catalog("ctb0066")
 
 # validation #####################################################################################

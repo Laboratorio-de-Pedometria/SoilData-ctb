@@ -22,7 +22,9 @@ source("./helper.R")
 # Google Sheet #####################################################################################
 # ctb0065
 # Dados de "Solos de três áreas de  restinga. 1. Morfologia, caracterização e classificação"
-# https://drive.google.com/drive/folders/1N90u15zgwHxxOU__vQJKfivjubk5_gb0
+# 
+# Google Drive: https://drive.google.com/drive/folders/1N90u15zgwHxxOU__vQJKfivjubk5_gb0
+# NotebookLM: https://notebooklm.google.com/notebook/58ded8e8-0569-479e-842c-4debb63aa02f
 ctb0065_ids <- soildata_catalog("ctb0065")
 
 # validation #####################################################################################
