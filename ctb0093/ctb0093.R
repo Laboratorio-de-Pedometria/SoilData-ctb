@@ -1,49 +1,43 @@
-# autor: Felipe Brun Vergani
+# autor: Felipe Brun Vergani and Alessandro Samuel-Rosa
 # data: 2025
 
 # Install and load required packages
-if (!require("data.table")) {
+if (!requireNamespace("data.table")) {
   install.packages("data.table")
-  library("data.table")
 }
-if (!require("sf")) {
+if (!requireNamespace("sf")) {
   install.packages("sf")
-  library("sf")
 }
-if (!require("mapview")) {
+if (!requireNamespace("mapview")) {
   install.packages("mapview")
-  library("mapview")
 }
-if (!require("parzer")) {
+if (!requireNamespace("parzer")) {
   install.packages("parzer")
-  library("parzer")
 }
-if (!require("dplyr")) {
+if (!requireNamespace("dplyr")) {
   install.packages("dplyr")
-  library("dplyr")
 }
 
 # Source helper functions
 source("./helper.R")
 
-
-
 # Google Sheet #####################################################################################
 # ctb0093
 # Dados de "Dados de Carbono de Solos - Projeto SIGecotur/Projeto Forense"
 # 
-# https://docs.google.com/spreadsheets/d/1vTspAdJTVhhRU73Ddqg_4zSQQEG-YwINZxhONezGIe4/edit?usp=sharing
-
-
+# Google Drive: https://drive.google.com/drive/u/0/folders/13Q2Nth6sBT8IiwdSMwXv1Vci08k8_fD3
 ctb0093_ids <- soildata_catalog("ctb0093")
 
 # validation #####################################################################################
-
 ctb0093_validation <- google_sheet(ctb0093_ids$gs_id, ctb0093_ids$gid_validation)
-str(ctb0093_validation)
+check_sheet_validation(ctb0093_validation)
 
-# Check for negative validation results
-sum(ctb0093_validation == FALSE, na.rm = TRUE)
+# Errors found in validation!
+
+
+
+
+
 
 # citation #####################################################################################
 ctb0093_citation <- google_sheet(ctb0093_ids$gs_id, ctb0093_ids$gid_citation)
