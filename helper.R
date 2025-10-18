@@ -142,8 +142,7 @@ any_missing_layer <- function(layer_data) {
     # Return the missing layers
     return(missing_layers)
   } else {
-    message("No missing layers were found.")
-    return(NULL)
+    message("No missing layers were found. You can proceed.")
   }
 }
 check_missing_layer <- any_missing_layer
