@@ -1,4 +1,4 @@
-# autor: Felipe Brun Vergani
+# autor: Felipe Brun Vergani and Alessandro Samuel-Rosa
 # data: 2025
 
 # Install and load required packages
