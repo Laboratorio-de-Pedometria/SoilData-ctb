@@ -407,9 +407,10 @@ check_equal_coordinates <-
   function(dt) {
     dup_coords <- dt[, .N, by = .(coord_x, coord_y)][N > 1]
     if (nrow(dup_coords) > 0) {
-      message("Duplicate coordinates found:")
+      warning("Duplicate coordinates found:")
       print(dup_coords)
+      warning("Check the source dataset to resolve this issue.\nIf no solution is found, consider adding a random perturbation of 1 meter to the coordinates and updating the coordinate precision accordingly using the Pythagorean theorem for propagation of uncertainty.")
     } else {
-      message("No duplicate coordinates found.")
+      message("No duplicate coordinates found: all coordinates are unique. You can proceed.")
     }
   }
