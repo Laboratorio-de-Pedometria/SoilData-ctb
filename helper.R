@@ -343,17 +343,6 @@ fill_empty_layer <- function(y, x) {
   spline(y = y, x = x, xout = x, method = "natural")$y
 }
 
-# Set GPS precision ################################################################################
-# This function sets the GPS precision for soil data collection.
-# It returns a numeric value representing the precision in meters.
-# Returns: numeric value representing the GPS precision (default is 30 meters)
-# Example usage: set_gps_precision() # returns 30
-# Note: The function can be modified to return different precision values based on the requirements
-# of the soil data collection protocol.
-set_gps_precision <- function() {
-  return(30)
-}
-
 # Select columns for final output ##################################################################
 # This function selects specific columns from a data.table containing soil data.
 # It checks if the target columns exist in the data and returns a subset of the data.table
