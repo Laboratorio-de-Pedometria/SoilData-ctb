@@ -194,6 +194,15 @@ str(ctb0066_event)
 ctb0066_layer <- google_sheet(ctb0066_ids$gs_id, ctb0066_ids$gid_layer)
 str(ctb0066_layer)
 
+# NOTE. This study sampled the soil in specific depth intervals: 0-5, 5-10, 10-15, 15-20, 20-40, and
+# 40-60 cm. There also is a 0-20 cm interval for some soil profiles (maybe all of them?). The 0-20
+# cm layer is a true field sample, not an aggregate of the laboratory results of the fine 5-cm thick
+# layers. This means that we will find inconsistencies in the depth intervals between layers of the
+# same soil profile. We will consider the 0-20 cm layer as a separate soil profile (event). The
+# 20-40 and 40-60 cm layers will be used to compose both soil profiles (the one with 0-20 cm and the
+# one with the 0-5, 5-10, 10-15, and 15-20 cm layers). Latter we will add a very small jitter to the
+# coordinates to pass data consistency checks.
+
 # Process fields
 
 # ID do evento -> observacao_id
@@ -224,6 +233,25 @@ data.table::setnames(ctb0066_layer, old = "Profundidade final [cm]", new = "prof
 ctb0066_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0066_layer[, profund_inf])
 
+# Create new events for the 0-20 cm layers
+# Start by identifying the events with 0-20 cm layers. Then, create a data frame containing only these events, drop any 5-cm thick layers starting and ending between 0-20 cm, and update the observacao_id to create new events. In the original data frame, drop the 0-20 cm layers to avoid duplicates. Finally, bind the two data frames together.
+ctb0066_layer[, has_0_20 := any(profund_sup == 0 & profund_inf == 20), by = observacao_id]
+ctb0066_layer[, thickness := profund_inf - profund_sup]
+ctb0066_layer_0_20 <- ctb0066_layer[has_0_20 == TRUE & thickness == 20]
+ctb0066_layer_0_20[, observacao_id := paste0(observacao_id, "_0_20")]
+ctb0066_layer <- ctb0066_layer[!(profund_sup == 0 & profund_inf == 20)]
+ctb0066_layer <- rbind(ctb0066_layer, ctb0066_layer_0_20)
+# Sort by observacao_id and profund_sup
+setorder(ctb0066_layer, observacao_id, profund_sup)
+ctb0066_layer[, .N, by = observacao_id]
+# Clean up temporary columns
+ctb0066_layer[, thickness := NULL]
+rm(ctb0066_layer_0_20)
+
+# Check for missing layers
+# There are no missing layers in the dataset
+check_missing_layer(ctb0066_layer)
+
 # terrafina
 # The terrafina (fine earth fraction) is not available in the original publication. However, this
 # information could be infered from other features. This will be possible when the complete data 
@@ -240,7 +268,7 @@ ctb0066_layer[, terrafina := NA_real_]
 data.table::setnames(ctb0066_layer, old = "Areia total (%)", new = "areia")
 ctb0066_layer[, areia := areia * 10]
 summary(ctb0066_layer[, areia])
-# There are 183 layers missing sand content
+# There are 239 layers missing sand content
 ctb0066_layer[!is.na(areia), .N]
 check_empty_layer(ctb0066_layer, "areia")
 
@@ -250,7 +278,7 @@ check_empty_layer(ctb0066_layer, "areia")
 data.table::setnames(ctb0066_layer, old = "Silte (%)", new = "silte")
 ctb0066_layer[, silte := silte * 10]
 summary(ctb0066_layer[, silte])
-# there are 183 layers missing silt content
+# there are 239 layers missing silt content
 ctb0066_layer[!is.na(silte), .N]
 check_empty_layer(ctb0066_layer, "silte")
 
@@ -260,7 +288,7 @@ check_empty_layer(ctb0066_layer, "silte")
 data.table::setnames(ctb0066_layer, old = "Argila (%)", new = "argila")
 ctb0066_layer[, argila := argila * 10]
 summary(ctb0066_layer[, argila])
-# there are 184 layers missing clay content
+# there are 240 layers missing clay content
 ctb0066_layer[!is.na(argila), .N]
 check_empty_layer(ctb0066_layer, "argila")
 
