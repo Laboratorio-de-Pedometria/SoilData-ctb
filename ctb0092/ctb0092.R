@@ -1,39 +1,28 @@
-# autor: Felipe Brun Vergani
+# autor: Felipe Brun Vergani and Alessandro Samuel-Rosa
 # data: 2025
 
 # Install and load required packages
-if (!require("data.table")) {
+if (!requireNamespace("data.table")) {
   install.packages("data.table")
-  library("data.table")
 }
-if (!require("sf")) {
+if (!requireNamespace("sf")) {
   install.packages("sf")
-  library("sf")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
-}
-if (!require("parzer")) {
+if (!requireNamespace("parzer")) {
   install.packages("parzer")
-  library("parzer")
 }
-if (!require("dplyr")) {
+if (!requireNamespace("dplyr")) {
   install.packages("dplyr")
-  library("dplyr")
 }
 
 # Source helper functions
 source("./helper.R")
 
-
-
 # Google Sheet #####################################################################################
 # ctb0092
-# Dados de "Dados de Carbono de Solos - Projeto SIGecotur/Projeto Forense"
-# 
-# https://docs.google.com/spreadsheets/d/1vTspAdJTVhhRU73Ddqg_4zSQQEG-YwINZxhONezGIe4/edit?usp=sharing
-
+# Dados de Carbono de Solos - Projeto SIGecotur/Projeto Forense
+#
+# Google Drive: https://drive.google.com/drive/u/0/folders/1RsV8ViDb7lsvz7BgxOOhqTHhDWe1qsLE
 
 ctb0092_ids <- soildata_catalog("ctb0092")
 
