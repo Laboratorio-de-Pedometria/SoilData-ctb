@@ -401,3 +401,15 @@ select_output_columns <- function(data) {
   }
   return(data[, ..target_columns])
 }
+# Check for equal coordinates ######################################################################
+# This function checks for equal coordinates in a data.table containing soil data.
+check_equal_coordinates <-
+  function(dt) {
+    dup_coords <- dt[, .N, by = .(coord_x, coord_y)][N > 1]
+    if (nrow(dup_coords) > 0) {
+      message("Duplicate coordinates found:")
+      print(dup_coords)
+    } else {
+      message("No duplicate coordinates found.")
+    }
+  }
