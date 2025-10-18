@@ -404,7 +404,7 @@ select_output_columns <- function(data) {
 # This function checks for equal coordinates in a data.table containing soil data.
 check_equal_coordinates <-
   function(dt) {
-    dup_coords <- dt[, .N, by = .(coord_x, coord_y)][N > 1]
+    dup_coords <- dt[!(is.na(coord_x) & is.na(coord_y)), .N, by = .(coord_x, coord_y)][N > 1]
     if (nrow(dup_coords) > 0) {
       warning("Duplicate coordinates found:")
       print(dup_coords)
