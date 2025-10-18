@@ -1,51 +1,34 @@
-# autor: Felipe Brun Vergani
+# autor: Felipe Brun Vergani and Alessandro Samuel-Rosa
 # data: 2025
 
 # Install and load required packages
-if (!require("data.table")) {
+if (!requireNamespace("data.table")) {
   install.packages("data.table")
-  library("data.table")
 }
-if (!require("sf")) {
+if (!requireNamespace("sf")) {
   install.packages("sf")
-  library("sf")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
-}
-if (!require("parzer")) {
+if (!requireNamespace("parzer")) {
   install.packages("parzer")
-  library("parzer")
 }
 
 # Source helper functions
 source("./helper.R")
 
-
-
 # Google Sheet #####################################################################################
 # ctb0073
 # Dados de "Relações pedologia, geomorfologia e sedimentologia no Pantanal Norte"
-# 
-# 
-# https://docs.google.com/spreadsheets/d/1jSW3GQxaLJiHNNAi0vSnIr_Ld18nlyEqfvILAxD6gwI/edit?usp=sharing
-
-
+#
+# Google Drive: https://drive.google.com/drive/u/1/folders/1-ZuzR5Ma_kdWIpSnOGg_MlYRvhE7BRfe
 ctb0073_ids <- soildata_catalog("ctb0073")
 
 # validation #####################################################################################
-
 ctb0073_validation <- google_sheet(ctb0073_ids$gs_id, ctb0073_ids$gid_validation)
-str(ctb0073_validation)
-
-# Check for negative validation results
-sum(ctb0073_validation == FALSE, na.rm = TRUE)
+check_sheet_validation(ctb0073_validation)
 
 # citation #####################################################################################
 ctb0073_citation <- google_sheet(ctb0073_ids$gs_id, ctb0073_ids$gid_citation)
 str(ctb0073_citation)
-
 
 # dataset_titulo
 # Check for the string "Título" in column "campo". Then get the corresponding row value from column
@@ -69,8 +52,7 @@ print(ctb0073_citation)
 ctb0073_event <- google_sheet(ctb0073_ids$gs_id, ctb0073_ids$gid_event)
 str(ctb0073_event)
 
-#PROCESS FIELDS
-
+# PROCESS FIELDS
 
 # observacao_id
 # ID do evento -> observacao_id
