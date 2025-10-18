@@ -223,6 +223,7 @@ ctb0066_layer[, amostra_id := NA_character_]
 # old: Profundidade inicial [cm]
 # new: profund_sup
 data.table::setnames(ctb0066_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+ctb0066_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0066_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0066_layer[, profund_sup])
 
@@ -230,6 +231,8 @@ summary(ctb0066_layer[, profund_sup])
 # old: Profundidade final [cm]
 # new: profund_inf
 data.table::setnames(ctb0066_layer, old = "Profundidade final [cm]", new = "profund_inf")
+ctb0066_layer[, profund_inf := depth_slash(profund_inf), by = .I]
+ctb0066_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0066_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0066_layer[, profund_inf])
 
@@ -247,6 +250,12 @@ ctb0066_layer[, .N, by = observacao_id]
 # Clean up temporary columns
 ctb0066_layer[, thickness := NULL]
 rm(ctb0066_layer_0_20)
+
+# camada_id
+# We will create a unique identifier for each layer.
+ctb0066_layer <- ctb0066_layer[order(observacao_id, profund_sup, profund_inf)]
+ctb0066_layer[, camada_id := 1:.N, by = observacao_id]
+ctb0066_layer[, .N, by = camada_id]
 
 # Check for missing layers
 # There are no missing layers in the dataset
