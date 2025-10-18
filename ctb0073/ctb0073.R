@@ -58,18 +58,26 @@ str(ctb0073_event)
 # ID do evento -> observacao_id
 data.table::setnames(ctb0073_event, old = "ID do evento", new = "observacao_id")
 ctb0073_event[, observacao_id := as.character(observacao_id)]
+# check for duplicated observacao_id
 any(table(ctb0073_event[, observacao_id]) > 1)
 
 # data_ano
 # Ano (coleta) -> data_coleta_ano
 data.table::setnames(ctb0073_event, old = "Ano (coleta)", new = "data_ano")
 ctb0073_event[, data_ano := as.integer(data_ano)]
+# The sampling date is missing for 21 events. These are 19 mechanized drillings (AT1 through AT19)
+# and two additional profiles (AP13 and AP15). We suppose that these were sampled in the same years
+# as the other soil profiles. We assign the year from the existing years in the dataset.
 ctb0073_event[, .N, by = data_ano]
 
 # ano_fonte
 ctb0073_event[!is.na(data_ano), ano_fonte := "Original"]
+ctb0073_event[is.na(data_ano), ano_fonte := "Estimativa"]
 ctb0073_event[, .N, by = ano_fonte]
 
+# Fill missing data_ano with the first non-missing year found
+ctb0073_event[is.na(data_ano), data_ano := ctb0073_event[!is.na(data_ano), unique(data_ano)][1]]
+ctb0073_event[, .N, by = data_ano]
 
 # coord_x
 # Longitude -> coord_x
@@ -80,8 +88,11 @@ data.table::setnames(ctb0073_event, old = "Longitude minuto", new = "longitude_m
 ctb0073_event[, longitude_minuto := as.numeric(longitude_minuto)]
 data.table::setnames(ctb0073_event, old = "Longitude segundo", new = "longitude_segundo")
 ctb0073_event[, longitude_segundo := as.numeric(longitude_segundo)]
-ctb0073_event[, coord_x := (longitude_grau + (longitude_minuto/60) + (longitude_segundo/3600)) * -1]
+ctb0073_event[, coord_x := -(longitude_grau + longitude_minuto / 60 + longitude_segundo / 3600)]
 summary(ctb0073_event[, coord_x])
+# There are 21 events with missing longitude. These are the same events with missing data_ano.
+# However, the authors provided a map (Figure 6) with the locations of all sampling points. This 
+# means that the authors have the coordinates of these points. We leave them as NA for now.
 
 # coord_y
 # Latitude -> coord_y
@@ -92,79 +103,50 @@ data.table::setnames(ctb0073_event, old = "Latitude minuto", new = "latitude_min
 ctb0073_event[, latitude_minuto := as.numeric(latitude_minuto)]
 data.table::setnames(ctb0073_event, old = "Latitude segundo", new = "latitude_segundo")
 ctb0073_event[, latitude_segundo := as.numeric(latitude_segundo)]
-ctb0073_event[, coord_y := (latitude_grau + (latitude_minuto/60) + (latitude_segundo/3600)) * -1]
+ctb0073_event[, coord_y := -(latitude_grau + latitude_minuto / 60 + latitude_segundo / 3600)]
 summary(ctb0073_event[, coord_y])
+# There are 21 events with missing latitude. These are the same events with missing longitude.
 
 # Check for duplicate coordinates
-ctb0073_event[, .N, by = .(coord_x, coord_y)][N > 1]
-# Remove todas as linhas onde 'coord_x' ou 'coord_y' sejam NA
-ctb0073_event <- na.omit(ctb0073_event, cols = c("coord_x", "coord_y"))
+check_equal_coordinates(ctb0073_event)
 
 # Datum (coord) -> coord_datum
-# Define o datum de origem como SIRGAS 2000 (EPSG: 4674)
-# O "L" garante que o número seja tratado como um inteiro (integer).
+# The methodology section, which describes the use of remote sensing tools and the establishment of
+# a spatial database (SIG), states that all images were stored in a spatial database (SIG) and
+# registered in the same datum WGS-84
 data.table::setnames(ctb0073_event, old = "Datum (coord)", new = "coord_datum")
-ctb0073_event[, coord_datum := NULL]
-ctb0073_event[, coord_datum := "N/A"]
-ctb0073_event[coord_datum == "N/A", coord_datum := 4674L]
+ctb0073_event[, coord_datum := as.character(coord_datum)]
+ctb0073_event[, coord_datum := gsub("WGS-84", 4326, coord_datum)]
+ctb0073_event[, coord_datum := gsub("WGS84", 4326, coord_datum)]
 ctb0073_event[, coord_datum := as.integer(coord_datum)]
-
-#  Converte o data.table para um objeto espacial (sf)
-# Informamos que o sistema de coordenadas (CRS) original é 4674
-ctb0073_event_sf <- sf::st_as_sf(
-  ctb0073_event,
-  coords = c("coord_x", "coord_y"),
-  crs = 4674 # Define o CRS de origem como SIRGAS 2000
-)
-
-#  Transforma as coordenadas para WGS84 (EPSG: 4326)
-ctb0073_event_sf_wgs84 <- sf::st_transform(ctb0073_event_sf, 4326)
-
-#  Extrai as novas coordenadas (já em WGS84) do objeto sf
-new_coords <- sf::st_coordinates(ctb0073_event_sf_wgs84)
-
-#  Atualiza a tabela original com as coordenadas convertidas e o novo datum
-ctb0073_event[, coord_x := new_coords[, 1]] # Novas longitudes
-ctb0073_event[, coord_y := new_coords[, 2]] # Novas latitudes
-ctb0073_event[, coord_datum := 4326L]      # Novo datum: WGS84
-
-summary(ctb0073_event[, .(coord_datum, coord_x, coord_y)])
-
-
-# Precisão (coord) -> coord_precisao
-# We set it to NA_real_
-data.table::setnames(ctb0073_event, old = "Precisão (coord)", new = "coord_precisao")
-ctb0073_event[, coord_precisao := NA_real_]
-summary(ctb0073_event[, coord_precisao])
+ctb0073_event[is.na(coord_datum) & !is.na(coord_x) & !is.na(coord_y), coord_datum := 4326L]
+ctb0073_event[, .N, by = coord_datum]
 
 # Fonte (coord) -> coord_fonte
+# The sources strongly indicate that the author and their research team used a GPS device in the
+# field to register the locations of sampling points.
 data.table::setnames(ctb0073_event, old = "Fonte (coord)", new = "coord_fonte")
-ctb0073_event[, coord_fonte := NA_real_]
-summary(ctb0073_event[, coord_fonte])
+ctb0073_event[, coord_fonte := as.character(coord_fonte)]
+ctb0073_event[is.na(coord_fonte) & !(is.na(coord_x) & is.na(coord_y)), coord_fonte := "GPS"]
+ctb0073_event[, .N, by = coord_fonte]
+
+# Precisão (coord) -> coord_precisao
+# The precision of the coordinates is not informed in this dataset. However, the coordinates were
+# likelly collected using a GPS device. Therefore, we will assume a precision of 10 meters.
+data.table::setnames(ctb0073_event, old = "Precisão (coord)", new = "coord_precisao")
+ctb0073_event[, coord_precisao := as.numeric(coord_precisao)]
+ctb0073_event[is.na(coord_precisao) & !(is.na(coord_x) & is.na(coord_y)), coord_precisao := 10]
+summary(ctb0073_event[, coord_precisao])
 
 # País -> pais_id
 data.table::setnames(ctb0073_event, old = "País", new = "pais_id")
-ctb0073_event[, pais_id := "BR"]
-
-# #Mapeamento dos estados para sigla se necessário utilizar a função 'recode'
-# mapa_siglas <- c(
-#   "Acre" = "AC", "Alagoas" = "AL", "Amapá" = "AP", "Amazonas" = "AM",
-#   "Bahia" = "BA", "Ceará" = "CE", "Distrito Federal" = "DF",
-#   "Espírito Santo" = "ES", "Goiás" = "GO", "Maranhão" = "MA",
-#   "Mato Grosso" = "MT", "Mato Grosso do Sul" = "MS", "Minas Gerais" = "MG",
-#   "Pará" = "PA", "Paraíba" = "PB", "Paraná" = "PR", "Pernambuco" = "PE",
-#   "Piauí" = "PI", "Rio de Janeiro" = "RJ", "Rio Grande do Norte" = "RN",
-#   "Rio Grande do Sul" = "RS", "Rondônia" = "RO", "Roraima" = "RR",
-#   "Santa Catarina" = "SC", "São Paulo" = "SP", "Sergipe" = "SE",
-#   "Tocantins" = "TO"
-# )
-
+ctb0073_event[, pais_id := as.character(pais_id)]
+ctb0073_event[, .N, by = pais_id]
 
 # Estado (UF) -> estado_id
 data.table::setnames(ctb0073_event, old = "Estado (UF)", new = "estado_id")
 ctb0073_event[, estado_id := as.character(estado_id)]
 ctb0073_event[, .N, by = estado_id]
-
 
 # Município -> municipio_id
 data.table::setnames(ctb0073_event, old = "Município", new = "municipio_id")
@@ -172,8 +154,10 @@ ctb0073_event[, municipio_id := as.character(municipio_id)]
 ctb0073_event[, .N, by = municipio_id]
 
 # Área do evento [m^2] -> amostra_area
-# is missing on main document
-ctb0073_event[, amostra_area := NA_real_]
+# The area of the sampling points is not informed in this dataset. However, we know that there are
+# soil profiles and auger drillings. Therefore, we can infer the size of the sampling points.
+data.table::setnames(ctb0073_event, old = "Área do evento [m^2]", new = "amostra_area")
+ctb0073_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0073_event[, amostra_area])
 
 # SiBCS (2006) -> taxon_sibcs
@@ -181,26 +165,21 @@ data.table::setnames(ctb0073_event, old = "SiBCS (2006)", new = "taxon_sibcs")
 ctb0073_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0073_event[, .N, by = taxon_sibcs]
 
-# taxon_st_1999
-
+# taxon_st
+# The soil classification according to Soil Taxonomy is not informed in this document.
 ctb0073_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie) 
+# Pedregosidade -> pedregosidade
 data.table::setnames(ctb0073_event, old = "Pedregosidade", new = "pedregosidade")
 ctb0073_event[, pedregosidade := as.character(pedregosidade)]
 ctb0073_event[, .N, by = pedregosidade]
 
-# Rochosidade (superficie)
-
+# Rochosidade -> rochosidade
 data.table::setnames(ctb0073_event, old = "Rochosidade", new = "rochosidade")
 ctb0073_event[, rochosidade := as.character(rochosidade)]
 ctb0073_event[, .N, by = rochosidade]
 
-
-
 str(ctb0073_event)
-
-
 
 # layers ###########################################################################################
 ctb0073_layer <- google_sheet(ctb0073_ids$gs_id, ctb0073_ids$gid_layer)
@@ -226,6 +205,7 @@ ctb0073_layer[, amostra_id := NA_character_]
 # old: Profundidade inicial [cm]
 # new: profund_sup
 data.table::setnames(ctb0073_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+ctb0073_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0073_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0073_layer[, profund_sup])
 
@@ -233,19 +213,54 @@ summary(ctb0073_layer[, profund_sup])
 # old: Profundidade final [cm]
 # new: profund_inf
 data.table::setnames(ctb0073_layer, old = "Profundidade final [cm]", new = "profund_inf")
+ctb0073_layer[, profund_inf := depth_slash(profund_inf), by = .I]
+ctb0073_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0073_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0073_layer[, profund_inf])
+
+# camada_id
+# We will create a unique identifier for each layer indicating the order of the layers in each soil
+# profile.
+ctb0073_layer <- ctb0073_layer[order(observacao_id, profund_sup, profund_inf)]
+ctb0073_layer[, camada_id := 1:.N, by = observacao_id]
+ctb0073_layer[, .N, by = camada_id]
+
+# Check for missing layers
+check_missing_layer(ctb0073_layer)
+
+# Fração fina (<2mm) -> terrafina
+# The documentation does not provide explicit analytical values for material coarser than 2 mm
+# (e.g., gravel, pebbles, or the total weight of coarse fragments) that was excluded by the 2 mm
+# sieve, though large features like nodules and concretions are noted qualitatively and
+# morphologically. We will keep it as NA for now.
+data.table::setnames(ctb0073_layer, old = "Fração fina (<2mm)", new = "terrafina")
+ctb0073_layer[, terrafina := as.numeric(terrafina)]
 
 # Sand in this document is separated into
 # Very coarse sand, Coarse sand, Medium sand, Fine sand, and Very fine sand.
 
-#areia_muito_grossa
+# areia_muito_grossa
 # old: Areia muito grossa (2-1 mm) [g/Kg]
 # new: areia_muito_grossa
-data.table::setnames(ctb0073_layer, old = "Areia muito grossa (2-1 mm) [g/Kg]", new = "areia_muito_grossa")
+data.table::setnames(ctb0073_layer,
+  old = "Areia muito grossa (2-1 mm) [g/Kg]", new = "areia_muito_grossa"
+)
 ctb0073_layer[, areia_muito_grossa := as.numeric(areia_muito_grossa)]
-ctb0073_layer[is.na(areia_muito_grossa), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_muito_grossa)]
+summary(ctb0073_layer[, areia_muito_grossa])
+# Very coarse sand is missing for 17 layers, 15 of the from AP13 and AP15. These were added as
+# "auxiliary profiles," appearing in the Annex A tables alongside the mechanized drillings
+# (tradagens - AT). The other two layers are from AP4 (3Cg1) and AT11 (575-615). For both of
+# these layers, there is no data for any soil property, so maybe the samples were lost.
+check_empty_layer(ctb0073_layer, "areia_muito_grossa")
 
+# Compute mid depth
+ctb0073_layer[, mid_depth := (profund_sup + profund_inf) / 2]
+
+# Fill missing areia_muito_grossa using spline interpolation by observacao_id
+ctb0073_layer[,
+  areia_muito_grossa := fill_empty_layer(areia_muito_grossa, mid_depth),
+  by = observacao_id
+]
 
 # areia_grossa
 # old: "Areia grossa (1-0,5 mm) [g/Kg]"
@@ -253,7 +268,14 @@ ctb0073_layer[is.na(areia_muito_grossa), .(observacao_id, camada_nome, profund_s
 # areia_grossa is missing for some layers...
 data.table::setnames(ctb0073_layer, old = "Areia grossa (1-0,5 mm) [g/Kg]", new = "areia_grossa")
 ctb0073_layer[, areia_grossa := as.numeric(areia_grossa)]
-ctb0073_layer[is.na(areia_grossa), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_grossa)]
+summary(ctb0073_layer[, areia_grossa])
+# Coarse sand is missing for 17 layers, the same layers with missing very coarse sand.
+check_empty_layer(ctb0073_layer, "areia_grossa")
+# Fill missing areia_grossa using spline interpolation by observacao_id
+ctb0073_layer[,
+  areia_grossa := fill_empty_layer(areia_grossa, mid_depth),
+  by = observacao_id
+]
 
 # areia_media
 # old: "Areia média (0,5-0,25 mm) [g/Kg]"
@@ -261,8 +283,14 @@ ctb0073_layer[is.na(areia_grossa), .(observacao_id, camada_nome, profund_sup, pr
 # areia_media is missing for some layers...
 data.table::setnames(ctb0073_layer, old = "Areia média (0,5-0,25 mm) [g/Kg]", new = "areia_media")
 ctb0073_layer[, areia_media := as.numeric(areia_media)]
-ctb0073_layer[is.na(areia_media), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_media)]
-
+summary(ctb0073_layer[, areia_media])
+# Medium sand is missing for 17 layers, the same layers with missing very coarse and coarse sand.
+check_empty_layer(ctb0073_layer, "areia_media")
+# Fill missing areia_media using spline interpolation by observacao_id
+ctb0073_layer[,
+  areia_media := fill_empty_layer(areia_media, mid_depth),
+  by = observacao_id
+]
 
 # areia_fina
 # old: "Areia fina (0,25-0,1 mm) [g/Kg]"
@@ -270,7 +298,14 @@ ctb0073_layer[is.na(areia_media), .(observacao_id, camada_nome, profund_sup, pro
 # areia_fina is missing for some layers...
 data.table::setnames(ctb0073_layer, old = "Areia fina (0,25-0,1 mm) [g/Kg]", new = "areia_fina")
 ctb0073_layer[, areia_fina := as.numeric(areia_fina)]
-ctb0073_layer[is.na(areia_fina), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_fina)]
+summary(ctb0073_layer[, areia_fina])
+# Fine sand is missing for 17 layers, the same layers with missing very coarse, coarse, and medium sand.
+check_empty_layer(ctb0073_layer, "areia_fina")
+# Fill missing areia_fina using spline interpolation by observacao_id
+ctb0073_layer[,
+  areia_fina := fill_empty_layer(areia_fina, mid_depth),
+  by = observacao_id
+]
 
 # areia_muito_fina
 # old: "Areia muito fina (0,1-0,05 mm) [g/Kg]"
@@ -278,43 +313,59 @@ ctb0073_layer[is.na(areia_fina), .(observacao_id, camada_nome, profund_sup, prof
 # areia_muito_fina is missing for some layers...
 data.table::setnames(ctb0073_layer, old = "Areia muito fina (0,1-0,05 mm) [g/Kg]", new = "areia_muito_fina")
 ctb0073_layer[, areia_muito_fina := as.numeric(areia_muito_fina)]
-ctb0073_layer[is.na(areia_muito_fina), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_muito_fina)]
-
-
+summary(ctb0073_layer[, areia_muito_fina])
+# Very fine sand is missing for 17 layers, the same layers with missing coarse, medium, fine, and very coarse sand.
+check_empty_layer(ctb0073_layer, "areia_muito_fina")
+# Fill missing areia_muito_fina using spline interpolation by observacao_id
+ctb0073_layer[,
+  areia_muito_fina := fill_empty_layer(areia_muito_fina, mid_depth),
+  by = observacao_id
+]
 
 # areia
-# criação da coluna areia 
-cols_areia <- c("areia_muito_grossa", "areia_grossa", "areia_media", "areia_fina", "areia_muito_fina")
-
-# Criação da coluna areia, somando as frações e tratando NAs como 0
-# na.rm = TRUE (NA remove) remove os NAs antes de somar
-ctb0073_layer[, areia := rowSums(.SD, na.rm = TRUE), .SDcols = cols_areia]
-
+# Combine all sand fractions into a single areia column
+ctb0073_layer[
+  ,
+  areia := areia_muito_grossa + areia_grossa + areia_media + areia_fina + areia_muito_fina
+]
+ctb0073_layer[, areia := round(areia)]
+summary(ctb0073_layer[, areia])
+# There are 15 layers with missing sand content. These are the 15 layers from AP13 and AP15.
+check_empty_layer(ctb0073_layer, "areia")
 
 # silte
 # old: Silte (0,05-0,002 mm) [g/Kg]
 # new: silte
-# silte is missing for some layers...
 data.table::setnames(ctb0073_layer, old = "Silte (0,05-0,002 mm) [g/Kg]", new = "silte")
 ctb0073_layer[, silte := as.numeric(silte)]
-ctb0073_layer[is.na(silte), .(observacao_id, camada_nome, profund_sup, profund_inf, silte)]
+summary(ctb0073_layer[, silte])
+# Silt is missing for 17 layers, the same 15 layers from AP13 and AP15, plus two additional layers
+# from AP4 (3Cg1) and AT11 (575-615).
+check_empty_layer(ctb0073_layer, "silte")
+# Fill missing silte using spline interpolation by observacao_id
+ctb0073_layer[,
+  silte := round(fill_empty_layer(silte, mid_depth)),
+  by = observacao_id
+]
 
 # argila
-#clay in this document is present as clay and clay dispersed in water, only clay was used
 # old: Argila > 0,002 mm (g/kg)
 # new: argila
-# argila is missing for some layers...
 data.table::setnames(ctb0073_layer, old = "Argila (<0,002) [g/Kg]", new = "argila")
 ctb0073_layer[, argila := as.numeric(argila)]
-ctb0073_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, argila)]
-
-# terrafina
-# Não existe fração fina na tabela apenas fração grossa portanto esta N/A
-ctb0073_layer[, terrafina := NA_character_]
+summary(ctb0073_layer[, argila])
+# Clay is missing for 17 layers, the same 15 layers from AP13 and AP15, plus two additional layers
+# from AP4 (3Cg1) and AT11 (575-615).
+check_empty_layer(ctb0073_layer, "argila")
+# Fill missing argila using spline interpolation by observacao_id
+ctb0073_layer[,
+  argila := round(fill_empty_layer(argila, mid_depth)),
+  by = observacao_id
+]
 
 # Check the particle size distribution
 # The sum of argila, silte and areia should be 1000 g/kg
-ctb0073_layer[, psd := round(rowSums(.SD, na.rm = TRUE)), .SDcols = c("argila", "silte", "areia")]
+ctb0073_layer[, psd := round(argila + silte + areia)]
 psd_lims <- 900:1100
 # Check the limits
 ctb0073_layer[!psd %in% psd_lims & !is.na(psd), .N]
@@ -322,8 +373,8 @@ ctb0073_layer[!psd %in% psd_lims & !is.na(psd), .N]
 # Print the rows with psd != 1000
 cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
 ctb0073_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
-
-
+# No layers with psd != 1000.
+ctb0073_layer[, psd := NULL]
 
 # carbono
 # old: C [g/Kg]
@@ -331,7 +382,16 @@ ctb0073_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 data.table::setnames(ctb0073_layer, old = "C [g/Kg]", new = "carbono")
 ctb0073_layer[, carbono := as.numeric(carbono)]
 summary(ctb0073_layer[, carbono])
+# There are 3 layers with missing carbon content: AP4 (3Cg1), AT12 (590-615), and AT18 (480-515).
+# AT12 (590-615) actually is in the document, but the data is recorded under AT11. We will fix this
+# in the spreadsheet. For AP4 (3Cg1) and AT18 (480-515), we will use spline interpolation to fill
+# the missing values.
 check_empty_layer(ctb0073_layer, "carbono")
+# Fill missing carbono using spline interpolation by observacao_id
+ctb0073_layer[,
+  carbono := fill_empty_layer(carbono, mid_depth),
+  by = observacao_id
+]
 
 # ctc
 # old: T [cmolc/Kg]
@@ -339,7 +399,13 @@ check_empty_layer(ctb0073_layer, "carbono")
 data.table::setnames(ctb0073_layer, old = "T [cmolc/Kg]", new = "ctc")
 ctb0073_layer[, ctc := as.numeric(ctc)]
 summary(ctb0073_layer[, ctc])
+# There are 3 layers with missing CTC: AP4 (3Cg1), AT12 (590-615), and AT18 (480-515).
 check_empty_layer(ctb0073_layer, "ctc")
+# Fill missing ctc using spline interpolation by observacao_id
+ctb0073_layer[,
+  ctc := fill_empty_layer(ctc, mid_depth),
+  by = observacao_id
+]
 
 # ph
 # old: pH 1:2,5 em H_2O
@@ -347,11 +413,22 @@ check_empty_layer(ctb0073_layer, "ctc")
 data.table::setnames(ctb0073_layer, old = "pH 1:2,5 em H_2O", new = "ph")
 ctb0073_layer[, ph := as.numeric(ph)]
 summary(ctb0073_layer[, ph])
+# There are 3 layers with missing pH: AP4 (3Cg1), AT12 (590-615), and AT18 (480-515).
 check_empty_layer(ctb0073_layer, "ph")
+# Fill missing ph using spline interpolation by observacao_id
+ctb0073_layer[,
+  ph := fill_empty_layer(ph, mid_depth),
+  by = observacao_id
+]
 
-# dsi
-# dsi is missing in this document 
-ctb0073_layer[, dsi := NA_real_]
+# Densidade do solo [Kg/dm^-3] -> dsi
+data.table::setnames(ctb0073_layer, old = "Densidade do solo [Kg/dm^-3]", new = "dsi")
+ctb0073_layer[, dsi := as.numeric(dsi)]
+summary(ctb0073_layer[, dsi])
+# There are 276 layers with missing soil density. The total number of unique layers presented
+# across the AP1-AP12 profiles is 74. Out of these, 17 layers have reported soil density values.
+# We better use other methods to estimate soil density rather than interpolation.
+check_empty_layer(ctb0073_layer, "dsi")
 
 str(ctb0073_layer)
 
@@ -359,15 +436,13 @@ str(ctb0073_layer)
 # events and layers
 ctb0073 <- merge(ctb0073_event, ctb0073_layer, all = TRUE)
 ctb0073[, dataset_id := "ctb0073"]
+
 # citation
 ctb0073 <- merge(ctb0073, ctb0073_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0073)
-
-
 # Layers: 322
 # Events: 33
 # Georeferenced events: 12
-
 
 # Plot using mapview
 if (FALSE) {
@@ -381,5 +456,3 @@ if (FALSE) {
 # Write to disk ####################################################################################
 ctb0073 <- select_output_columns(ctb0073)
 data.table::fwrite(ctb0073, "ctb0073/ctb0073.csv")
-data.table::fwrite(ctb0073_event, "ctb0073/ctb0073_event.csv")
-data.table::fwrite(ctb0073_layer, "ctb0073/ctb0073_layer.csv")
