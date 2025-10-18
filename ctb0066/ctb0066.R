@@ -336,16 +336,48 @@ ctb0066_layer[, dsi := NA_real_]
 str(ctb0066_layer)
 
 # Merge ############################################################################################
-# events and layers
+# Get the 'observacao_id' of the soil profiles in ctb0066_layer that have has_0_20 == TRUE. Then, match with ctb0066_event and create new events with updated observacao_id. Then add a small jitter to the coordinates of these new events to avoid duplicates.
+ctb0066_event_0_20 <- ctb0066_event[
+  observacao_id %in% ctb0066_layer[has_0_20 == TRUE, unique(observacao_id)]
+]
+ctb0066_event_0_20[, observacao_id := paste0(observacao_id, "_0_20")]
+# Add small jitter to coord_x and coord_y
+set.seed(12345)
+amount <- 1 # meter
+ctb0066_event_0_20_sf <- sf::st_as_sf(
+  ctb0066_event_0_20,
+  coords = c("coord_x", "coord_y"),
+  crs = 4326
+)
+# Transform to a projected CRS (e.g., UTM) to add jitter in meters.
+ctb0066_event_0_20_sf <- sf::st_transform(ctb0066_event_0_20_sf, crs = 31983) # UTM zone 23S - SIRGAS2000
+ctb0066_event_0_20_sf <- sf::st_jitter(ctb0066_event_0_20_sf, amount = amount)
+# Transform back to WGS84
+ctb0066_event_0_20_sf <- sf::st_transform(ctb0066_event_0_20_sf, 4326)
+# Update the coordinates in the data.table
+ctb0066_event_0_20[, coord_x := sf::st_coordinates(ctb0066_event_0_20_sf)[, 1]]
+ctb0066_event_0_20[, coord_y := sf::st_coordinates(ctb0066_event_0_20_sf)[, 2]]
+rm(ctb0066_event_0_20_sf)
+# Update coord_precisao to account for the jitter added using the Pythagorean theorem.
+ctb0066_event_0_20[, coord_precisao := sqrt(coord_precisao^2 + (amount * sqrt(2))^2)]
+summary(ctb0066_event_0_20[, coord_precisao])
+# Bind the two data.tables
+ctb0066_event <- rbind(ctb0066_event, ctb0066_event_0_20)
+ctb0066_event[, .N, by = observacao_id]
+# Clean up temporary columns
+ctb0066_layer[, has_0_20 := NULL]
+rm(ctb0066_event_0_20, amount)
+
+# Merge events and layers
 ctb0066 <- merge(ctb0066_event, ctb0066_layer, all = TRUE)
 ctb0066[, dataset_id := "ctb0066"]
 
 # citation
 ctb0066 <- merge(ctb0066, ctb0066_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0066)
-# Layers: 199
-# Events: 31
-# Georeferenced events: 31
+# Layers: 258
+# Events: 62
+# Georeferenced events: 59
 
 # Plot using mapview
 if (FALSE) {
