@@ -413,3 +413,21 @@ check_equal_coordinates <-
       message("No duplicate coordinates found: all coordinates are unique. You can proceed.")
     }
   }
+# Check for negative validation results. ########################################################
+# This function checks for negative validation results in a data.table containing validation
+# results.
+check_sheet_validation <- function(dt) {
+  neg_results <- sum(dt == FALSE, na.rm = TRUE)
+  if (neg_results > 0) {
+    stop(
+      paste0(
+          "Sheet validation failed with ",
+          neg_results,
+          " negative results. Please check the validation sheet for details.\n",
+          "Consult with the data provider, person responsible for data entry, or soil expert to resolve the issues before proceeding."
+        )
+      )
+    } else {
+      message("Sheet validation passed with no negative results. You can proceed.")
+    }
+  }
