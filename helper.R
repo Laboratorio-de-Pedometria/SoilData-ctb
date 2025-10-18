@@ -364,7 +364,7 @@ select_output_columns <- function(data) {
     "amostra_area",
     "taxon_sibcs", "taxon_st",
     "pedregosidade", "rochosidade",
-    "camada_nome", "amostra_id",
+    "camada_nome", "amostra_id", "camada_id",
     "profund_sup", "profund_inf",
     "terrafina",
     "argila", "silte", "areia",
