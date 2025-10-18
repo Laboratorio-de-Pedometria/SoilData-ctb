@@ -22,7 +22,8 @@ source("./helper.R")
 # ctb0064
 # Dados de "Caracterização, Gênese, Classificação e Aptidão Agrícola de
 # uma Sequência de Solos do Terciário na Região de Campos, RJ"
-# https://drive.google.com/drive/u/0/folders/1QaxiNiQ1O2Z7UFDnNoLvdIdx3WekaHGe
+#
+# Google Drive: https://drive.google.com/drive/u/0/folders/1QaxiNiQ1O2Z7UFDnNoLvdIdx3WekaHGe
 ctb0064_ids <- soildata_catalog("ctb0064")
 
 # validation #####################################################################################
@@ -209,6 +210,9 @@ summary(ctb0064_layer[, profund_sup])
 data.table::setnames(ctb0064_layer, old = "Profundidade final [cm]", new = "profund_inf")
 ctb0064_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0064_layer[, profund_inf])
+
+# Check for missing layers
+check_missing_layer(ctb0064_layer)
 
 # terrafina
 # old: Terra fina <2 mm [%]

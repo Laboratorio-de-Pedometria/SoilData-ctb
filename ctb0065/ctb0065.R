@@ -291,6 +291,9 @@ ctb0065_layer[, camada_id := 1:.N, by = observacao_id]
 ctb0065_layer[, .N, by = camada_id]
 summary(ctb0065_layer[, camada_id])
 
+# Check for missing layers
+check_missing_layer(ctb0065_layer)
+
 # terrafina
 # old: Fração fina [< 2mm~] (%)
 # new: terrafina
