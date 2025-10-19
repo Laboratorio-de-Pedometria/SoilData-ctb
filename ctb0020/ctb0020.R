@@ -231,13 +231,13 @@ summary(ctb0020_layer[, silte])
 
 # old: areia_total
 # new: areia
-setnames(ctb0020_layer, old = "areia_total", new = "areia")
+data.table::setnames(ctb0020_layer, old = "areia_total", new = "areia")
 ctb0020_layer[, areia := as.numeric(areia)]
 summary(ctb0020_layer[, areia])
 
 # old: carbono_cromo_xxx_xxx
 # new: carbono
-setnames(ctb0020_layer, old = "carbono_cromo_xxx_xxx", new = "carbono")
+data.table::setnames(ctb0020_layer, old = "carbono_cromo_xxx_xxx", new = "carbono")
 ctb0020_layer[, carbono := as.numeric(carbono)]
 summary(ctb0020_layer[, carbono])
 

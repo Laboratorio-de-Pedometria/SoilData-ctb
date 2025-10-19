@@ -225,10 +225,10 @@ summary(ctb0101_layer[, profund_inf])
 # Drop the C4 layer
 ctb0101_layer <- ctb0101_layer[!(observacao_id == "PT6" & camada_nome == "C4")]
 # Correct the depth of layer Cf if necessary
-ctb0101_layer[observacao_id == "PT6" & camada_nome == "Cf", profund_sup := fifelse(
+ctb0101_layer[observacao_id == "PT6" & camada_nome == "Cf", profund_sup := data.table::fifelse(
   profund_sup == 186, 145, profund_sup
 )]
-ctb0101_layer[observacao_id == "PT6" & camada_nome == "Cf", profund_inf := fifelse(
+ctb0101_layer[observacao_id == "PT6" & camada_nome == "Cf", profund_inf := data.table::fifelse(
   profund_inf >= 200, 186, profund_inf
 )]
 

@@ -3,17 +3,14 @@
 rm(list = ls())
 
 # Install and load required packages
-if (!require("data.table")) {
+if (!requireNamespace("data.table")) {
   install.packages("data.table")
-  library("data.table")
 }
-if (!require("sf")) {
+if (!requireNamespace("sf")) {
   install.packages("sf")
-  library("sf")
 }
-if (!require("openxlsx")) {
+if (!requireNamespace("openxlsx")) {
   install.packages("openxlsx")
-  library("openxlsx")
 }
 
 # Source helper functions
@@ -222,9 +219,9 @@ check_empty_layer(ctb0038_layer, "areia")
 ctb0038_layer[, areia := fill_empty_layer(y = areia, x = profund_mid), by = observacao_id]
 check_empty_layer(ctb0038_layer, "areia")
 
-# old: Carbono.%
+# old: Carbono.[%]
 # new: carbono
-data.table::setnames(ctb0038_layer, old = "Carbono.%", new = "carbono")
+data.table::setnames(ctb0038_layer, old = "Carbono.[%]", new = "carbono")
 ctb0038_layer[, carbono := as.numeric(carbono)]
 summary(ctb0038_layer[, carbono])
 check_empty_layer(ctb0038_layer, "carbono")
