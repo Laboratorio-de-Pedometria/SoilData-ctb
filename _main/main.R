@@ -15,41 +15,25 @@ if (!require("callr")) {
 # - General purpose scripts: _main/main.R, helper.R
 # - Scripts with known issues or not reviewed yet
 exceptions <- c(
-_main/main.R,
-helper.R,
-ctb0067 review
-
-ctb0068 new
-
-ctb0069 review
-
-ctb0070 new
-
-ctb0075 check decimal separator for clay
-
-ctb0079 new
-
-ctb0080 check sand check coordinates
-
-ctb0082 check coordinates
-
-ctb0083 check coordinates
-
-ctb0085 check coordinates
-
-ctb0086 new
-
-ctb0093 new
-
-ctb0094 new
-
-ctb0095 new
-
-ctb0097 new
-
-ctb0098 new
-
-ctb0099 new
+  "_main/main.R",
+  "helper.R",
+  "ctb0067/ctb0067.R", # needs review
+  "ctb0068/ctb0068.R", # new
+  "ctb0069/ctb0069.R", # review
+  "ctb0070/ctb0070.R", # new
+  "ctb0075/ctb0075.R", # check decimal separator for clay
+  "ctb0079/ctb0079.R", # new
+  "ctb0080/ctb0080.R", # check sand check coordinates
+  "ctb0082/ctb0082.R", # check coordinates
+  "ctb0083/ctb0083.R", # check coordinates
+  "ctb0085/ctb0085.R", # check coordinates
+  "ctb0086/ctb0086.R", # new
+  "ctb0093/ctb0093.R", # new
+  "ctb0094/ctb0094.R", # new
+  "ctb0095/ctb0095.R", # new
+  "ctb0097/ctb0097.R", # new
+  "ctb0098/ctb0098.R", # new
+  "ctb0099/ctb0099.R", # new
 )
 r_scripts <- list.files(pattern = "\\.R$", recursive = TRUE)
 r_scripts <- r_scripts[!r_scripts %in% exceptions]
