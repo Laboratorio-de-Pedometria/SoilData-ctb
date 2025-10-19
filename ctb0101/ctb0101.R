@@ -19,7 +19,8 @@ source("./helper.R")
 # ctb0101
 # Dados de "Sistema pedológico Planossolo-Plintossolo no Pantanal de Barão de Melgaço-MT"
 # 
-# Google Drive: https://drive.google.com/drive/folders/1C_l6qxu3yhUY8BlLBi6rhnfZKeRCtFjF?usp=drive_link
+# Google Drive: https://drive.google.com/drive/folders/1C_l6qxu3yhUY8BlLBi6rhnfZKeRCtFjF
+# NotebookLM: https://notebooklm.google.com/notebook/0f4fa5bd-6c4f-43b1-bd03-019e6c2302e8
 ctb0101_ids <- soildata_catalog("ctb0101")
 
 # validation #####################################################################################
