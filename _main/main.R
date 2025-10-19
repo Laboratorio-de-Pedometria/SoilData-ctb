@@ -12,10 +12,47 @@ if (!require("callr")) {
 
 # Identify all R scripts in the current directory and its subdirectories
 # Exceptions:
-#  _main/main.R, helper.R
-#  
+# - General purpose scripts: _main/main.R, helper.R
+# - Scripts with known issues or not reviewed yet
+exceptions <- c(
+_main/main.R,
+helper.R,
+ctb0067 review
+
+ctb0068 new
+
+ctb0069 review
+
+ctb0070 new
+
+ctb0075 check decimal separator for clay
+
+ctb0079 new
+
+ctb0080 check sand check coordinates
+
+ctb0082 check coordinates
+
+ctb0083 check coordinates
+
+ctb0085 check coordinates
+
+ctb0086 new
+
+ctb0093 new
+
+ctb0094 new
+
+ctb0095 new
+
+ctb0097 new
+
+ctb0098 new
+
+ctb0099 new
+)
 r_scripts <- list.files(pattern = "\\.R$", recursive = TRUE)
-r_scripts <- r_scripts[!r_scripts %in% c("_main/main.R", "helper.R")]
+r_scripts <- r_scripts[!r_scripts %in% exceptions]
 
 # Source each R script
 # Run each R script in a separate, clean R session to avoid variable conflicts.
