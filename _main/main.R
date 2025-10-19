@@ -11,12 +11,14 @@ if (!require("callr")) {
 }
 
 # Identify all R scripts in the current directory and its subdirectories
-# Exceptions: _main/main.R, helper.R
+# Exceptions:
+#  _main/main.R, helper.R
+#  
 r_scripts <- list.files(pattern = "\\.R$", recursive = TRUE)
 r_scripts <- r_scripts[!r_scripts %in% c("_main/main.R", "helper.R")]
 
 # Source each R script
-# Run each R script in a separate, clean R session to avoid variable and package conflicts.
+# Run each R script in a separate, clean R session to avoid variable conflicts.
 # Use a try-catch block to handle errors gracefully, interrupting the loop if a script fails.
 for (script in r_scripts) {
   message(paste("Processing script:", script))
@@ -32,3 +34,4 @@ for (script in r_scripts) {
   }
   cat("================================\n") # Print a newline for better readability between scripts
 }
+
