@@ -225,6 +225,9 @@ ctb0073_layer <- ctb0073_layer[order(observacao_id, profund_sup, profund_inf)]
 ctb0073_layer[, camada_id := 1:.N, by = observacao_id]
 ctb0073_layer[, .N, by = camada_id]
 
+# Check for duplicated layers
+check_repeated_layer(ctb0073_layer)
+
 # Check for missing layers
 check_missing_layer(ctb0073_layer)
 
