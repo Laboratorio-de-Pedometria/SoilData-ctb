@@ -17,7 +17,8 @@ source("./helper.R")
 # ctb0044
 # Dados de "Caracterização de Solos e Avaliação da Vulnerabilidade de Ambientes no Parque Nacional
 # de Itatiaia, Brasil"
-# https://drive.google.com/drive/folders/1j_CPeBHyMT-LpDc651xQATnr2RuoVVwO
+# Google Drive: https://drive.google.com/drive/folders/1j_CPeBHyMT-LpDc651xQATnr2RuoVVwO
+# NotebookLM: https://notebooklm.google.com/notebook/109d19f8-c76c-4875-bac0-783f8867d7e8
 gs <- "14isyQnb-2cc8F51vF-C-DVosqJr801kwUIWrxoKspLc"
 gid_validation <- 88779986
 gid_citation <- 0
