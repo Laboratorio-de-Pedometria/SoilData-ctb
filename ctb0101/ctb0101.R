@@ -21,6 +21,8 @@ source("./helper.R")
 # 
 # Google Drive: https://drive.google.com/drive/folders/1C_l6qxu3yhUY8BlLBi6rhnfZKeRCtFjF
 # NotebookLM: https://notebooklm.google.com/notebook/0f4fa5bd-6c4f-43b1-bd03-019e6c2302e8
+# 
+# NOTE: The data included in this study appears to be part of ctb0054.
 ctb0101_ids <- soildata_catalog("ctb0101")
 
 # validation #####################################################################################
@@ -84,9 +86,6 @@ ctb0101_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0101_event[, coord_y])
 # UTM coordinates
 
-# Check for duplicate coordinates
-check_equal_coordinates(ctb0101_event)
-
 # Datum (coord) -> coord_datum
 # UTM-SAD 69 Zona 21s : EPSG == 29191
 # https://spatialreference.org/ref/epsg/29181/
@@ -109,6 +108,9 @@ ctb0101_event[coord_datum == 29191, coord_x := sf::st_coordinates(ctb0101_event_
 ctb0101_event[coord_datum == 29191, coord_y := sf::st_coordinates(ctb0101_event_sf)[, 2]]
 ctb0101_event[coord_datum == 29191, coord_datum := 4326]
 rm(ctb0101_event_sf)
+
+# Check for duplicate coordinates
+check_equal_coordinates(ctb0101_event)
 
 # Fonte (coord) -> coord_fonte
 data.table::setnames(ctb0101_event, old = "Fonte (coord)", new = "coord_fonte")
