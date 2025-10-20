@@ -166,10 +166,13 @@ ctb0039_layer[, amostra_id := as.integer(amostra_id)]
 ctb0039_layer[, .N, by = amostra_id]
 
 # profund_sup
+ctb0039_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0039_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0039_layer[, profund_sup])
 
 # profund_inf
+ctb0039_layer[, profund_inf := depth_slash(profund_inf), by = .I]
+ctb0039_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0039_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0039_layer[, profund_inf])
 
