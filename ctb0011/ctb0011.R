@@ -192,15 +192,20 @@ ctb0011_layer[, amostra_id := NA]
 # old: Limite Superior [cm]
 # new: profund_sup
 data.table::setnames(ctb0011_layer, old = "Limite Superior [cm]", new = "profund_sup")
+ctb0011_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0011_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0011_layer[, profund_sup])
 
 # old: Limite Inferior [cm]
 # new: profund_inf
 data.table::setnames(ctb0011_layer, old = "Limite Inferior [cm]", new = "profund_inf")
+ctb0011_layer[, profund_inf := depth_slash(profund_inf), by = .I]
 ctb0011_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0011_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0011_layer[, profund_inf])
+
+# check for equal layer depths
+ctb0011_layer[profund_sup == profund_inf, .(observacao_id, camada_nome, profund_sup, profund_inf)]
 
 # check for missing layers
 any_missing_layer(ctb0011_layer)
