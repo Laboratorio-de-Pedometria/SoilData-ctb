@@ -419,5 +419,3 @@ if (FALSE) {
 # Write to disk ####################################################################################
 ctb0025 <- select_output_columns(ctb0025)
 data.table::fwrite(ctb0025, "ctb0025/ctb0025.csv")
-data.table::fwrite(ctb0025_event, "ctb0025/ctb0025_event.csv")
-data.table::fwrite(ctb0025_layer, "ctb0025/ctb0025_layer.csv")
