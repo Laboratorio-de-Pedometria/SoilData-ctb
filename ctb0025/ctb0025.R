@@ -6,13 +6,11 @@ rm(list = ls())
 if (!requireNamespace("data.table")) {
   install.packages("data.table")
 }
-if (!require("openxlsx")) {
+if (!requireNamespace("openxlsx")) {
   install.packages("openxlsx")
-  library("openxlsx")
 }
-if (!require("sf")) {
+if (!requireNamespace("sf")) {
   install.packages("sf")
-  library("sf")
 }
 
 # Source helper functions
@@ -287,6 +285,27 @@ ctb0025_layer[, areia := areia + as.numeric(areia_0050mm0200mm_peneira)]
 summary(ctb0025_layer[, areia])
 # areia is missing for 18 layers: R, CR, C/R, and C.
 check_empty_layer(ctb0025_layer, "areia")
+
+# Check that the sum of the particle size fractions is approximately 1000 g/kg, accepting a
+# tolerance of 100 g/kg.
+ctb0025_layer[, psd_sum := argila + silte + areia]
+ctb0025_layer[, psd_check := all(abs(psd_sum - 1000) <= 100), by = observacao_id]
+ctb0025_layer[psd_check == FALSE, .(observacao_id, camada_nome, argila, silte, areia, psd_sum)]
+# Profile Perfil-38 has some suspicious values for layers Bt2 (865 g/kg) and BC (883 g/kg) for the
+# sum of particle size fractions. Both have texture described as very clayey, suggesting that the
+# clay content is correct (~700 g/kg). We notice that the sand content increases with depth, which
+# is comon in cases of varied geology or parent material. According to the morphological description,
+# the Bt1 layer has a clay texture with coarse fragments. So, it is reasonable to assume that the
+# there is a lithologic discontinuity between layers Bt1 and Bt2, with an increase in sand content.
+# The silt content, however, drops drastically from 320 to 40 g/kg. We also note that the sum of
+# particle size fractions for layers Ap and Bt1 are almost 10% less than 1000 g/kg. So, we will
+# assume that these are systematic errors as the data pattern seems pedologically consistent.
+# Adjust the clay, sand, and silt contents for all layers in the dataset:
+ctb0025_layer[, argila := round(argila / psd_sum * 1000)]
+ctb0025_layer[, silte := round(silte / psd_sum * 1000)]
+ctb0025_layer[, areia := round(areia / psd_sum * 1000)]
+ctb0025_layer[, psd_sum := NULL]
+ctb0025_layer[, psd_check := NULL]
 
 # carbono_cromo_xxx_mohr -> carbono
 data.table::setnames(ctb0025_layer, old = "carbono_cromo_xxx_mohr", new = "carbono")
