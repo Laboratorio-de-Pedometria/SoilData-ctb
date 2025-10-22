@@ -3,13 +3,13 @@
 rm(list = ls())
 
 # Install and load required packages
-if (!require("data.table")) {
+if (!requireNamespace("data.table")) {
   install.packages("data.table")
 }
-if (!require("sf")) {
+if (!requireNamespace("sf")) {
   install.packages("sf")
 }
-if (!require("openxlsx")) {
+if (!requireNamespace("openxlsx")) {
   install.packages("openxlsx")
 }
 
@@ -235,25 +235,39 @@ summary(ctb0046_layer[, areia])
 check_empty_layer(ctb0046_layer, "areia")
 
 # Check the particle size distribution
+# Round the values to avoid floating point issues.
+ctb0046_layer[, argila := round(argila)]
+ctb0046_layer[, silte := round(silte)]
+ctb0046_layer[, areia := round(areia)]
 # The sum of the particle size distribution should be 1000.
-ctb0046_layer[, psd := round(argila + silte + areia)]
-psd_lims <- 900:1100
-ctb0046_layer[!psd %in% psd_lims & !is.na(psd), .N]
-# 2 layers have a sum of the particle size distribution outside the limits.
-# Print the rows with psd not in the range
-cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
-ctb0046_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
-# These are typos in the source document. Follows the correction:
-ctb0046_layer[observacao_id == "PERFIL-01" & camada_nome == "CA", areia := 540 + 320 + 130]
-ctb0046_layer[observacao_id == "PERFIL-01" & camada_nome == "C2", areia := 470 + 330 + 90]
+ctb0046_layer[, psd_sum := round(argila + silte + areia)]
+ctb0046_layer[, psd_check := all(abs(psd_sum - 1000) <= 100), by = observacao_id]
+ctb0046_layer[psd_check == FALSE, .(observacao_id, camada_nome, profund_sup, profund_inf, argila, silte, areia, psd_sum)]
+# There are two layers with psd outside the acceptable range (900-1100), both of them from
+# PERFIL-01: CA and C2. The error comes from the original document, where the sand content drops
+# dramaticaly in these two layers while the clay and silt contents maintain similar values to the
+# adjacent layers. As this is a sandy soil, it is reasonable to assume that the sand content
+# was mistyped in the source document. We correct it here:
+ctb0046_layer[
+  observacao_id == "PERFIL-01" & camada_nome == "CA" & areia < 700,
+  areia := 1000 - argila - silte
+]
+ctb0046_layer[
+  observacao_id == "PERFIL-01" & camada_nome == "C2" & areia < 500,
+  areia := 1000 - argila - silte
+]
+ctb0046_layer[, psd_sum := round(argila + silte + areia)]
 # For the remaining layers, we will correct them by distributing the error evenly.
-ctb0046_layer[psd != 1000, argila := round(argila / psd * 1000)]
-ctb0046_layer[psd != 1000, silte := round(silte / psd * 1000)]
-ctb0046_layer[psd != 1000, areia := round(areia / psd * 1000)]
+ctb0046_layer[psd_sum != 1000, argila := round(argila / psd_sum * 1000)]
+ctb0046_layer[psd_sum != 1000, silte := round(silte / psd_sum * 1000)]
+ctb0046_layer[psd_sum != 1000, areia := round(areia / psd_sum * 1000)]
 # Check the particle size distribution again
-ctb0046_layer[, psd := argila + silte + areia]
-ctb0046_layer[psd != 1000, ..cols]
-ctb0046_layer[, psd := NULL]
+ctb0046_layer[, psd_sum := argila + silte + areia]
+ctb0046_layer[
+  psd_sum != 1000,
+  .(observacao_id, camada_nome, argila, silte, areia, psd_sum)
+]
+ctb0046_layer[, psd_sum := NULL]
 
 # carbono
 # carbono_xxx_xxx_xxx
@@ -324,5 +338,3 @@ if (FALSE) {
 # Write to disk ####################################################################################
 ctb0046 <- select_output_columns(ctb0046)
 data.table::fwrite(ctb0046, "ctb0046/ctb0046.csv")
-data.table::fwrite(ctb0046_event, "ctb0046/ctb0046_event.csv")
-data.table::fwrite(ctb0046_layer, "ctb0046/ctb0046_layer.csv")
