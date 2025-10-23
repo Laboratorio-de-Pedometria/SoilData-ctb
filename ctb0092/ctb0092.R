@@ -9,9 +9,8 @@ if (!requireNamespace("sf")) {
   install.packages("sf")
 }
 if (!requireNamespace("mapview")) {
-  install.packages("mapview", dependencies = TRUE)
+  install.packages("mapview")
 }
-
 
 # Source helper functions
 source("./helper.R")
