@@ -282,13 +282,14 @@ check_empty_layer <- find_empty_layer
 # fill the missing values. Otherwise, it returns the original vector 'y' unchanged.
 # y: numeric vector with missing values (NA) to be filled
 # x: numeric vector representing the x-coordinates corresponding to 'y'
+# ylim: range of acceptable values for 'y'
 # Returns: numeric vector with missing values filled using spline interpolation, or the original
 #          vector 'y' if conditions are not met
 # Example usage: fill_empty_layer(c(1, NA, 3), c(1, 2, 3)) # returns c(1, 2, 3)
 # Note: The function includes several checks to ensure that spline interpolation is only applied
 # when appropriate, such as when there are enough non-missing values and no consecutive missing
 # values. It prints a message to the console indicating whether interpolation was performed.
-fill_empty_layer <- function(y, x) {
+fill_empty_layer <- function(y, x, ylim) {
   # Check if y is numeric
   if (!is.numeric(y)) {
     stop("y must be a numeric vector")
@@ -340,7 +341,13 @@ fill_empty_layer <- function(y, x) {
   }
   # Else, return spline
   message("NA values found. Conditions met. Spline interpolation applied.")
-  spline(y = y, x = x, xout = x, method = "natural")$y
+  out <- spline(y = y, x = x, xout = x, method = "natural")$y
+  # Correct values outside ylim if ylim is provided
+  if (!missing(ylim)) {
+    out[out < ylim[1]] <- ylim[1]
+    out[out > ylim[2]] <- ylim[2]
+  }
+  return(out)
 }
 
 # Select columns for final output ##################################################################
