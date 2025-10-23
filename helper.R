@@ -207,7 +207,7 @@ add_missing_layer <- function(
   result <- rbind(x, missing_layers, fill = TRUE)
 
   # Set layer_name using the depth limits (top-bottom)
-  result[, layer_name := paste0(depth_top, "-", depth_bottom)]
+  result[is.na(layer_name), layer_name := paste0(depth_top, "-", depth_bottom)]
 
   # Order the result by event.id and depth_top
   data.table::setorder(result, event_id, depth_top)
