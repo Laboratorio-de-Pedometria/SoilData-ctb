@@ -27,11 +27,9 @@ source("./helper.R")
 ctb0065_ids <- soildata_catalog("ctb0065")
 
 # validation #####################################################################################
+# Load validation sheet and check
 ctb0065_validation <- google_sheet(ctb0065_ids$gs_id, ctb0065_ids$gid_validation)
-str(ctb0065_validation)
-
-# Check for negative validation results
-sum(ctb0065_validation == FALSE, na.rm = TRUE)
+check_sheet_validation(ctb0065_validation)
 
 # citation #####################################################################################
 ctb0065_citation <- google_sheet(ctb0065_ids$gs_id, ctb0065_ids$gid_citation)
