@@ -220,11 +220,10 @@ data.table::setnames(ctb0065_event, old = "Classificação do Solo (1988)", new 
 ctb0065_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0065_event[, .N, by = taxon_sibcs]
 
-# Soil Taxonomy (1975) -> taxon_st
+# Soil Taxonomy (1994) -> taxon_st
 # The Soil Taxonomy classification is available in the original document, but the spreadsheet
 # provided does not contain this information.
-# data.table::setnames(ctb0065_event, old = "Soil Taxonomy (1975)", new = "taxon_st")
-ctb0065_event[, taxon_st := NA_character_]
+data.table::setnames(ctb0065_event, old = "Soil Taxonomy (1994)", new = "taxon_st")
 ctb0065_event[, taxon_st := as.character(taxon_st)]
 ctb0065_event[, .N, by = taxon_st]
 
@@ -422,5 +421,3 @@ if (FALSE) {
 # Write to disk ####################################################################################
 ctb0065 <- select_output_columns(ctb0065)
 data.table::fwrite(ctb0065, "ctb0065/ctb0065.csv")
-data.table::fwrite(ctb0065_event, "ctb0065/ctb0065_event.csv")
-data.table::fwrite(ctb0065_layer, "ctb0065/ctb0065_layer.csv")
