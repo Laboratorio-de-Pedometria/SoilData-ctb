@@ -242,7 +242,7 @@ ctb0066_layer_0_20[, observacao_id := paste0(observacao_id, "_0_20")]
 ctb0066_layer <- ctb0066_layer[!(profund_sup == 0 & profund_inf == 20)]
 ctb0066_layer <- rbind(ctb0066_layer, ctb0066_layer_0_20)
 # Sort by observacao_id and profund_sup
-setorder(ctb0066_layer, observacao_id, profund_sup)
+data.table::setorder(ctb0066_layer, observacao_id, profund_sup)
 ctb0066_layer[, .N, by = observacao_id]
 # Clean up temporary columns
 ctb0066_layer[, thickness := NULL]
