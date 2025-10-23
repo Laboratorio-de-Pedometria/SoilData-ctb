@@ -22,7 +22,9 @@ source("./helper.R")
 # Planalto Meridional
 file_path <- path.expand("~/ownCloud/febr-repo/processamento/ctb0038/2022-02-02-ctb0038.xlsx")
 
+# ATTENTION!!!
 # Soil profile descriptions are missing: the data is available in the dissertation.
+# Data is being digitized and moved to Google Drive!
 
 # citation #########################################################################################
 ctb0038_citation <- openxlsx::read.xlsx(file_path, sheet = "identificacao")
