@@ -333,6 +333,7 @@ fill_empty_layer <- function(y, x, ylim) {
     return(y)
   }
   # If three points, two not NA, and y[3] is NA, return y
+  # This avoids extrapolation with only two points
   if (length(y) == 3 & sum(!is.na(y)) == 2 & is.na(y[3])) {
     message(no_interpolation_message)
     return(y)
