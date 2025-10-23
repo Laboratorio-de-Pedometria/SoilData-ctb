@@ -172,8 +172,8 @@ add_missing_layer <- function(
   data.table::setDT(x)
 
   # Rename columns
-  old_names <- c(event.id, depth.top, depth.bottom, layer.id)
-  new_names <- c("event_id", "depth_top", "depth_bottom", "layer_id")
+  old_names <- c(event.id, depth.top, depth.bottom, layer.id, layer.name)
+  new_names <- c("event_id", "depth_top", "depth_bottom", "layer_id", "layer_name")
   data.table::setnames(x, old = old_names, new = new_names)
 
   # Check for each event_id if it is missing the top layer, i.e. min(depth_top) > 0
@@ -203,11 +203,11 @@ add_missing_layer <- function(
     depth_bottom = data.table::shift(depth_top, type = "lead")[-.N]
   ), by = event_id][depth_top != depth_bottom]
 
-  # Add layer_name and layer_id as NA, using the depth limits (top-bottom) as layer_name
-  missing_layers[, camada_nome := paste0(depth_top, "-", depth_bottom)]
-
   # Combine the original data with the missing layers
   result <- rbind(x, missing_layers, fill = TRUE)
+
+  # Set layer_name using the depth limits (top-bottom)
+  result[, layer_name := paste0(depth_top, "-", depth_bottom)]
 
   # Order the result by event.id and depth_top
   data.table::setorder(result, event_id, depth_top)
