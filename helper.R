@@ -166,7 +166,7 @@ check_missing_layer <- any_missing_layer
 # necessary columns for event ID, depth top, depth bottom, and layer ID.
 add_missing_layer <- function(
     x, event.id = "observacao_id", depth.top = "profund_sup", depth.bottom = "profund_inf",
-    layer.id = "camada_id") {
+    layer.id = "camada_id", layer.name = "camada_nome") {
   
   # Ensure x is a data.table
   data.table::setDT(x)
@@ -202,6 +202,9 @@ add_missing_layer <- function(
     depth_top = depth_bottom[-.N],
     depth_bottom = data.table::shift(depth_top, type = "lead")[-.N]
   ), by = event_id][depth_top != depth_bottom]
+
+  # Add layer_name and layer_id as NA, using the depth limits (top-bottom) as layer_name
+  missing_layers[, camada_nome := paste0(depth_top, "-", depth_bottom)]
 
   # Combine the original data with the missing layers
   result <- rbind(x, missing_layers, fill = TRUE)
