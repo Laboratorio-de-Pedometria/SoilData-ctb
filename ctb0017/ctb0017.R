@@ -209,6 +209,7 @@ any_missing_layer(ctb0017_layer)
 # There is one missing layer for one event (observacao_id = "Perfil-53) between the B and R layers.
 # We add this missing layer with NA values.
 ctb0017_layer <- add_missing_layer(ctb0017_layer)
+any_missing_layer(ctb0017_layer)
 
 # mid_depth
 ctb0017_layer[, mid_depth := (profund_sup + profund_inf) / 2]
@@ -218,17 +219,16 @@ summary(ctb0017_layer[, mid_depth])
 # new: terrafina
 data.table::setnames(ctb0017_layer, old = "Terra fina (mm) [%]", new = "terrafina")
 ctb0017_layer[, terrafina := as.numeric(terrafina) * 10]
-# WARNING: One A layer and two B layers have 0 values for terrafina. This is unlikely to be correct.
-# We will temporarily replace these values with 1000 (maximum value observed in the dataset).
-ctb0017_layer[terrafina == 0, .(observacao_id, camada_nome, terrafina)]
-ctb0017_layer[grepl("A|B", camada_nome) & terrafina == 0, terrafina := 1000]
 summary(ctb0017_layer[, terrafina])
-# The only layers missing data on fine earth is one R layer and the one missing layer we added.
-ctb0017_layer[is.na(terrafina), .(observacao_id, camada_nome, profund_sup, profund_inf, terrafina)]
+# There are five layers with missing data on fine earth.
+check_empty_layer(ctb0017_layer, "terrafina")
+# One of them is a R layer, one was added as the missing layer between the B and R layers.
 # As this is a Latossolo Vermelho Eutroférrico, we set terrafina in the missing layer to be equal to
 # the layer above it.
 ctb0017_layer[observacao_id == "Perfil-53" & profund_sup == 150 & is.na(terrafina), terrafina :=
   ctb0017_layer[observacao_id == "Perfil-53" & profund_inf == 150, terrafina]]
+# The other three are A and B layers. These layers had inconsistent values in the source document
+# and we were not able to infer their values. We will leave them as NA.
 
 # Argila (mm) [%] -> argila
 data.table::setnames(ctb0017_layer, old = "Argila (mm) [%]", new = "argila")
@@ -236,6 +236,7 @@ ctb0017_layer[, argila := as.numeric(argila) * 10]
 summary(ctb0017_layer[, argila])
 # The only layers missing data on clay is one R layer and the one missing layer we added.
 # As this is a Latossolo Vermelho Eutroférrico, we set clay to be equal to the layer above it.
+check_empty_layer(ctb0017_layer, "argila")
 ctb0017_layer[observacao_id == "Perfil-53" & profund_sup == 150 & is.na(argila), argila :=
   ctb0017_layer[observacao_id == "Perfil-53" & profund_inf == 150, argila]]
 
@@ -244,7 +245,7 @@ data.table::setnames(ctb0017_layer, old = "Silte (mm) [%]", new = "silte")
 ctb0017_layer[, silte := as.numeric(silte) * 10]
 summary(ctb0017_layer[, silte])
 # The only layer missing data on silt is one R layer and the one missing layer we added.
-ctb0017_layer[is.na(silte), .(observacao_id, camada_nome, profund_sup, profund_inf, silte)]
+check_empty_layer(ctb0017_layer, "silte")
 # As this is a Latossolo Vermelho Eutroférrico, we set silt in the missing layer to be equal to
 # the layer above it.
 ctb0017_layer[observacao_id == "Perfil-53" & profund_sup == 150 & is.na(silte), silte :=
@@ -255,7 +256,7 @@ data.table::setnames(ctb0017_layer, old = "Areia (mm) [%]", new = "areia")
 ctb0017_layer[, areia := as.numeric(areia) * 10]
 summary(ctb0017_layer[, areia])
 # The only layer missing data on sand is one R layer and the one missing layer we added.
-ctb0017_layer[is.na(areia), .(observacao_id, camada_nome, profund_sup, profund_inf, areia)]
+check_empty_layer(ctb0017_layer, "areia")
 # As this is a Latossolo Vermelho Eutroférrico, we set sand in the missing layer to be equal to
 # the layer above it.
 ctb0017_layer[observacao_id == "Perfil-53" & profund_sup == 150 & is.na(areia), areia :=
@@ -266,9 +267,8 @@ data.table::setnames(ctb0017_layer, old = "C [dag/kg^1]", new = "carbono")
 ctb0017_layer[, carbono := as.numeric(carbono) * 10]
 summary(ctb0017_layer[, carbono])
 # The only layer missing data on carbon is one R layer and the one missing layer we added.
-ctb0017_layer[is.na(carbono), .(observacao_id, camada_id, camada_nome, profund_sup, profund_inf, carbono)]
-# Fill missing value in the added layer using splines
-ctb0017_layer[, carbono := fill_empty_layer(carbono, mid_depth)]
+check_empty_layer(ctb0017_layer, "carbono")
+# We will keep it as NA
 
 # T [cmolc/dm^3] -> ctc
 data.table::setnames(ctb0017_layer, old = "T [cmolc/dm^3]", new = "ctc")
@@ -310,10 +310,11 @@ str(ctb0017_layer)
 # events and layers
 ctb0017 <- merge(ctb0017_event, ctb0017_layer, all = TRUE)
 ctb0017[, dataset_id := "ctb0017"]
+
 # citation
 ctb0017 <- merge(ctb0017, ctb0017_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0017)
-# Layers: 167
+# Layers: 168
 # Events: 83
 # Georeferenced events: 83
 
