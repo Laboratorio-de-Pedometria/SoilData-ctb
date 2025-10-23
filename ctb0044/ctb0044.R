@@ -391,9 +391,17 @@ str(ctb0044_layer)
 # events and layers
 ctb0044 <- merge(ctb0044_event, ctb0044_layer, all = TRUE)
 ctb0044[, dataset_id := "ctb0044"]
+
+# Column 'use' reports some observations of rock outcrops ("rock"). We can identify the respective
+# layers as R layers with 20 cm.
+ctb0044[use == "rock" & is.na(camada_nome), `:=` (
+  camada_nome = "R",
+  profund_sup = 0,
+  profund_inf = 20
+)]
+
 # citation
 ctb0044 <- merge(ctb0044, ctb0044_citation, by = "dataset_id", all.x = TRUE)
-cat("ATTENTION! There are some events that consist of rock outcrops: we need to process them!\n")
 summary_soildata(ctb0044)
 # Layers: 431
 # Events: 162
