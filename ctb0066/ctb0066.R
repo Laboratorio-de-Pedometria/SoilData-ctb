@@ -17,19 +17,17 @@ source("./helper.R")
 
 # Google Sheet #####################################################################################
 # ctb0066
-# Dados de "ASSOCIAÇÕES ENTRE OS SOLOS, OS AMBIENTES SEDIMENTARES QUATERNÁRIOS E AS FITOFISIONOMIAS DE
-# PLANÍCIE COSTEIRA E BAIXA ENCOSTA NAS BACIAS DOS RIOS ITAGUARÉ E GUARATUBA (BERTIOGA-SP)"
+# Dados de "ASSOCIAÇÕES ENTRE OS SOLOS, OS AMBIENTES SEDIMENTARES QUATERNÁRIOS E AS FITOFISIONOMIAS
+# DE PLANÍCIE COSTEIRA E BAIXA ENCOSTA NAS BACIAS DOS RIOS ITAGUARÉ E GUARATUBA (BERTIOGA-SP)"
 # 
 # Google Drive: https://drive.google.com/drive/u/0/folders/1HsBKA6yMB0zu4omBKpb6PkiVeBBoVAJW
 # NotebookLM: https://notebooklm.google.com/notebook/04228dea-024b-4176-95f5-22cd4a6281d4
 ctb0066_ids <- soildata_catalog("ctb0066")
 
 # validation #####################################################################################
+# Load validation data and check
 ctb0066_validation <- google_sheet(ctb0066_ids$gs_id, ctb0066_ids$gid_validation)
-str(ctb0066_validation)
-
-# Check for negative validation results
-sum(ctb0066_validation == FALSE, na.rm = TRUE)
+check_sheet_validation(ctb0066_validation)
 
 # citation #####################################################################################
 ctb0066_citation <- google_sheet(ctb0066_ids$gs_id, ctb0066_ids$gid_citation)
@@ -169,9 +167,11 @@ ctb0066_event[is.na(amostra_area), amostra_area := 1]
 summary(ctb0066_event[, amostra_area])
 
 # taxon_sibcs
-# The soil classification is based on the Brazilian Soil Classification System (SiBCS). It is
-# available in the original publication, but not in the Google Sheets document. So, we set N/A.
-ctb0066_event[, taxon_sibcs := NA_character_]
+# old: SiBCS (2006)
+# new: taxon_sibcs
+data.table::setnames(ctb0066_event, old = "SiBCS (2006)", new = "taxon_sibcs")
+ctb0066_event[, taxon_sibcs := as.character(taxon_sibcs)]
+ctb0066_event[, .N, by = taxon_sibcs]
 
 # taxon_st
 # The US Soil Taxonomy classification is not available in the original publication, so we set N/A.
