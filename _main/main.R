@@ -10,6 +10,13 @@ if (!require("callr")) {
   library("callr")
 }
 
+# Identify all csv files in the current directory and its subdirectories and delete them
+# This is necessary to ensure that all R scripts generate fresh output files.
+csv_files <- list.files(pattern = "\\.csv$", recursive = TRUE)
+if (length(csv_files) > 0) {
+  file.remove(csv_files)
+}
+
 # Identify all R scripts in the current directory and its subdirectories
 # Exceptions:
 # - General purpose scripts: _main/main.R, helper.R
