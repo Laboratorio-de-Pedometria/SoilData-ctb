@@ -8,12 +8,10 @@ if (!requireNamespace("data.table")) {
 if (!requireNamespace("sf")) {
   install.packages("sf")
 }
-if (!requireNamespace("parzer")) {
-  install.packages("parzer")
+if (!requireNamespace("mapview")) {
+  install.packages("mapview", dependencies = TRUE)
 }
-if (!requireNamespace("dplyr")) {
-  install.packages("dplyr")
-}
+
 
 # Source helper functions
 source("./helper.R")
@@ -23,15 +21,11 @@ source("./helper.R")
 # Dados de Carbono de Solos - Projeto SIGecotur/Projeto Forense
 #
 # Google Drive: https://drive.google.com/drive/u/0/folders/1RsV8ViDb7lsvz7BgxOOhqTHhDWe1qsLE
-
 ctb0092_ids <- soildata_catalog("ctb0092")
 
 # validation #####################################################################################
 ctb0092_validation <- google_sheet(ctb0092_ids$gs_id, ctb0092_ids$gid_validation)
-str(ctb0092_validation)
-
-# Check for negative validation results
-sum(ctb0092_validation == FALSE, na.rm = TRUE)
+check_sheet_validation(ctb0092_validation)
 
 # citation #####################################################################################
 ctb0092_citation <- google_sheet(ctb0092_ids$gs_id, ctb0092_ids$gid_citation)
@@ -165,17 +159,20 @@ data.table::setnames(ctb0092_layer, old = "ID do evento", new = "observacao_id")
 ctb0092_layer[, observacao_id := as.character(observacao_id)]
 ctb0092_layer[, .N, by = observacao_id]
 # Most soil profiles have two layers, but a few have only one layer. Maybe in these profiles the
-# authors encountered the bedrock.
+# authors encountered the bedrock. We need to check this information with them.
 
 # ID da camada -> camada_nome
 data.table::setnames(ctb0092_layer, old = "ID da camada", new = "camada_nome")
 ctb0092_layer[, camada_nome := as.character(camada_nome)]
 ctb0092_layer[, .N, by = camada_nome]
 # Most layers are 0-20 cm and 20-40 cm. A few profiles have layers with inferior limits such as 15,
-# 25, and 35. These layers could indicate that the authors reached some lithic contact.
+# 25, and 35. These layers could indicate that the authors reached some lithic contact. We need to
+# check this information with the authors.
 
 # ID da amostra -> amostra_id
-ctb0092_layer[, amostra_id := NA_real_]
+data.table::setnames(ctb0092_layer, old = "ID da amostra", new = "amostra_id")
+ctb0092_layer[, amostra_id := as.character(amostra_id)]
+ctb0092_layer[, .N, by = amostra_id]
 
 # profund_sup
 # old: Profundidade inicial [cm]
@@ -194,30 +191,78 @@ ctb0092_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0092_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0092_layer[, profund_inf])
 
+# Check for equal layer depths
+ctb0092_layer[profund_sup == profund_inf]
+
 # camada_id
 # We will create a unique identifier for each layer.
 ctb0092_layer <- ctb0092_layer[order(observacao_id, profund_sup, profund_inf)]
 ctb0092_layer[, camada_id := 1:.N, by = observacao_id]
 ctb0092_layer[, .N, by = camada_id]
 
+# mid_depth
+ctb0092_layer[, mid_depth := (profund_sup + profund_inf) / 2]
+summary(ctb0092_layer[, mid_depth])
+
 # Check for missing layers
+# There are no missing layers in this dataset.
 check_missing_layer(ctb0092_layer)
 
-# terrafina
-# The fine earth fraction is not informed in this dataset. Maybe the authors have this information.
-ctb0092_layer[, terrafina := NA_real_]
+# Terra fina [%] -> terrafina
+# The fine earth fraction was not informed in this dataset. Maybe the author did not measure it, but
+# could still provide some qualitative information.
+data.table::setnames(ctb0092_layer, old = "Terra fina [%]", new = "terrafina")
+ctb0092_layer[, terrafina := as.numeric(terrafina)]
+summary(ctb0092_layer[, terrafina])
 
-# areia
-# The sand content is not informed in this dataset. Maybe the authors have this information.
-ctb0092_layer[, areia := NA_real_]
+# Areia total [%] -> areia
+# areia = areia * 10
+data.table::setnames(ctb0092_layer, old = "Areia total [%]", new = "areia")
+ctb0092_layer[, areia := as.numeric(areia) * 10]
+summary(ctb0092_layer[, areia])
+# There is one layer with missing sand content (SC2_B27; 10-20). We added this layer mannually to
+# the dataset as to ensure completeness of the soil profile. However, this is the only event with a
+# a gap between the two layers (0-10 cm and 20-40 cm). It could be a typo, or maybe the authors did
+# not complete the laboratory analysis for this layer yet.
+check_empty_layer(ctb0092_layer, "areia")
+# Fill empty layer
+ctb0092_layer[, areia := fill_empty_layer(areia, mid_depth, c(0, 1000)), by = observacao_id]
 
-# silte
-# The silt content is not informed in this dataset. Maybe the authors have this information.
-ctb0092_layer[, silte := NA_real_]
+# Silte [%] -> silte
+# silte = silte * 10
+data.table::setnames(ctb0092_layer, old = "Silte [%]", new = "silte")
+ctb0092_layer[, silte := as.numeric(silte) * 10]
+summary(ctb0092_layer[, silte])
+# There is one layer with missing silt content (SC2_B27; 10-20). See comments for sand content.
+check_empty_layer(ctb0092_layer, "silte")
+# Fill empty layer
+ctb0092_layer[, silte := fill_empty_layer(silte, mid_depth, c(0, 1000)), by = observacao_id]
 
 # argila
-# The clay content is not informed in this dataset. Maybe the authors have this information.
-ctb0092_layer[, argila := NA_real_]
+# old: Argila [%]
+# new: argila
+# argila = argila * 10
+data.table::setnames(ctb0092_layer, old = "Argila [%]", new = "argila")
+ctb0092_layer[, argila := as.numeric(argila) * 10]
+summary(ctb0092_layer[, argila])
+# There is one layer with missing clay content (SC2_B27; 10-20). See comments for sand content.
+check_empty_layer(ctb0092_layer, "argila")
+# Fill empty layer
+ctb0092_layer[, argila := fill_empty_layer(argila, mid_depth, c(0, 1000)), by = observacao_id]
+
+# Check the particle size distribution
+# We accept a maximum difference of 100 g/kg (10%) in the sum of the particle size fractions.
+# Round the values to avoid floating point issues.
+ctb0092_layer[, areia := round(areia)]
+ctb0092_layer[, silte := round(silte)]
+ctb0092_layer[, argila := round(argila)]
+ctb0092_layer[, psd_sum := areia + silte + argila]
+ctb0092_layer[, psd_diff := abs(1000 - psd_sum)]
+ctb0092_layer[
+  psd_diff > 100,
+  .(observacao_id, camada_nome, profund_sup, profund_inf, areia, silte, argila)
+]
+# There are no layers with particle size sum differing more than 100 g/kg.
 
 # carbono
 # old: C total [%]
@@ -225,21 +270,24 @@ ctb0092_layer[, argila := NA_real_]
 data.table::setnames(ctb0092_layer, old = "C total [%]", new = "carbono")
 ctb0092_layer[, carbono := as.numeric(carbono) * 10] # convert to g/kg
 summary(ctb0092_layer[, carbono])
-# There is one layer missing carbon content (B27, 10-20 cm). This is the only sampling point with a
-# 10-20 cm layer. Maybe this is a typo.
+# There is one layer missing carbon content (B27, 10-20 cm). See comments for sand content.
 check_empty_layer(ctb0092_layer, "carbono")
+# Fill empty layer
+ctb0092_layer[, carbono := fill_empty_layer(carbono, mid_depth, c(0, 1000)), by = observacao_id]
 
 # ctc
 # The cation exchange capacity is not informed in this dataset. Maybe the authors have this
-# information.
+# information. We need to check this with them.
 ctb0092_layer[, ctc := NA_real_]
 
 # ph
-# The pH is not informed in this dataset. Maybe the authors have this information.
+# The pH is not informed in this dataset. Maybe the authors have this information. We need to check
+# this with them.
 ctb0092_layer[, ph := NA_real_]
 
 # dsi
 # The soil bulk density is not informed in this dataset. Maybe the authors have this information.
+# We need to check this with them.
 ctb0092_layer[, dsi := NA_real_]
 
 str(ctb0092_layer)
