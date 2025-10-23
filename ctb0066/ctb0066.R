@@ -2,17 +2,14 @@
 # data: 2025
 
 # Install and load required packages
-if (!require("data.table")) {
+if (!requireNamespace("data.table")) {
   install.packages("data.table")
-  library("data.table")
 }
-if (!require("sf")) {
+if (!requireNamespace("sf")) {
   install.packages("sf")
-  library("sf")
 }
-if (!require("parzer")) {
+if (!requireNamespace("parzer")) {
   install.packages("parzer")
-  library("parzer")
 }
 
 # Source helper functions
