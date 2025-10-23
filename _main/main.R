@@ -28,7 +28,6 @@ exceptions <- c(
   "ctb0083/ctb0083.R", # check coordinates
   "ctb0085/ctb0085.R", # check coordinates
   "ctb0086/ctb0086.R", # new
-  "ctb0093/ctb0092.R", # New data on soil particle size distribution was added
   "ctb0093/ctb0093.R", # new
   "ctb0094/ctb0094.R", # new
   "ctb0095/ctb0095.R", # new
