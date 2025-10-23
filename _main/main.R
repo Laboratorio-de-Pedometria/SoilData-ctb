@@ -40,7 +40,7 @@ exceptions <- c(
   "ctb0097/ctb0097.R", # new
   "ctb0098/ctb0098.R", # new
   "ctb0099/ctb0099.R", # new
-  "ctb00101/ctb00101.R" # Included in ctb0054
+  "ctb0101/ctb0101.R" # Included in ctb0054
 )
 r_scripts <- list.files(pattern = "\\.R$", recursive = TRUE)
 r_scripts <- r_scripts[!r_scripts %in% exceptions]
