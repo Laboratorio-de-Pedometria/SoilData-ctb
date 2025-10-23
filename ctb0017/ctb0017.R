@@ -196,9 +196,17 @@ ctb0017_layer <- ctb0017_layer[order(observacao_id, profund_sup, profund_inf)]
 ctb0017_layer[, camada_id := 1:.N, by = observacao_id]
 ctb0017_layer[, .N, by = camada_id]
 
+# Check for equal depths
+ctb0017_layer[profund_sup >= profund_inf]
+# There are no layers with equal depths
+
+# Check for repeated layers
+check_repeated_layer(ctb0017_layer)
+# There are no repeated layers
+
 # Check for missing layers
 any_missing_layer(ctb0017_layer)
-# There is one missing layer for one event (observacao_id = "Perfil-53) between the B and R layers..
+# There is one missing layer for one event (observacao_id = "Perfil-53) between the B and R layers.
 # We add this missing layer with NA values.
 ctb0017_layer <- add_missing_layer(ctb0017_layer)
 
