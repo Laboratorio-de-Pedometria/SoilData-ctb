@@ -24,6 +24,7 @@ source("./helper.R")
 ctb0092_ids <- soildata_catalog("ctb0092")
 
 # validation #####################################################################################
+# Load validation sheet and check
 ctb0092_validation <- google_sheet(ctb0092_ids$gs_id, ctb0092_ids$gid_validation)
 check_sheet_validation(ctb0092_validation)
 
