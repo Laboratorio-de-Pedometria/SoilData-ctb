@@ -27,10 +27,7 @@ gid_layer <- 771766248
 
 # validation #######################################################################################
 ctb0044_validation <- google_sheet(gs, gid_validation)
-str(ctb0044_validation)
-
-# Check for negative validation results
-sum(ctb0044_validation == FALSE, na.rm = TRUE)
+check_sheet_validation(ctb0044_validation)
 
 # citation #########################################################################################
 ctb0044_citation <- google_sheet(gs, gid_citation)
@@ -269,7 +266,10 @@ ctb0044_layer[, terrafina := as.numeric(terrafina) * 10]
 summary(ctb0044_layer[, terrafina])
 check_empty_layer(ctb0044_layer, "terrafina")
 # Fill empty layers
-ctb0044_layer[, terrafina := fill_empty_layer(y = terrafina, x = profund_mid), by = observacao_id]
+ctb0044_layer[,
+  terrafina := fill_empty_layer(y = terrafina, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
 check_empty_layer(ctb0044_layer, "terrafina")
 
 # Clay content
@@ -281,7 +281,10 @@ ctb0044_layer[, argila := as.numeric(argila) * 10]
 summary(ctb0044_layer[, argila])
 check_empty_layer(ctb0044_layer, "argila")
 # Fill empty layers
-ctb0044_layer[, argila := fill_empty_layer(y = argila, x = profund_mid), by = observacao_id]
+ctb0044_layer[,
+  argila := fill_empty_layer(y = argila, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
 ctb0044_layer[, argila := round(argila)]
 check_empty_layer(ctb0044_layer, "argila")
 
@@ -294,7 +297,10 @@ ctb0044_layer[, silte := as.numeric(silte) * 10]
 summary(ctb0044_layer[, silte])
 check_empty_layer(ctb0044_layer, "silte")
 # Fill empty layers
-ctb0044_layer[, silte := fill_empty_layer(y = silte, x = profund_mid), by = observacao_id]
+ctb0044_layer[,
+  silte := fill_empty_layer(y = silte, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
 ctb0044_layer[, silte := round(silte)]
 check_empty_layer(ctb0044_layer, "silte")
 
@@ -307,7 +313,10 @@ ctb0044_layer[, areia := as.numeric(areia) * 10]
 summary(ctb0044_layer[, areia])
 check_empty_layer(ctb0044_layer, "areia")
 # Fill empty layers
-ctb0044_layer[, areia := fill_empty_layer(y = areia, x = profund_mid), by = observacao_id]
+ctb0044_layer[,
+  areia := fill_empty_layer(y = areia, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
 ctb0044_layer[, areia := round(areia)]
 check_empty_layer(ctb0044_layer, "areia")
 
@@ -325,7 +334,10 @@ ctb0044_layer[, carbono := as.numeric(carbono) * 10]
 summary(ctb0044_layer[, carbono])
 check_empty_layer(ctb0044_layer, "carbono")
 # Fill empty layers
-ctb0044_layer[, carbono := fill_empty_layer(y = carbono, x = profund_mid), by = observacao_id]
+ctb0044_layer[,
+  carbono := fill_empty_layer(y = carbono, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
 ctb0044_layer[, carbono := round(carbono)]
 check_empty_layer(ctb0044_layer, "carbono")
 summary(ctb0044_layer[, carbono])
@@ -402,5 +414,3 @@ if (FALSE) {
 # Write to disk ####################################################################################
 ctb0044 <- select_output_columns(ctb0044)
 data.table::fwrite(ctb0044, "ctb0044/ctb0044.csv")
-data.table::fwrite(ctb0044_event, "ctb0044/ctb0044_event.csv")
-data.table::fwrite(ctb0044_layer, "ctb0044/ctb0044_layer.csv")
