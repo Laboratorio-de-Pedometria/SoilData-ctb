@@ -16,7 +16,7 @@ source("./helper.R")
 # Google Sheet #####################################################################################
 # ctb0017
 # Dados de 'Solos da Bacia Hidrográfica do Rio Uberaba'
-# https://drive.google.com/drive/folders/1CtxewFfjgRQuWTFO6fjZ_M3-w-m2Glds?usp=drive_link
+# GoogleDrive: https://drive.google.com/drive/folders/1CtxewFfjgRQuWTFO6fjZ_M3-w-m2Glds
 gs <- "1WBaSoLQDucp8_wXv9hMs8sT0ZEUOLfC_2fM-9Pr5OwE"
 gid_validation <- 88779986
 gid_citation <- 0
@@ -62,14 +62,16 @@ any(table(ctb0017_event[, observacao_id]) > 1)
 
 # old: Ano (coleta)
 # new: data_ano
-# The document reports that the data was collected in 2009 and 2010. We will assume that all data
-# was collected in 2009.
+# The document reports that the data was collected in 2008-2009. We will assume that all samples
+# were collected in 2008, unless specified otherwise.
 data.table::setnames(ctb0017_event, old = "Ano (coleta)", new = "data_ano")
-ctb0017_event[, data_ano := as.integer(data_ano)]
-ctb0017_event[, data_ano := 2009]
+ctb0017_event[, data_ano := as.character(data_ano)]
+ctb0017_event[!is.na(data_ano), data_ano := ifelse(grepl("2009", data_ano), "2009", data_ano)]
+ctb0017_event[!is.na(data_ano), data_ano := as.integer(data_ano)]
+ctb0017_event[, .N, by = data_ano]
 
 # ano_fonte = "estimativa"
-# As per the original document, the data was collected in 2009 and 2010. We assumed all data was
+# As per the original document, the data was collected in 2008 and 2009. We assumed all data was
 # collected in 2009. However, since the exact collection date was not specified, we made an estimate.
 ctb0017_event[!is.na(data_ano) , ano_fonte := "estimativa"]
 
@@ -198,6 +200,13 @@ ctb0017_layer[, .N, by = camada_id]
 
 # Check for missing layers
 any_missing_layer(ctb0017_layer)
+# There is one missing layer for one event (observacao_id = "Perfil-53) between the B and R layers..
+# We add this missing layer with NA values.
+ctb0017_layer <- add_missing_layer(ctb0017_layer)
+
+# mid_depth
+ctb0017_layer[, mid_depth := (profund_sup + profund_inf) / 2]
+summary(ctb0017_layer[, mid_depth])
 
 # old: Terra fina (mm) [%]
 # new: terrafina
@@ -206,59 +215,88 @@ ctb0017_layer[, terrafina := as.numeric(terrafina) * 10]
 # WARNING: One A layer and two B layers have 0 values for terrafina. This is unlikely to be correct.
 # We will temporarily replace these values with 1000 (maximum value observed in the dataset).
 ctb0017_layer[terrafina == 0, .(observacao_id, camada_nome, terrafina)]
-ctb0017_layer[camada_nome == "A|B" & terrafina == 0, terrafina := 1000]
+ctb0017_layer[grepl("A|B", camada_nome) & terrafina == 0, terrafina := 1000]
 summary(ctb0017_layer[, terrafina])
-# The only layer missing data on fine earth is one R layer. 
+# The only layers missing data on fine earth is one R layer and the one missing layer we added.
 ctb0017_layer[is.na(terrafina), .(observacao_id, camada_nome, profund_sup, profund_inf, terrafina)]
+# As this is a Latossolo Vermelho Eutroférrico, we set terrafina in the missing layer to be equal to
+# the layer above it.
+ctb0017_layer[observacao_id == "Perfil-53" & profund_sup == 150 & is.na(terrafina), terrafina :=
+  ctb0017_layer[observacao_id == "Perfil-53" & profund_inf == 150, terrafina]]
 
 # Argila (mm) [%] -> argila
 data.table::setnames(ctb0017_layer, old = "Argila (mm) [%]", new = "argila")
 ctb0017_layer[, argila := as.numeric(argila) * 10]
 summary(ctb0017_layer[, argila])
-# The only layer missing data on clay is one R layer.
-ctb0017_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, argila)]
+# The only layers missing data on clay is one R layer and the one missing layer we added.
+# As this is a Latossolo Vermelho Eutroférrico, we set clay to be equal to the layer above it.
+ctb0017_layer[observacao_id == "Perfil-53" & profund_sup == 150 & is.na(argila), argila :=
+  ctb0017_layer[observacao_id == "Perfil-53" & profund_inf == 150, argila]]
 
 # Silte (mm) [%] -> silte
 data.table::setnames(ctb0017_layer, old = "Silte (mm) [%]", new = "silte")
 ctb0017_layer[, silte := as.numeric(silte) * 10]
 summary(ctb0017_layer[, silte])
-# The only layer missing data on silt is one R layer.
+# The only layer missing data on silt is one R layer and the one missing layer we added.
 ctb0017_layer[is.na(silte), .(observacao_id, camada_nome, profund_sup, profund_inf, silte)]
+# As this is a Latossolo Vermelho Eutroférrico, we set silt in the missing layer to be equal to
+# the layer above it.
+ctb0017_layer[observacao_id == "Perfil-53" & profund_sup == 150 & is.na(silte), silte :=
+  ctb0017_layer[observacao_id == "Perfil-53" & profund_inf == 150, silte]]
 
 # Areia (mm) [%] -> areia
 data.table::setnames(ctb0017_layer, old = "Areia (mm) [%]", new = "areia")
 ctb0017_layer[, areia := as.numeric(areia) * 10]
 summary(ctb0017_layer[, areia])
-# The only layer missing data on sand is one R layer.
+# The only layer missing data on sand is one R layer and the one missing layer we added.
 ctb0017_layer[is.na(areia), .(observacao_id, camada_nome, profund_sup, profund_inf, areia)]
+# As this is a Latossolo Vermelho Eutroférrico, we set sand in the missing layer to be equal to
+# the layer above it.
+ctb0017_layer[observacao_id == "Perfil-53" & profund_sup == 150 & is.na(areia), areia :=
+  ctb0017_layer[observacao_id == "Perfil-53" & profund_inf == 150, areia]]
 
 # C [dag/kg^1] -> carbono
 data.table::setnames(ctb0017_layer, old = "C [dag/kg^1]", new = "carbono")
 ctb0017_layer[, carbono := as.numeric(carbono) * 10]
 summary(ctb0017_layer[, carbono])
-# The only layer missing data on carbon is one R layer.
+# The only layer missing data on carbon is one R layer and the one missing layer we added.
 ctb0017_layer[is.na(carbono), .(observacao_id, camada_id, camada_nome, profund_sup, profund_inf, carbono)]
+# Fill missing value in the added layer using splines
+ctb0017_layer[, carbono := fill_empty_layer(carbono, mid_depth)]
 
 # T [cmolc/dm^3] -> ctc
 data.table::setnames(ctb0017_layer, old = "T [cmolc/dm^3]", new = "ctc")
 ctb0017_layer[, ctc := as.numeric(ctc)]
 summary(ctb0017_layer[, ctc])
-# The only layer missing data on cation exchange capacity is one R layer.
+# The only layer missing data on cation exchange capacity is one R layer and the one missing layer
+# we added.
 ctb0017_layer[is.na(ctc), .(observacao_id, camada_id, camada_nome, profund_sup, profund_inf, ctc)]
+# As this is a Latossolo Vermelho Eutroférrico, we set ctc in the missing layer to be equal to
+# the layer above it.
+ctb0017_layer[observacao_id == "Perfil-53" & profund_sup == 150 & is.na(ctc), ctc :=
+  ctb0017_layer[observacao_id == "Perfil-53" & profund_inf == 150, ctc]]
 
 # pH em Água -> ph
 data.table::setnames(ctb0017_layer, old = "pH em Água", new = "ph")
 ctb0017_layer[, ph := as.numeric(ph)]
 summary(ctb0017_layer[, ph])
-# The only layer missing data on pH is one R layer.
+# The only layer missing data on pH is one R layer and the one missing layer we added.
 ctb0017_layer[is.na(ph), .(observacao_id, camada_id, camada_nome, profund_sup, profund_inf, ph)]
+# As this is a Latossolo Vermelho Eutroférrico, we set pH in the missing layer to be equal to
+# the layer above it.
+ctb0017_layer[observacao_id == "Perfil-53" & profund_sup == 150 & is.na(ph), ph :=
+  ctb0017_layer[observacao_id == "Perfil-53" & profund_inf == 150, ph]]
 
 # Densidade do solo [g/cm^3] -> dsi
 data.table::setnames(ctb0017_layer, old = "Densidade do solo [g/cm^3]", new = "dsi")
 ctb0017_layer[, dsi := as.numeric(dsi)]
 summary(ctb0017_layer[, dsi])
-# The only layer missing data on soil density is one R layer.
+# The only layer missing data on soil density is one R layer and the one missing layer we added.
 ctb0017_layer[is.na(dsi), .(observacao_id, camada_id, camada_nome, profund_sup, profund_inf, dsi)]
+# As this is a Latossolo Vermelho Eutroférrico, we set soil density in the missing layer to be
+# equal to the layer above it.
+ctb0017_layer[observacao_id == "Perfil-53" & profund_sup == 150 & is.na(dsi), dsi :=
+  ctb0017_layer[observacao_id == "Perfil-53" & profund_inf == 150, dsi]]
 
 str(ctb0017_layer)
 
@@ -285,5 +323,3 @@ if (FALSE) {
 # Write to disk ####################################################################################
 ctb0017 <- select_output_columns(ctb0017)
 data.table::fwrite(ctb0017, "ctb0017/ctb0017.csv")
-data.table::fwrite(ctb0017_event, "ctb0017/ctb0017_event.csv")
-data.table::fwrite(ctb0017_layer, "ctb0017/ctb0017_layer.csv")
