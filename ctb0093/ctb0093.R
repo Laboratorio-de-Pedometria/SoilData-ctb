@@ -11,12 +11,6 @@ if (!requireNamespace("sf")) {
 if (!requireNamespace("mapview")) {
   install.packages("mapview")
 }
-if (!requireNamespace("parzer")) {
-  install.packages("parzer")
-}
-if (!requireNamespace("dplyr")) {
-  install.packages("dplyr")
-}
 
 # Source helper functions
 source("./helper.R")
@@ -29,20 +23,13 @@ source("./helper.R")
 ctb0093_ids <- soildata_catalog("ctb0093")
 
 # validation #####################################################################################
+# Load validation sheet and check
 ctb0093_validation <- google_sheet(ctb0093_ids$gs_id, ctb0093_ids$gid_validation)
 check_sheet_validation(ctb0093_validation)
-
-# Errors found in validation!
-
-
-
-
-
 
 # citation #####################################################################################
 ctb0093_citation <- google_sheet(ctb0093_ids$gs_id, ctb0093_ids$gid_citation)
 str(ctb0093_citation)
-
 
 # dataset_titulo
 # Check for the string "Título" in column "campo". Then get the corresponding row value from column
