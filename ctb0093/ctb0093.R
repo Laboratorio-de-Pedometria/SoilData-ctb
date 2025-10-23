@@ -91,13 +91,16 @@ data.table::setnames(ctb0093_event, old = "Latitude", new = "coord_y")
 ctb0093_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0093_event[, coord_y])
 # There are three events missing y coordinates. The reason is unknown.
+ctb0093_event[is.na(coord_y), .(observacao_id)]
 
 # Datum (coord) -> coord_datum
 # already in WGS84
 data.table::setnames(ctb0093_event, old = "Datum (coord)", new = "coord_datum")
 ctb0093_event[coord_datum == "WGS84", coord_datum := 4326]
+ctb0093_event[, coord_datum := as.integer(coord_datum)]
+ctb0093_event[, .N, by = coord_datum]
 
-# Check for duplicate coordinates
+# Check for duplicated coordinates
 ctb0093_event[!is.na(coord_x) & !is.na(coord_y), coord_duplicated := .N > 1, by = .(coord_y, coord_x)]
 ctb0093_event[coord_duplicated == TRUE, .(observacao_id, coord_x, coord_y)]
 # There are a few dupplicated coordinates: PAN17 and PAN18, SSC14 and SSC15, and SC2B13 and SC2B15.
@@ -124,6 +127,7 @@ rm(ctb0093_event_sf)
 # GPS Garmin
 data.table::setnames(ctb0093_event, old = "Fonte (coord)", new = "coord_fonte")
 ctb0093_event[, coord_fonte := as.character(coord_fonte)]
+ctb0093_event[coord_duplicated == TRUE, coord_fonte := "GPS Garmin + 1-m jitter"]
 ctb0093_event[, .N, by = coord_fonte]
 
 # Precisão (coord) -> coord_precisao
@@ -193,8 +197,12 @@ ctb0093_layer[, .N, by = observacao_id][order(N)]
 data.table::setnames(ctb0093_layer, old = "ID da camada", new = "camada_nome")
 ctb0093_layer[, camada_nome := as.character(camada_nome)]
 ctb0093_layer[, .N, by = camada_nome]
+# Most layers have round numbers for the layer names, like 0-10, 10-20, etc. A few have broken
+# ranges like 0-15, 0-25, etc. This could mean that the authors reached the bedrock before reaching
+# the standard layer depth. we need to check this with them.
 
 # ID da amostra -> amostra_id
+# The laboratory sample identifier is available in the source.
 data.table::setnames(ctb0093_layer, old = "ID da amostra", new = "amostra_id")
 ctb0093_layer[, amostra_id := as.character(amostra_id)]
 ctb0093_layer[, .N, by = amostra_id]
@@ -203,6 +211,8 @@ ctb0093_layer[, .N, by = amostra_id]
 # old: Profundidade inicial [cm]
 # new: profund_sup
 data.table::setnames(ctb0093_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+# Resolve broken depth intervals with slash "/"
+ctb0093_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0093_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0093_layer[, profund_sup])
 
@@ -210,8 +220,15 @@ summary(ctb0093_layer[, profund_sup])
 # old: Profundidade final [cm]
 # new: profund_inf
 data.table::setnames(ctb0093_layer, old = "Profundidade final [cm]", new = "profund_inf")
+# Resolve broken depth intervals with slash "/"
+ctb0093_layer[, profund_inf := depth_slash(profund_inf), by = .I]
+# Resolve censored layer depth (plus)
+ctb0093_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0093_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0093_layer[, profund_inf])
+
+# Check for equal layer depths
+ctb0093_layer[profund_sup == profund_inf]
 
 # camada_id
 # We will create a unique identifier for each layer indicating the order of the layers in each soil
@@ -224,14 +241,22 @@ ctb0093_layer[, .N, by = camada_id]
 
 # Check for duplicated layers in the same soil profile
 check_repeated_layer(ctb0093_layer)
-# There are duplicated layers in four soil profiles: SCM15, SCM25, SCM49, SCM60.
+# There are duplicated layers in four soil profiles: SCM15, SCM25, SCM49, SCM60. It is not evident
+# why this happened. We need to check with the data providers. For now, we will drop one of them.
+ctb0093_layer <- ctb0093_layer[,
+  .SD[1],
+  by = .(observacao_id, profund_sup, profund_inf)
+]
+# Check again for duplicated layers
+check_repeated_layer(ctb0093_layer)
 
 # Check missing layers
 check_missing_layer(ctb0093_layer)
-# There are missing layers in 17 soil profiles. In some cases the topsoil layer is missing, in
+# There are missing layers in 15 soil profiles. In some cases the topsoil layer is missing, in
 # others it is a subsoil layer. We need to check with the data providers the reason for these
 # missing layers. For now, we will add them.
 ctb0093_layer <- add_missing_layer(ctb0093_layer)
+ctb0093_layer[, .N, by = camada_nome]
 
 # terrafina
 # Data on fine earth (terrafina) content is missing in this document. The authors are still running
@@ -255,6 +280,9 @@ ctb0093_layer[, silte := NA_real_]
 # analysis.
 ctb0093_layer[, argila := NA_real_]
 
+# Check that the sum of sand, silt, and clay is 1000 g/kg
+# AS SOON AS THE DATA IS AVAILABLE
+
 # carbono
 # old: C [%]
 # new: carbono
@@ -262,7 +290,7 @@ ctb0093_layer[, argila := NA_real_]
 data.table::setnames(ctb0093_layer, old = "C [%]", new = "carbono")
 ctb0093_layer[, carbono := as.numeric(carbono) * 10]
 summary(ctb0093_layer[, carbono])
-# There are 22 missing values for carbon content, most of them in the added missing layers.
+# There are 18 missing values for carbon content, most of them in the added missing layers.
 check_empty_layer(ctb0093_layer, "carbono")
 # Fill empty layers
 ctb0093_layer[,
@@ -294,7 +322,7 @@ ctb0093[, dataset_id := "ctb0093"]
 # citation
 ctb0093 <- merge(ctb0093, ctb0093_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0093)
-# Layers: 767
+# Layers: 759
 # Events: 373
 # Georeferenced events: 370
 
