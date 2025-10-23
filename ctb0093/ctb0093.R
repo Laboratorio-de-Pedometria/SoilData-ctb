@@ -241,8 +241,9 @@ ctb0093_layer[, .N, by = camada_id]
 
 # Check for duplicated layers in the same soil profile
 check_repeated_layer(ctb0093_layer)
-# There are duplicated layers in four soil profiles: SCM15, SCM25, SCM49, SCM60. It is not evident
-# why this happened. We need to check with the data providers. For now, we will drop one of them.
+# ATTENTION. There are duplicated layers in four soil profiles: SCM15, SCM25, SCM49, SCM60. It is
+# not evident why this happened. We need to check with the data providers. For now, we will drop one
+# of them.
 ctb0093_layer <- ctb0093_layer[,
   .SD[1],
   by = .(observacao_id, profund_sup, profund_inf)
