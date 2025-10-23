@@ -24,11 +24,9 @@ gid_event <- 1628657862
 gid_layer <- 771766248
 
 # validation #######################################################################################
+# Load validation sheet and check
 ctb0017_validation <- google_sheet(gs, gid_validation)
-str(ctb0017_validation)
-
-# Check for negative validation results
-sum(ctb0017_validation == FALSE, na.rm = TRUE)
+check_sheet_validation(ctb0017_validation)
 
 # citation #########################################################################################
 ctb0017_citation <- google_sheet(gs, gid_citation)
@@ -62,8 +60,8 @@ any(table(ctb0017_event[, observacao_id]) > 1)
 
 # old: Ano (coleta)
 # new: data_ano
-# The document reports that the data was collected in 2008-2009. We will assume that all samples
-# were collected in 2008, unless specified otherwise.
+# The document reports that the data was collected in 2009-2010. We will assume that all samples
+# were collected in 2009, unless specified otherwise.
 data.table::setnames(ctb0017_event, old = "Ano (coleta)", new = "data_ano")
 ctb0017_event[, data_ano := as.character(data_ano)]
 ctb0017_event[!is.na(data_ano), data_ano := ifelse(grepl("2009", data_ano), "2009", data_ano)]
