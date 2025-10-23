@@ -53,20 +53,25 @@ print(ctb0093_citation)
 ctb0093_event <- google_sheet(ctb0093_ids$gs_id, ctb0093_ids$gid_event)
 str(ctb0093_event)
 
-#PROCESS FIELDS
-
+# PROCESS FIELDS
 
 # observacao_id
-# ID do evento -> observacao_id
+# old: ID do evento
+# new: observacao_id
 data.table::setnames(ctb0093_event, old = "ID do evento", new = "observacao_id")
 ctb0093_event[, observacao_id := as.character(observacao_id)]
 any(table(ctb0093_event[, observacao_id]) > 1)
 
 # data_ano
-# Ano (coleta) -> data_coleta_ano
+# old: Ano (coleta)
+# new: data_ano
 data.table::setnames(ctb0093_event, old = "Ano (coleta)", new = "data_ano")
 ctb0093_event[, data_ano := as.integer(data_ano)]
 ctb0093_event[, .N, by = data_ano]
+
+
+
+
 
 # ano_fonte
 ctb0093_event[!is.na(data_ano), ano_fonte := "Original"]
