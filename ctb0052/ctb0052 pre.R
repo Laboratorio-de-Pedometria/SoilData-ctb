@@ -195,9 +195,48 @@ colnames(ctb0052_points) %in% colnames(ctb0052_profile)
 ctb0052_layer <- rbindlist(list(ctb0052_profile, ctb0052_points), fill = TRUE)
 ctb0052_layer <- merge(
   ctb0052_layer,
-  ctb0052_event[, c("id_ponto", "espessura_solum (cm)", "camada_impedimento (cm)")]
+  ctb0052_event[, c("id_ponto", "classe", "espessura_solum (cm)")]
 )
 str(ctb0052_layer)
+
+# # Add missing layers
+# # espessura_solum
+# ctb0052_layer[, espessura_solum := `espessura_solum (cm)`]
+# # substitute ">" with "" in espessura_solum
+# ctb0052_layer[, espessura_solum := gsub(">", "", espessura_solum)]
+# # set as numeric
+# ctb0052_layer[, espessura_solum := as.numeric(espessura_solum)]
+# summary(ctb0052_layer[, espessura_solum])
+
+# # lower_depth
+# ctb0052_layer[, lower_depth := profund_inf]
+# ctb0052_layer[, lower_depth := depth_slash(lower_depth), by = .I]
+# ctb0052_layer[, lower_depth := depth_plus(lower_depth), by = .I]
+# ctb0052_layer[, lower_depth := as.numeric(lower_depth)]
+# summary(ctb0052_layer[, lower_depth])
+
+# # max_lower_depth
+# ctb0052_layer[, max_lower_depth := max(lower_depth, na.rm = TRUE), by = id_ponto]
+# summary(ctb0052_layer[, max_lower_depth])
+
+# # lithic_contact == TRUE if max_lower_depth < espessura_solum & classe %in% c("RL", "CX") & espessura_solum < 100
+# ctb0052_layer[
+#   , lithic_contact := ifelse(
+#     max_lower_depth < espessura_solum & classe %in% c("RL", "CX") & espessura_solum < 100,
+#     TRUE,
+#     FALSE
+#   ),
+#   by = id_ponto
+# ]
+# View(ctb0052_layer[lithic_contact == TRUE, .(id_ponto, camada, espessura_solum, max_lower_depth)])
+
+# # identify id_ponto with max_lower_depth < espessura_solum
+# ctb0052_layer[
+#   , exceeds_solum := ifelse(max_lower_depth < espessura_solum, TRUE, FALSE),
+#   by = id_ponto
+# ]
+# # view
+# ctb0052_layer[exceeds_solum == TRUE, .(id_ponto, lower_depth, espessura_solum, max_lower_depth)]
 
 # Write to disk
 data.table::fwrite(ctb0052_layer, "ctb0052/ctb0052_layer.csv")
