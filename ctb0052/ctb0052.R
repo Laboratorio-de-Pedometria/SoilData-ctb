@@ -39,7 +39,7 @@ pontos <- google_sheet(gs_pontos, gid_pontos)
 # MERGE
 ctb0052_event <- rbindlist(list(perfil, pontos), fill = TRUE)
 str(ctb0052_event)
-data.table::fwrite(ctb0052_event, "ctb0052/ctb0052_event.csv")
+# data.table::fwrite(ctb0052_event, "ctb0052/ctb0052_event.csv")
 
 # layer ############################################################################################
 # PROFILE
@@ -196,7 +196,7 @@ ctb0052_layer <- merge(
 str(ctb0052_layer)
 
 # Write to disk
-data.table::fwrite(ctb0052_layer, "ctb0052/ctb0052_layer.csv")
+# data.table::fwrite(ctb0052_layer, "ctb0052/ctb0052_layer.csv")
 
 # event ############################################################################################
 # Process fields
