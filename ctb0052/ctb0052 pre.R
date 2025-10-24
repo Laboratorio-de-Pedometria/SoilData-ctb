@@ -21,6 +21,10 @@ source("./helper.R")
 # Google Drive: https://drive.google.com/drive/u/1/folders/1o1y45aiXr4n5ou3A3wpTQ2Beb0DNCGob
 # NotebookLM: https://notebooklm.google.com/notebook/f4c92e6c-f44a-4abe-8a12-1abc0ece53cd
 
+# This script downloads and preprocesses the raw data from Google Sheets and saves them as CSV
+# files. These CSV files will be used to create a consolidated SoilData database in GoogleDrive
+# and then used in the post processing scripts.
+
 # citation #########################################################################################
 ctb0052_citation <- data.table::data.table(
   dataset_id = "ctb0052",
