@@ -17,7 +17,9 @@ source("./helper.R")
 # ctb0052
 # Dados de "Variação de parâmetros dendrométricos de Pinus taeda L. e a distribuição espacial de
 # atributos do solo por técnicas de mapeamento digital de solos"
-# https://drive.google.com/drive/u/1/folders/1o1y45aiXr4n5ou3A3wpTQ2Beb0DNCGob
+# 
+# Google Drive: https://drive.google.com/drive/u/1/folders/1o1y45aiXr4n5ou3A3wpTQ2Beb0DNCGob
+# NotebookLM: https://notebooklm.google.com/notebook/f4c92e6c-f44a-4abe-8a12-1abc0ece53cd
 
 # citation #########################################################################################
 ctb0052_citation <- data.table::data.table(
@@ -39,7 +41,7 @@ pontos <- google_sheet(gs_pontos, gid_pontos)
 # MERGE
 ctb0052_event <- rbindlist(list(perfil, pontos), fill = TRUE)
 str(ctb0052_event)
-# data.table::fwrite(ctb0052_event, "ctb0052/ctb0052_event.csv")
+data.table::fwrite(ctb0052_event, "ctb0052/ctb0052_event.csv")
 
 # layer ############################################################################################
 # PROFILE
@@ -180,9 +182,9 @@ ctb0052_points <- merge(
 )
 # Depth from "camada" (eg. 0-20) to "profund_sup" and "profund_inf"
 ctb0052_points[, profund_sup := strsplit(camada, "-")[[1]][1], by = .I]
-ctb0052_points[, profund_sup := as.numeric(profund_sup)]
+# ctb0052_points[, profund_sup := as.numeric(profund_sup)]
 ctb0052_points[, profund_inf := strsplit(camada, "-")[[1]][2], by = .I]
-ctb0052_points[, profund_inf := as.numeric(profund_inf)]
+# ctb0052_points[, profund_inf := as.numeric(profund_inf)]
 str(ctb0052_points)
 
 # MERGE
@@ -196,15 +198,18 @@ ctb0052_layer <- merge(
 str(ctb0052_layer)
 
 # Write to disk
-# data.table::fwrite(ctb0052_layer, "ctb0052/ctb0052_layer.csv")
+data.table::fwrite(ctb0052_layer, "ctb0052/ctb0052_layer.csv")
 
 # event ############################################################################################
+
 # Process fields
+
 # observacao_id
 # OLD: id_ponto
 # NEW: observacao_id
 data.table::setnames(ctb0052_event, old = "id_ponto", new = "observacao_id")
 ctb0052_event[, observacao_id := as.character(observacao_id)]
+# check for duplicated observacao_id
 ctb0052_event[, .N, by = observacao_id][N > 1]
 
 # data_ano
@@ -337,9 +342,9 @@ str(ctb0052_event)
 # layer ############################################################################################
 
 # Compute average over layers
-ctb0052_layer[, amostra_id := NULL]
-ctb0052_layer <- ctb0052_layer[, lapply(.SD, mean, na.rm = TRUE), by = .(id_ponto, camada)]
-str(ctb0052_layer)
+# ctb0052_layer[, amostra_id := NULL]
+# ctb0052_layer <- ctb0052_layer[, lapply(.SD, mean, na.rm = TRUE), by = .(id_ponto, camada)]
+# str(ctb0052_layer)
 
 # Process fields
 # observacao_id
@@ -361,12 +366,18 @@ ctb0052_layer[, .N, by = camada_nome]
 ctb0052_layer[, amostra_id := NA_character_]
 
 # profund_sup
+ctb0052_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0052_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0052_layer[, profund_sup])
 
 # profund_inf
+ctb0052_layer[, profund_inf := depth_slash(profund_inf), by = .I]
+ctb0052_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0052_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0052_layer[, profund_inf])
+
+
+
 
 # check for missing layers
 check_missing_layer(ctb0052_layer)
