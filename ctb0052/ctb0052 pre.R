@@ -186,9 +186,7 @@ ctb0052_points <- merge(
 )
 # Depth from "camada" (eg. 0-20) to "profund_sup" and "profund_inf"
 ctb0052_points[, profund_sup := strsplit(camada, "-")[[1]][1], by = .I]
-# ctb0052_points[, profund_sup := as.numeric(profund_sup)]
 ctb0052_points[, profund_inf := strsplit(camada, "-")[[1]][2], by = .I]
-# ctb0052_points[, profund_inf := as.numeric(profund_inf)]
 str(ctb0052_points)
 
 # MERGE
