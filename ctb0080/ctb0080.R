@@ -271,31 +271,14 @@ summary(ctb0080_layer[, terrafina])
 # holes. We will keep these missing values as NA for now. 
 check_empty_layer(ctb0080_layer, "terrafina")
 
-# Sand in this document is separated into
-# Coarse sand, Fine sand
-
-# areia_grossa
-# old: "Areia grossa [g/kg]"
-# new: areia_grossa
-data.table::setnames(ctb0080_layer, old = "Areia grossa [g/kg]", new = "areia_grossa")
-ctb0080_layer[, areia_grossa := as.numeric(areia_grossa)]
-ctb0080_layer[is.na(areia_grossa), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_grossa)]
-
-# areia_fina
-# old: "Areia fina [g/kg]"
-# new: areia_fina
-# 
-data.table::setnames(ctb0080_layer, old = "Areia fina [g/kg]", new = "areia_fina")
-ctb0080_layer[, areia_fina := as.numeric(areia_fina)]
-ctb0080_layer[is.na(areia_fina), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_fina)]
-
-              
 # areia
-data.table::setnames(ctb0080_layer, old = "Areia [g/kg]", new = "areia")
-# Utilizo NULL para limpar os "#N/A" factors.
-ctb0080_layer[, areia := NULL]
-ctb0080_layer[, areia := (areia_fina + areia_grossa)]
-
+# Areia total [g/kg] -> areia
+data.table::setnames(ctb0080_layer, old = "Areia total [g/kg]", new = "areia")
+ctb0080_layer[, areia := as.numeric(areia)]
+summary(ctb0080_layer[, areia])
+# There are seven layers with missing "areia" values. These include organic layers and an R layer,
+# which is as expected.
+check_empty_layer(ctb0080_layer, "areia")
 
 # silte
 # old: Silte [g/kg]
