@@ -2,6 +2,20 @@
 # author: Alessandro Samuel-Rosa
 # data: 2025
 
+# Install and load required packages
+if (!requireNamespace("data.table")) {
+  install.packages("data.table")
+}
+if (!requireNamespace("sf")) {
+  install.packages("sf")
+}
+if (!requireNamespace("mapview")) {
+  install.packages("mapview")
+}
+if (!requireNamespace("parzer")) {
+  install.packages("parzer")
+}
+
 # Describe soil data ###############################################################################
 # This function summarizes a data.frame containing soil data.
 # It prints the column names, number of layers, number of events, and number of georeferenced events.
