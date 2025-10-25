@@ -347,6 +347,8 @@ check_empty_layer(ctb0080_layer, "ctc")
 data.table::setnames(ctb0080_layer, old = "pH [H_2O]", new = "ph")
 ctb0080_layer[, ph := as.numeric(ph)]
 summary(ctb0080_layer[, ph])
+# There are 1740 layers with missing "ph" values. These include organic layers, an R layer, and the
+# auger holes. This is in accordance with the documentation.
 check_empty_layer(ctb0080_layer, "ph")
 
 # dsi
@@ -355,6 +357,9 @@ check_empty_layer(ctb0080_layer, "ph")
 data.table::setnames(ctb0080_layer, old = "Densidade Solo [kg/dm^3]", new = "dsi")
 ctb0080_layer[, dsi := as.numeric(dsi)]
 summary(ctb0080_layer[, dsi])
+# There are 16 layers with missing soil bulk density "dsi" values. These include organic layers and
+# an R layer, which is as expected. It also includes mineral layers from the Perfil-2 and Perfil-4.
+# The document does not provide bulk density data for these profiles.
 check_empty_layer(ctb0080_layer, "dsi")
 
 str(ctb0080_layer)
@@ -363,14 +368,21 @@ str(ctb0080_layer)
 # events and layers
 ctb0080 <- merge(ctb0080_event, ctb0080_layer, all = TRUE)
 ctb0080[, dataset_id := "ctb0080"]
+
+# Drop duplicated coordinates and their respective layers
+# Check for duplicated coordinates
+ctb0080[, duplicated_coordinates := duplicated(.SD), .SDcols = c("coord_x", "coord_y")]
+ctb0080[duplicated_coordinates == TRUE, .(observacao_id, coord_x, coord_y)]
+# Filter out the duplicated coordinates
+ctb0080 <- ctb0080[duplicated_coordinates == FALSE]
+ctb0080[, duplicated_coordinates := NULL]
+
 # citation
 ctb0080 <- merge(ctb0080, ctb0080_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0080)
-
-#Layers: 1780
-#Events: 1415
-#Georeferenced events: 1415
-
+# Layers: 1325
+# Events: 1325
+# Georeferenced events: 1325
 
 # Plot using mapview
 if (FALSE) {
