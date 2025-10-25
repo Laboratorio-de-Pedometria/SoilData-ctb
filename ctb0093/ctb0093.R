@@ -1,18 +1,7 @@
 # autor: Felipe Brun Vergani and Alessandro Samuel-Rosa
 # data: 2025
 
-# Install and load required packages
-if (!requireNamespace("data.table")) {
-  install.packages("data.table")
-}
-if (!requireNamespace("sf")) {
-  install.packages("sf")
-}
-if (!requireNamespace("mapview")) {
-  install.packages("mapview")
-}
-
-# Source helper functions
+# Source helper functions and packages
 source("./helper.R")
 
 # Google Sheet #####################################################################################
