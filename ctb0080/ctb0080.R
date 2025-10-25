@@ -78,27 +78,31 @@ ctb0080_event[, .N, by = ano_fonte]
 
 # coord_x
 # X -> coord_x
-#
 data.table::setnames(ctb0080_event, old = "X", new = "coord_x")
 ctb0080_event[, coord_x := as.numeric(coord_x)]
 summary(ctb0080_event[, coord_x])
 
 # coord_y
 # Y -> coord_y
-# 
 data.table::setnames(ctb0080_event, old = "Y", new = "coord_y")
 ctb0080_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0080_event[, coord_y])
 
 # Check for duplicate coordinates
-ctb0080_event[, .N, by = .(coord_x, coord_y)][N > 1]
+check_duplicated_coordinates(ctb0080_event)
+# There are 90 cases of duplicated coordinates. These are auger holes. After a quick check of the
+# source document and also analythical data, we conclude that these are indeed the same locations
+# and thus we can drop the duplicates. However, as we also need to drop their respective layers, we
+# will not drop them now, but later after merging events and layers.
 
 # DATUM -> coord_datum
 data.table::setnames(ctb0080_event, old = "DATUM", new = "coord_datum")
+ctb0080_event[, coord_datum := as.character(coord_datum)]
+ctb0080_event[, .N, by = coord_datum]
+# All coordinates are in "SAD69 / UTM zona 21S" (EPSG: 29191).
 ctb0080_event[coord_datum == "SAD69 / UTM zona 21S", coord_datum := 29191]
-
-# Converte a coluna do datum para o tipo numérico (inteiro)
 ctb0080_event[, coord_datum := as.integer(coord_datum)]
+ctb0080_event[, .N, by = coord_datum]
 
 # Cria um objeto 'sf' (simple features) com os dados a serem transformados
 ctb0080_event_sf <- sf::st_as_sf(
