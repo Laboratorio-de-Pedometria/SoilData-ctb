@@ -120,19 +120,22 @@ summary(ctb0080_event[, .(coord_x, coord_y)])
 ctb0080_event[, .N, by = coord_datum]
 rm(ctb0080_event_sf)
 
-# Precisão (coord) -> coord_precisao
-# We set it to NA_real_
-ctb0080_event[, coord_precisao := NA_real_]
-summary(ctb0080_event[, coord_precisao])
-
 # Fonte (coord) -> coord_fonte
 data.table::setnames(ctb0080_event, old = "Fonte (coord)", new = "coord_fonte")
 ctb0080_event[, coord_fonte := as.character(coord_fonte)]
-summary(ctb0080_event[, coord_fonte])
+ctb0080_event[, .N, by = coord_fonte]
+
+# Precisão (coord) -> coord_precisao
+# The coordinates were obtained using GPS equipment, but the sources do not explicitly state the
+# technical precision (e.g., error margin in meters or centimeters) of the GPS device used. So we
+# will assume a precision of 10 meters.
+data.table::setnames(ctb0080_event, old = "Precisão (coord)", new = "coord_precisao")
+ctb0080_event[, coord_precisao := as.numeric(coord_precisao)]
+summary(ctb0080_event[, coord_precisao])
+ctb0080_event[is.na(coord_precisao), coord_precisao := 10]
 
 # País -> pais_id
 data.table::setnames(ctb0080_event, old = "País", new = "pais_id")
-ctb0080_event[, pais_id := "BR"]
 
 # #Mapeamento dos estados para sigla se necessário utilizar a função 'recode'
 # mapa_siglas <- c(
