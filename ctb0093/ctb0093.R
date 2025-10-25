@@ -200,7 +200,7 @@ ctb0093_layer[, .N, by = amostra_id]
 # old: Profundidade inicial [cm]
 # new: profund_sup
 data.table::setnames(ctb0093_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
-# Resolve broken depth intervals with slash "/"
+# Resolve irregular depth intervals
 ctb0093_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0093_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0093_layer[, profund_sup])
@@ -209,9 +209,9 @@ summary(ctb0093_layer[, profund_sup])
 # old: Profundidade final [cm]
 # new: profund_inf
 data.table::setnames(ctb0093_layer, old = "Profundidade final [cm]", new = "profund_inf")
-# Resolve broken depth intervals with slash "/"
+# Resolve irregular depth intervals
 ctb0093_layer[, profund_inf := depth_slash(profund_inf), by = .I]
-# Resolve censored layer depth (plus)
+# Resolve censored depths
 ctb0093_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0093_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0093_layer[, profund_inf])
