@@ -195,6 +195,16 @@ ctb0080_layer[, .N, by = observacao_id]
 data.table::setnames(ctb0080_layer, old = "ID da camada", new = "camada_nome")
 ctb0080_layer[, camada_nome := as.character(camada_nome)]
 ctb0080_layer[, .N, by = camada_nome]
+# Soil layers from augerings are named "A", "B", and "C" to indicate the order "0-10", "10-20", and
+# "20-30", respectively. We will replace these names with the actual depth intervals. We identify
+# these layers by checking which soil layers do not have "Perfil" in "observacao_id".
+ctb0080_layer[!grepl("Perfil", observacao_id) & camada_nome == "A", camada_nome := "0-10"]
+ctb0080_layer[!grepl("Perfil", observacao_id) & camada_nome == "B", camada_nome := "10-20"]
+ctb0080_layer[!grepl("Perfil", observacao_id) & camada_nome == "C", camada_nome := "20-30"]
+ctb0080_layer[, .N, by = camada_nome]
+
+
+#
 
 # ID da amostra -> amostra_id
 # amostra_id is missing. We assume it is NA
