@@ -4,6 +4,9 @@
 # data: 2025
 rm(list = ls())
 
+# Google Sheet with the list of datasets and their metadata
+# https://docs.google.com/spreadsheets/d/13_6nt97aNc3bWHrfXW-OpkmtvVh-D37DLgRnu6Yps48/edit?usp=sharing
+
 # Install callr if not already installed. This is a lightweight package with no dependencies.
 if (!require("callr")) {
   install.packages("callr")
