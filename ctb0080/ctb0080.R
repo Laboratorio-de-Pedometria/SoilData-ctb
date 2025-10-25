@@ -1,33 +1,13 @@
 # autor: Felipe Brun Vergani
 # data: 2025
 
-# Install and load required packages
-if (!require("data.table")) {
-  install.packages("data.table")
-  library("data.table")
-}
-if (!require("sf")) {
-  install.packages("sf")
-  library("sf")
-}
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
-}
-if (!require("parzer")) {
-  install.packages("parzer")
-  library("parzer")
-}
-
-
-# Source helper functions
+# Source helper functions and packages
 source("./helper.R")
-
-
 
 # Google Sheet #####################################################################################
 # ctb0080
-# Dados de "Variabilidade de atributos do solo em um transecto entre os biomas Pantanal Mato-grossense e Cerrado "
+# Dados de "Variabilidade de atributos do solo em um transecto entre os biomas Pantanal
+# Mato-Grossense e Cerrado"
 # 
 # 
 # https://docs.google.com/spreadsheets/d/1Qxw0rFw9MY_SWtAvbn6YjHPO3X2gtOH9N38xS5V-oCM/edit?usp=sharing
