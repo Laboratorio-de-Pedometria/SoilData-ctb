@@ -261,6 +261,7 @@ check_repeated_layer <- function(data) {
   }
   return(repeated_layers)
 }
+check_duplicated_layer <- check_repeated_layer
 
 # Check for empty layers ###########################################################################
 # This function checks for empty layers in a data.table containing soil layer data.
@@ -454,3 +455,22 @@ check_sheet_validation <- function(dt) {
       message("Sheet validation passed with no negative results. You can proceed.")
     }
   }
+# Check for equal layer depths #####################################################################
+# This function checks for layers where the upper and lower depth limits are equal.
+# data: data.table containing soil layer data with 'profund_sup' and 'profund_inf' columns.
+# Returns: data.table with layers having equal depths.
+check_equal_depths <- function(data) {
+  equal_depths <- data[profund_sup == profund_inf,
+    .(observacao_id, camada_nome, profund_sup, profund_inf)
+  ]
+  if (nrow(equal_depths) > 0) {
+    message(
+      "Layers with equal upper and lower depth limits were found. ",
+      "This might indicate an issue with the data recording, such as a layer with zero thickness."
+    )
+    print(equal_depths)
+  } else {
+    message("No layers with equal upper and lower depth limits were found. You can proceed.")
+  }
+  return(invisible(equal_depths))
+}
