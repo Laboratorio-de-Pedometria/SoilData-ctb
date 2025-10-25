@@ -283,34 +283,43 @@ check_empty_layer(ctb0080_layer, "areia")
 # silte
 # old: Silte [g/kg]
 # new: silte
-# 
 data.table::setnames(ctb0080_layer, old = "Silte [g/kg]", new = "silte")
 ctb0080_layer[, silte := as.numeric(silte)]
-ctb0080_layer[is.na(silte), .(observacao_id, camada_nome, profund_sup, profund_inf, silte)]
+summary(ctb0080_layer[, silte])
+# There are seven layers with missing "silte" values. These include organic layers and an R layer,
+# which is as expected.
+check_empty_layer(ctb0080_layer, "silte")
+
+# clay
+# old: Clay [g/kg]
+# new: clay
+data.table::setnames(ctb0080_layer, old = "Clay [g/kg]", new = "clay")
+ctb0080_layer[, clay := as.numeric(clay)]
+summary(ctb0080_layer[, clay])
+# There are seven layers with missing "clay" values. These include organic layers and an R layer,
+# which is as expected.
+check_empty_layer(ctb0080_layer, "clay")
 
 # argila
 # old: Argila [g/kg]
 # new: argila
-#
 data.table::setnames(ctb0080_layer, old = "Argila [g/kg]", new = "argila")
 ctb0080_layer[, argila := as.numeric(argila)]
-ctb0080_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, argila)]
-
-
-
+summary(ctb0080_layer[, argila])
+# There are seven layers with missing "argila" values. These include organic layers and an R layer,
+# which is as expected.
+check_empty_layer(ctb0080_layer, "argila")
 
 # Check the particle size distribution
-# The sum of argila, silte and areia should be 1000 g/kg
-ctb0080_layer[, psd := round(rowSums(.SD, na.rm = TRUE)), .SDcols = c("argila", "silte", "areia")]
-psd_lims <- 900:1100
+ctb0080_layer[, argila := round(argila)]
+ctb0080_layer[, silte := round(silte)]
+ctb0080_layer[, areia := round(areia)]
+# The sum of argila, silte and areia should be 1000 g/kg. We accept a tolerance of +/- 100 g/kg.
+ctb0080_layer[, psd_sum := argila + silte + areia]
+ctb0080_layer[!is.na(psd_sum), psd_check := psd_sum %in% 900:1100]
 # Check the limits
-ctb0080_layer[!psd %in% psd_lims & !is.na(psd), .N]
-# 0 layers have a sum of the particle size distribution outside the limits.
-# Print the rows with psd != 1000
-cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
-ctb0080_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
-
-
+ctb0080_layer[!psd_check & !is.na(psd_check), .(observacao_id, camada_nome, argila, silte, areia, psd_sum)]
+# There are no layers with sum of the particle size distribution outside the limits.
 
 # carbono
 # old: C[orgânico] [g/kg]
