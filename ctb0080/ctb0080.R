@@ -9,19 +9,14 @@ source("./helper.R")
 # Dados de "Variabilidade de atributos do solo em um transecto entre os biomas Pantanal
 # Mato-Grossense e Cerrado"
 # 
-# 
-# https://docs.google.com/spreadsheets/d/1Qxw0rFw9MY_SWtAvbn6YjHPO3X2gtOH9N38xS5V-oCM/edit?usp=sharing
-
-
+# Google Drive: https://drive.google.com/drive/u/1/folders/1n87B-QaQnTRNSpVDPpdtKEv5dbkOfbp6
+# NotebookLM: https://notebooklm.google.com/notebook/d8e16cd4-a3e8-4575-bf39-ac51f561a9de
 ctb0080_ids <- soildata_catalog("ctb0080")
 
 # validation #####################################################################################
-
+# Load validation sheet and check
 ctb0080_validation <- google_sheet(ctb0080_ids$gs_id, ctb0080_ids$gid_validation)
-str(ctb0080_validation)
-
-# Check for negative validation results
-sum(ctb0080_validation == FALSE, na.rm = TRUE)
+check_sheet_validation(ctb0080_validation)
 
 # citation #####################################################################################
 ctb0080_citation <- google_sheet(ctb0080_ids$gs_id, ctb0080_ids$gid_citation)
