@@ -235,6 +235,27 @@ check_equal_depths(ctb0080_layer)
 
 # Check for negative layer depths
 check_depth_inversion(ctb0080_layer)
+# There are six layers with inverted depths, all of them indicating organic layers (Oo). We will
+# correct these depths, moving the top depth to 0 cm. The correction will be propagated to the
+# depths of the other layers as well.
+ctb0080_layer[profund_sup > profund_inf & grepl("Oo", camada_nome), `:=`(
+  is_organic = TRUE,
+  thickness_to_add = max(abs(profund_sup), na.rm = TRUE)
+), by = .I]
+ctb0080_layer[, thickness_to_add := max(thickness_to_add, na.rm = TRUE), by = observacao_id]
+ctb0080_layer[thickness_to_add > 0, .(observacao_id, camada_nome, profund_sup, profund_inf, thickness_to_add, is_organic)]
+# If is_organic is TRUE, subtract thickness_to_add from profund_sup and add thickness_to_add to
+# profund_inf. Else, add 
+# thickness_to_add to profund_sup and profund_inf.
+ctb0080_layer[is_organic == TRUE, `:=`(
+  profund_sup = profund_sup - thickness_to_add,
+  profund_inf = profund_inf + thickness_to_add
+)]
+ctb0080_layer[is.na(is_organic) & thickness_to_add > 0, `:=`(
+  profund_sup = profund_sup + thickness_to_add,
+  profund_inf = profund_inf + thickness_to_add
+)]
+ctb0080_layer[thickness_to_add > 0, .(observacao_id, camada_nome, profund_sup, profund_inf, thickness_to_add, is_organic)]
 
 # Check for missing layers
 check_missing_layer(ctb0080_layer)
