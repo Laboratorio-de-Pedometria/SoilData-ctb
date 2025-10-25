@@ -162,26 +162,23 @@ data.table::setnames(ctb0080_event, old = "SiBCS (2009)", new = "taxon_sibcs")
 ctb0080_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0080_event[, .N, by = taxon_sibcs]
 
-# taxon_st_1999
-# missing taxon_st_1999 so, we set N/A.
+# taxon_st
+# Soil classification according to US Soil Taxonomy is missing in this document.
 ctb0080_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie) 
+# pedregosidade
+# Pedregosidade -> pedregosidade
 data.table::setnames(ctb0080_event, old = "Pedregosidade", new = "pedregosidade")
 ctb0080_event[, pedregosidade := as.character(pedregosidade)]
 ctb0080_event[, .N, by = pedregosidade]
 
-# Rochosidade (superficie)
-
+# rochosidade
+# Rochosidade -> rochosidade
 data.table::setnames(ctb0080_event, old = "Rochosidade", new = "rochosidade")
 ctb0080_event[, rochosidade := as.character(rochosidade)]
 ctb0080_event[, .N, by = rochosidade]
 
-
-
 str(ctb0080_event)
-
-
 
 # layers ###########################################################################################
 ctb0080_layer <- google_sheet(ctb0080_ids$gs_id, ctb0080_ids$gid_layer)
