@@ -298,16 +298,6 @@ summary(ctb0080_layer[, silte])
 # which is as expected.
 check_empty_layer(ctb0080_layer, "silte")
 
-# clay
-# old: Clay [g/kg]
-# new: clay
-data.table::setnames(ctb0080_layer, old = "Clay [g/kg]", new = "clay")
-ctb0080_layer[, clay := as.numeric(clay)]
-summary(ctb0080_layer[, clay])
-# There are seven layers with missing "clay" values. These include organic layers and an R layer,
-# which is as expected.
-check_empty_layer(ctb0080_layer, "clay")
-
 # argila
 # old: Argila [g/kg]
 # new: argila
