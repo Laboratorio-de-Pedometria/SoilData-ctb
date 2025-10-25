@@ -133,31 +133,17 @@ data.table::setnames(ctb0080_event, old = "Precisão (coord)", new = "coord_prec
 ctb0080_event[, coord_precisao := as.numeric(coord_precisao)]
 summary(ctb0080_event[, coord_precisao])
 ctb0080_event[is.na(coord_precisao), coord_precisao := 10]
+summary(ctb0080_event[, coord_precisao])
 
 # País -> pais_id
 data.table::setnames(ctb0080_event, old = "País", new = "pais_id")
 ctb0080_event[, pais_id := as.character(pais_id)]
 ctb0080_event[, .N, by = pais_id]
 
-# #Mapeamento dos estados para sigla se necessário utilizar a função 'recode'
-# mapa_siglas <- c(
-#   "Acre" = "AC", "Alagoas" = "AL", "Amapá" = "AP", "Amazonas" = "AM",
-#   "Bahia" = "BA", "Ceará" = "CE", "Distrito Federal" = "DF",
-#   "Espírito Santo" = "ES", "Goiás" = "GO", "Maranhão" = "MA",
-#   "Mato Grosso" = "MT", "Mato Grosso do Sul" = "MS", "Minas Gerais" = "MG",
-#   "Pará" = "PA", "Paraíba" = "PB", "Paraná" = "PR", "Pernambuco" = "PE",
-#   "Piauí" = "PI", "Rio de Janeiro" = "RJ", "Rio Grande do Norte" = "RN",
-#   "Rio Grande do Sul" = "RS", "Rondônia" = "RO", "Roraima" = "RR",
-#   "Santa Catarina" = "SC", "São Paulo" = "SP", "Sergipe" = "SE",
-#   "Tocantins" = "TO"
-# )
-
-
 # Estado (UF) -> estado_id
 data.table::setnames(ctb0080_event, old = "Estado", new = "estado_id")
 ctb0080_event[, estado_id := as.character(estado_id)]
 ctb0080_event[, .N, by = estado_id]
-
 
 # Município -> municipio_id
 data.table::setnames(ctb0080_event, old = "Município", new = "municipio_id")
@@ -165,8 +151,10 @@ ctb0080_event[, municipio_id := as.character(municipio_id)]
 ctb0080_event[, .N, by = municipio_id]
 
 # Área do evento [m^2] -> amostra_area
-# is missing on main document
-ctb0080_event[, amostra_area := NA_real_]
+# The area of the sampling event is not reported in the source documents. However, it can be
+# inferred from the type of sampling. This will be done in the source spreadsheet in the future.
+data.table::setnames(ctb0080_event, old = "Área do evento [m^2]", new = "amostra_area")
+ctb0080_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0080_event[, amostra_area])
 
 # SiBCS (2009) -> taxon_sibcs
