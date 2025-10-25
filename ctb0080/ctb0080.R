@@ -136,6 +136,8 @@ ctb0080_event[is.na(coord_precisao), coord_precisao := 10]
 
 # País -> pais_id
 data.table::setnames(ctb0080_event, old = "País", new = "pais_id")
+ctb0080_event[, pais_id := as.character(pais_id)]
+ctb0080_event[, .N, by = pais_id]
 
 # #Mapeamento dos estados para sigla se necessário utilizar a função 'recode'
 # mapa_siglas <- c(
