@@ -3,11 +3,14 @@
 rm(list = ls())
 
 # Install and load required packages
-if (!require("data.table")) {
+if (!requireNamespace("data.table")) {
   install.packages("data.table")
 }
-if (!require("sf")) {
+if (!requireNamespace("sf")) {
   install.packages("sf")
+}
+if (!requireNamespace("ranger")) {
+  install.packages("ranger")
 }
 
 # Source helper functions
@@ -28,9 +31,10 @@ ctb0052_citation <- data.table::data.table(
   dataset_licenca = "CC-BY"
 )
 
-
-
 # event ############################################################################################
+# Temporarily read from local CSV: this needs to go to Google Drive
+ctb0052_event <- data.table::fread("ctb0052/ctb0052_event.csv")
+str(ctb0052_event)
 
 # Process fields
 
@@ -139,42 +143,32 @@ data.table::setnames(ctb0052_event, old = "SIBCS_classificacao", new = "taxon_si
 ctb0052_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0052_event[is.na(taxon_sibcs), taxon_sibcs := as.character(classe)]
 ctb0052_event[, .N, by = taxon_sibcs]
-# RL -> NEOSSOLO LITÓLICO
-ctb0052_event[taxon_sibcs == "RL", taxon_sibcs := "NEOSSOLO LITÓLICO"]
-# CX -> CAMBISSOLO HÁPLICO
-ctb0052_event[taxon_sibcs == "CX", taxon_sibcs := "CAMBISSOLO HÁPLICO"]
-# GX -> GLEISSOLO HÁPLICO
-ctb0052_event[taxon_sibcs == "GX", taxon_sibcs := "GLEISSOLO HÁPLICO"]
-# RR -> NEOSSOLO REGOLÍTICO
-ctb0052_event[taxon_sibcs == "RR", taxon_sibcs := "NEOSSOLO REGOLÍTICO"]
-# GM -> GLEISSOLO MELÂNICO
-ctb0052_event[taxon_sibcs == "GM", taxon_sibcs := "GLEISSOLO MELÂNICO"]
-# OX -> ORGANOSSOLO HÁPLICO
-ctb0052_event[taxon_sibcs == "OX", taxon_sibcs := "ORGANOSSOLO HÁPLICO"]
-# RL/RR -> NEOSSOLO LITÓLICO
-ctb0052_event[taxon_sibcs == "RL/RR", taxon_sibcs := "NEOSSOLO LITÓLICO"]
-# RR/GM -> NEOSSOLO REGOLÍTICO
-ctb0052_event[taxon_sibcs == "RR/GM", taxon_sibcs := "NEOSSOLO REGOLÍTICO"]
+# Two soil profiles have two soil classifications, possibly indicating that the authors were not
+# sure about the classification. We keep only the first in the sequence, separated by "/".
+ctb0052_event[, taxon_sibcs := sub("/.*", "", taxon_sibcs)]
 ctb0052_event[, .N, by = taxon_sibcs]
 
 # taxon_st
 # US Soil Taxonomy classification is missing. We set it to NA_character_
 ctb0052_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie)
-ctb0052_event[, pedregosidade := NA_character_]
+# pedregosidade
+# Pedregosidade -> pedregosidade
+data.table::setnames(ctb0052_event, old = "Pedregosidade", new = "pedregosidade")
+ctb0052_event[, pedregosidade := as.character(pedregosidade)]
+ctb0052_event[, .N, by = pedregosidade]
 
-# Rochosidade (superficie)
-ctb0052_event[, rochosidade := NA_character_]
+# rochosidade
+# Rochosidade -> rochosidade
+data.table::setnames(ctb0052_event, old = "Rochosidade", new = "rochosidade")
+ctb0052_event[, rochosidade := as.character(rochosidade)]
+ctb0052_event[, .N, by = rochosidade]
 
 str(ctb0052_event)
 
 # layer ############################################################################################
-
-# Compute average over layers
-# ctb0052_layer[, amostra_id := NULL]
-# ctb0052_layer <- ctb0052_layer[, lapply(.SD, mean, na.rm = TRUE), by = .(id_ponto, camada)]
-# str(ctb0052_layer)
+# Temporarily read from local CSV: this needs to go to Google Drive
+ctb0052_layer <- data.table::fread("ctb0052/ctb0052_layer.csv")
 
 # Process fields
 # observacao_id
@@ -192,8 +186,8 @@ ctb0052_layer[, camada_nome := as.character(camada_nome)]
 ctb0052_layer[, .N, by = camada_nome]
 
 # amostra_id
-# amostra_id is missing. We set it to NA_character_
-ctb0052_layer[, amostra_id := NA_character_]
+ctb0052_layer[, amostra_id := as.character(amostra_id)]
+ctb0052_layer[, .N, by = amostra_id]
 
 # profund_sup
 ctb0052_layer[, profund_sup := depth_slash(profund_sup), by = .I]
@@ -206,24 +200,47 @@ ctb0052_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0052_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0052_layer[, profund_inf])
 
-
-
-
-# check for missing layers
-check_missing_layer(ctb0052_layer)
-ctb0052_layer[observacao_id == "P11" & camada_nome == "Cg2", profund_inf := profund_inf + 20]
-
-# compute mid depth
-ctb0052_layer[, profund_mid := (profund_sup + profund_inf) / 2]
+# Compute average over layers
+# We compute the average of all replicates for each layer (camada_nome) in each observation
+# (observacao_id)
+str(ctb0052_layer)
+ctb0052_layer[, amostra_id := NULL]
+ctb0052_layer <- ctb0052_layer[,
+  lapply(.SD, mean, na.rm = TRUE),
+  by = .(observacao_id, camada_nome)
+]
+str(ctb0052_layer)
 
 # camada_id
 ctb0052_layer <- ctb0052_layer[order(observacao_id, profund_sup, profund_inf)]
 ctb0052_layer[, camada_id := 1:.N, by = observacao_id]
 ctb0052_layer[, .N, by = camada_id]
 
+# amostra_id
+ctb0052_layer[, amostra_id := 1:.N, by = observacao_id]
+
+# check for missing layers
+check_missing_layer(ctb0052_layer)
+
+# compute mid depth
+ctb0052_layer[, profund_mid := (profund_sup + profund_inf) / 2]
+
+# check for equal depths
+ctb0052_layer[profund_sup == profund_inf, .(observacao_id, camada_nome, profund_sup, profund_inf)]
+
 # terrafina
-# terra fina is missing. We assume it is NA
-ctb0052_layer[, terrafina := NA_real_]
+# terra fina(%) -> terrafina
+# The content of fine earth was missing in this dataset and the authors made an educated guess
+# based on the soil profile descriptions and pictures.
+data.table::setnames(ctb0052_layer, old = "terra fina(%)", new = "terrafina")
+ctb0052_layer[, terrafina := as.numeric(terrafina) * 10]
+# round
+ctb0052_layer[, terrafina := round(terrafina)]
+summary(ctb0052_layer[, terrafina])
+# There are 354 layers with missing "terrafina".
+check_empty_layer(ctb0052_layer, "terrafina")
+# These are auger samples and Cr or R horizon samples from soil profiles for which the authors do
+# not have any information. We keep them as NA.
 
 # argila
 # old: argila(%) * 10
@@ -231,9 +248,16 @@ ctb0052_layer[, terrafina := NA_real_]
 data.table::setnames(ctb0052_layer, old = "argila(%)", new = "argila")
 ctb0052_layer[, argila := as.numeric(argila) * 10]
 summary(ctb0052_layer[, argila])
+# There are 76 layers with missing "argila". Most of these are Cr, R/Cr, and R layers from soil
+# profiles and auger samples. We will try to fill some of these using interpolation, except for R
+# layers.
 check_empty_layer(ctb0052_layer, "argila")
 # fill empty layers
-ctb0052_layer[, argila := fill_empty_layer(y = argila, x = profund_mid), by = observacao_id]
+ctb0052_layer[!grepl("R", camada_nome, ignore.case = TRUE),
+  argila := fill_empty_layer(y = argila, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
+# Interpolation was applied to only 3 layers.
 check_empty_layer(ctb0052_layer, "argila")
 
 # silte
@@ -242,9 +266,16 @@ check_empty_layer(ctb0052_layer, "argila")
 data.table::setnames(ctb0052_layer, old = "silte(%)", new = "silte")
 ctb0052_layer[, silte := as.numeric(silte) * 10]
 summary(ctb0052_layer[, silte])
+# There are 76 layers with missing "silte". Most of these are Cr, R/Cr, and R layers from soil
+# profiles and auger samples. We will try to fill some of these using interpolation, except for R
+# layers.
 check_empty_layer(ctb0052_layer, "silte")
 # fill empty layers
-ctb0052_layer[, silte := fill_empty_layer(y = silte, x = profund_mid), by = observacao_id]
+ctb0052_layer[!grepl("R", camada_nome, ignore.case = TRUE),
+  silte := fill_empty_layer(y = silte, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
+# Interpolation was applied to only 3 layers.
 check_empty_layer(ctb0052_layer, "silte")
 
 # areia
@@ -253,37 +284,29 @@ check_empty_layer(ctb0052_layer, "silte")
 data.table::setnames(ctb0052_layer, old = "areia(%)", new = "areia")
 ctb0052_layer[, areia := as.numeric(areia) * 10]
 summary(ctb0052_layer[, areia])
+# There are 76 layers with missing "areia". Most of these are Cr, R/Cr, and R layers from soil
+# profiles and auger samples. We will try to fill some of these using interpolation, except for R
+# layers.
 check_empty_layer(ctb0052_layer, "areia")
 # fill empty layers
-ctb0052_layer[, areia := fill_empty_layer(y = areia, x = profund_mid), by = observacao_id]
+ctb0052_layer[!grepl("R", camada_nome, ignore.case = TRUE),
+  areia := fill_empty_layer(y = areia, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
+# Interpolation was applied to only 3 layers.
 check_empty_layer(ctb0052_layer, "areia")
 
-# carbono
-# cot_DC(%) * 10 -> carbono
-data.table::setnames(ctb0052_layer, old = "cot_DC(%)", new = "carbono")
-ctb0052_layer[, carbono := as.numeric(carbono) * 10]
-summary(ctb0052_layer[, carbono])
-# cos_WCc(%) * 10 -> carbono_color
-data.table::setnames(ctb0052_layer, old = "cos_WCc(%)", new = "carbono_color")
-ctb0052_layer[, carbono_color := as.numeric(carbono_color) * 10]
-summary(ctb0052_layer[, carbono_color])
-# cos_WCt(%) * 10 -> carbono_wet
-data.table::setnames(ctb0052_layer, old = "cos_WCt(%)", new = "carbono_wet")
-ctb0052_layer[, carbono_wet := as.numeric(carbono_wet) * 10]
-summary(ctb0052_layer[, carbono_wet])
-# linear model: carbono ~ carbono_wet
-lm_carbono <- lm(carbono ~ carbono_wet, data = ctb0052_layer)
-summary(lm_carbono)
-ctb0052_layer[is.na(carbono) & !is.na(carbono_wet), carbono := predict(lm_carbono, .SD)]
-summary(ctb0052_layer[, carbono])
-# linear model: carbono ~ carbono_color
-# lm_carbono <- lm(carbono ~ carbono_color, data = ctb0052_layer)
-# summary(lm_carbono)
-# ctb0052_layer[is.na(carbono) & !is.na(carbono_color), carbono := predict(lm_carbono, .SD)]
-check_empty_layer(ctb0052_layer, "carbono")
-# fill empty layers
-ctb0052_layer[, carbono := fill_empty_layer(y = carbono, x = profund_mid), by = observacao_id]
-check_empty_layer(ctb0052_layer, "carbono")
+# Check if sand + silt + clay = 1000 g/kg
+# limit: 10%
+# round to avoid numerical issues
+ctb0052_layer[, argila := round(argila)]
+ctb0052_layer[, silte := round(silte)]
+ctb0052_layer[, areia := round(areia)]
+ctb0052_layer[, psd_sum := argila + silte + areia]
+ctb0052_layer[, psd_check := abs(psd_sum - 1000) <= 10]
+ctb0052_layer[psd_check == FALSE, .(observacao_id, camada_nome, argila, silte, areia, psd_sum)]
+ctb0052_layer[, psd_sum := NULL]
+ctb0052_layer[, psd_check := NULL]
 
 # ph
 # old: pH_agua
@@ -291,10 +314,15 @@ check_empty_layer(ctb0052_layer, "carbono")
 data.table::setnames(ctb0052_layer, old = "pH_agua", new = "ph")
 ctb0052_layer[, ph := as.numeric(ph)]
 summary(ctb0052_layer[, ph])
+# There are 68 layers missing "ph", most of them Cr and R layers.
 check_empty_layer(ctb0052_layer, "ph")
-# fill empty layers
-ctb0052_layer[, ph := fill_empty_layer(y = ph, x = profund_mid), by = observacao_id]
+# fill empty layers, except for R layers.
+ctb0052_layer[!grepl("R", camada_nome, ignore.case = TRUE),
+  ph := fill_empty_layer(y = ph, x = profund_mid),
+  by = observacao_id
+]
 check_empty_layer(ctb0052_layer, "ph")
+# interpolation worked for 2 layers.
 
 # ctc
 # Ca(cmolc.kg) + Mg(cmolc.kg) + H+Al(cmolc.kg) + K (cmolc/kg) + Na (cmolc/kg)
@@ -326,10 +354,67 @@ summary(ctb0052_layer[, na])
 # ctc
 ctb0052_layer[, ctc := ca + mg + hal + k + na]
 summary(ctb0052_layer[, ctc])
+# there are 355 layers missing ctc.
 check_empty_layer(ctb0052_layer, "ctc")
-# fill empty layers
-ctb0052_layer[, ctc := fill_empty_layer(y = ctc, x = profund_mid), by = observacao_id]
+# fill empty layers, except for R layers.
+ctb0052_layer[!grepl("R", camada_nome, ignore.case = TRUE),
+  ctc := fill_empty_layer(y = ctc, x = profund_mid),
+  by = observacao_id
+]
 check_empty_layer(ctb0052_layer, "ctc")
+# interpolation did not solve any missingness.
+
+# carbono
+# Soil organic carbon content is given in three different columns:
+# cot_DC(%) - dry combustion
+# cos_WCc(%) - wet colorimetric
+# cos_WCt(%) - wet total
+# We first convert all to g/kg (i.e., multiply by 10). Then, we use linear models to fill missing
+# values in cot_DC(%) using cos_WCt(%) and cos_WCc(%). Finally, we fill remaining missing
+# values using interpolation.
+# cot_DC(%) * 10 -> carbono
+data.table::setnames(ctb0052_layer, old = "cot_DC(%)", new = "carbono")
+ctb0052_layer[, carbono := as.numeric(carbono) * 10]
+ctb0052_layer[, has_carbono := !is.na(carbono)]
+summary(ctb0052_layer[, carbono]) # 282 NAs
+# cos_WCc(%) * 10 -> carbono_color
+data.table::setnames(ctb0052_layer, old = "cos_WCc(%)", new = "carbono_color")
+ctb0052_layer[, carbono_color := as.numeric(carbono_color) * 10]
+summary(ctb0052_layer[, carbono_color]) # 256 NAs
+# cos_WCt(%) * 10 -> carbono_wet
+data.table::setnames(ctb0052_layer, old = "cos_WCt(%)", new = "carbono_wet")
+ctb0052_layer[, carbono_wet := as.numeric(carbono_wet) * 10]
+summary(ctb0052_layer[, carbono_wet]) # 151 NAs
+# linear model: carbono ~ carbono_wet
+lm_carbono <- lm(carbono ~ carbono_wet + I(carbono_wet^2), data = ctb0052_layer)
+summary(lm_carbono) # 0.9881
+ctb0052_layer[is.na(carbono) & !is.na(carbono_wet), carbono := predict(lm_carbono, .SD)]
+summary(ctb0052_layer[, carbono]) # 132 NAs
+# linear model: carbono ~ carbono_color + I(carbono_color^2)
+# lm_carbono <- lm(carbono ~ carbono_color + I(carbono_color^2),
+#   data = ctb0052_layer[has_carbono == TRUE]
+# )
+# summary(lm_carbono) # 0.3432
+# ctb0052_layer[is.na(carbono) & !is.na(carbono_color), carbono := predict(lm_carbono, .SD)]
+rf_carbono <- ranger::ranger(
+  carbono ~ carbono_color + argila + silte + areia + terrafina + profund_inf + profund_sup + ph + ctc,
+  data = ctb0052_layer[has_carbono == TRUE]
+)
+print(rf_carbono) # 0.4395323
+ctb0052_layer[
+  is.na(carbono) & !is.na(carbono_color),
+  carbono := predict(rf_carbono, .SD)$predictions
+]
+summary(ctb0052_layer[, carbono])
+# There are 87 layers missing "carbono". Most of them are Cr, R layers.
+check_empty_layer(ctb0052_layer, "carbono")
+# fill empty layers, except for R layers.
+ctb0052_layer[!grepl("R", camada_nome, ignore.case = TRUE),
+  carbono := fill_empty_layer(y = carbono, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
+check_empty_layer(ctb0052_layer, "carbono")
+# Interpolation worked for 2 layers.
 
 # dsi
 # old: Ds(g.cm3)
@@ -337,10 +422,15 @@ check_empty_layer(ctb0052_layer, "ctc")
 data.table::setnames(ctb0052_layer, old = "Ds(g.cm3)", new = "dsi")
 ctb0052_layer[, dsi := as.numeric(dsi)]
 summary(ctb0052_layer[, dsi])
+# There are 359 layers missing bulk density.
 check_empty_layer(ctb0052_layer, "dsi")
-# fill empty layers
-ctb0052_layer[, dsi := fill_empty_layer(y = dsi, x = profund_mid), by = observacao_id]
+# fill empty layers, except for R layers.
+ctb0052_layer[!grepl("R", camada_nome, ignore.case = TRUE),
+  dsi := fill_empty_layer(y = dsi, x = profund_mid, ylim = c(0, 2.6)),
+  by = observacao_id
+]
 check_empty_layer(ctb0052_layer, "dsi")
+# interpolation did not solve any missingness.
 
 str(ctb0052_layer)
 
@@ -348,12 +438,13 @@ str(ctb0052_layer)
 # Merge events and layers
 ctb0052 <- merge(ctb0052_event, ctb0052_layer, all = TRUE)
 ctb0052[, dataset_id := "ctb0052"]
+
 # citation
 ctb0052 <- merge(ctb0052, ctb0052_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0052)
-# Layers: 467
+# Layers: 407
 # Events: 137
-# Georeferenced events: 137 (ponto 13 ???)
+# Georeferenced events: 137
 
 # Plot using mapview
 if (FALSE) {
