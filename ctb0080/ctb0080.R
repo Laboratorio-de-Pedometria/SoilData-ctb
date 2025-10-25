@@ -22,7 +22,6 @@ check_sheet_validation(ctb0080_validation)
 ctb0080_citation <- google_sheet(ctb0080_ids$gs_id, ctb0080_ids$gid_citation)
 str(ctb0080_citation)
 
-
 # dataset_titulo
 # Check for the string "Título" in column "campo". Then get the corresponding row value from column
 # "valor".
@@ -45,13 +44,13 @@ print(ctb0080_citation)
 ctb0080_event <- google_sheet(ctb0080_ids$gs_id, ctb0080_ids$gid_event)
 str(ctb0080_event)
 
-#PROCESS FIELDS
-
+# PROCESS FIELDS
 
 # observacao_id
 # ID do evento -> observacao_id
 data.table::setnames(ctb0080_event, old = "ID do evento", new = "observacao_id")
 ctb0080_event[, observacao_id := as.character(observacao_id)]
+# Check for duplicate IDs
 any(table(ctb0080_event[, observacao_id]) > 1)
 
 # data_ano
@@ -59,11 +58,23 @@ any(table(ctb0080_event[, observacao_id]) > 1)
 data.table::setnames(ctb0080_event, old = "Ano (coleta)", new = "data_ano")
 ctb0080_event[, data_ano := as.integer(data_ano)]
 ctb0080_event[, .N, by = data_ano]
+# There are two soil profiles with the sampling year 2008. These could be soil profiles obtained
+# from the work of Raphael Beirigo (2008) in the Pantanal region. We need to check this with the
+# authors.
 
 # ano_fonte
+# There are 1405 soil profiles missing the year of collection in the field. These are auger
+# holes. We will contact the authors to check if they can provide this information. For now, we
+# will attribute a random year between the interval of years reported for other soil profiles.
 ctb0080_event[!is.na(data_ano), ano_fonte := "Original"]
 ctb0080_event[, .N, by = ano_fonte]
 
+# data_ano - fill missing values
+year_range <- ctb0080_event[!is.na(data_ano), range(data_ano)]
+ctb0080_event[is.na(data_ano), data_ano := sample(year_range[1]:year_range[2], .N, replace = TRUE)]
+ctb0080_event[is.na(ano_fonte), ano_fonte := "Estimativa"]
+ctb0080_event[, .N, by = data_ano]
+ctb0080_event[, .N, by = ano_fonte]
 
 # coord_x
 # X -> coord_x
