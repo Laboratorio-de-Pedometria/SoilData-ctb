@@ -327,6 +327,8 @@ ctb0080_layer[!psd_check & !is.na(psd_check), .(observacao_id, camada_nome, argi
 data.table::setnames(ctb0080_layer, old = "C[orgânico] [g/kg]", new = "carbono")
 ctb0080_layer[, carbono := as.numeric(carbono)]
 summary(ctb0080_layer[, carbono])
+# There are 11 layers with missing "carbono" values. These include organic layers and an R layer,
+# which is as expected.
 check_empty_layer(ctb0080_layer, "carbono")
 
 # ctc
