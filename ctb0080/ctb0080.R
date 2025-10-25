@@ -203,17 +203,16 @@ ctb0080_layer[!grepl("Perfil", observacao_id) & camada_nome == "B", camada_nome 
 ctb0080_layer[!grepl("Perfil", observacao_id) & camada_nome == "C", camada_nome := "20-30"]
 ctb0080_layer[, .N, by = camada_nome]
 
-
-#
-
 # ID da amostra -> amostra_id
-# amostra_id is missing. We assume it is NA
+# The laboratory sample ID is not reported in the source document.
 ctb0080_layer[, amostra_id := NA_character_]
 
 # profund_sup
 # old: Profundidade inicial [cm]
 # new: profund_sup
 data.table::setnames(ctb0080_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+# Resolve irregular depth intervals
+ctb0080_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0080_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0080_layer[, profund_sup])
 
@@ -221,8 +220,21 @@ summary(ctb0080_layer[, profund_sup])
 # old: Profundidade final [cm]
 # new: profund_inf
 data.table::setnames(ctb0080_layer, old = "Profundidade final [cm]", new = "profund_inf")
+# Resolve irregular depth intervals
+ctb0080_layer[, profund_inf := depth_slash(profund_inf), by = .I]
+# Resolve censored depths
+ctb0080_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0080_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0080_layer[, profund_inf])
+
+# Check for duplicated layers
+check_duplicated_layer(ctb0080_layer)
+
+# Check for layers with equal top and bottom depths
+check_equal_depths(ctb0080_layer)
+
+# Check for missing layers
+check_missing_layer(ctb0080_layer)
 
 # Sand in this document is separated into
 # Coarse sand, Fine sand
