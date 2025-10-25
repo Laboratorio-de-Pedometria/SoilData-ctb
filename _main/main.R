@@ -33,7 +33,6 @@ exceptions <- c(
   "ctb0070/ctb0070.R", # new
   "ctb0075/ctb0075.R", # check decimal separator for clay
   "ctb0079/ctb0079.R", # new
-  "ctb0080/ctb0080.R", # check sand check coordinates
   "ctb0082/ctb0082.R", # check coordinates
   "ctb0083/ctb0083.R", # check coordinates
   "ctb0085/ctb0085.R", # check coordinates
