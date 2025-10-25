@@ -233,6 +233,9 @@ check_duplicated_layer(ctb0080_layer)
 # Check for layers with equal top and bottom depths
 check_equal_depths(ctb0080_layer)
 
+# Check for negative layer depths
+check_depth_inversion(ctb0080_layer)
+
 # Check for missing layers
 check_missing_layer(ctb0080_layer)
 

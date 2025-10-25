@@ -474,3 +474,25 @@ check_equal_depths <- function(data) {
   }
   return(invisible(equal_depths))
 }
+# Check for inverted or negative layer depths ######################################################
+# This function checks for layers with inverted depth limits (profund_inf < profund_sup)
+# or negative depth values. These can sometimes indicate special cases like organic layers
+# above the mineral soil surface (negative depths) or data entry errors.
+# data: data.table containing soil layer data with 'profund_sup' and 'profund_inf' columns.
+# Returns: data.table with layers having inverted or negative depths.
+check_depth_inversion <- function(data) {
+  inverted_depths <- data[profund_inf < profund_sup | profund_sup < 0,
+    .(observacao_id, camada_nome, profund_sup, profund_inf)
+  ]
+  if (nrow(inverted_depths) > 0) {
+    message(
+      "Layers with inverted or negative depths were found. ",
+      "This might indicate organic layers recorded with negative depths or data entry errors. ",
+      "Please review the identified layers."
+    )
+    print(inverted_depths)
+  } else {
+    message("No layers with inverted or negative depths were found. You can proceed.")
+  }
+  return(invisible(inverted_depths))
+}
