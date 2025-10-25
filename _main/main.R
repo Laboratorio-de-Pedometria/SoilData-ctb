@@ -47,7 +47,6 @@ exceptions <- c(
 )
 r_scripts <- list.files(pattern = "\\.R$", recursive = TRUE)
 r_scripts <- r_scripts[!r_scripts %in% exceptions]
-r_scripts <- sample(r_scripts) # randomize order
 
 # Source each R script
 # Run each R script in a separate, clean R session to avoid variable conflicts.
