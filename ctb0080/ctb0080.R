@@ -265,9 +265,8 @@ check_missing_layer(ctb0080_layer)
 # profile. Order by observacao_id and mid_depth.
 ctb0080_layer[, mid_depth := (profund_sup + profund_inf) / 2]
 data.table::setorder(ctb0080_layer, observacao_id, mid_depth)
-ctb0080_layer[, layer_id := 1:.N, by = observacao_id]
-ctb0080_layer[, mid_depth := NULL]
-ctb0080_layer[, .N, by = layer_id]
+ctb0080_layer[, camada_id := 1:.N, by = observacao_id]
+ctb0080_layer[, .N, by = camada_id]
 
 # terrafina
 # old: Terra fina [g/kg]
