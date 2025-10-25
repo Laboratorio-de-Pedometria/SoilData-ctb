@@ -337,6 +337,8 @@ check_empty_layer(ctb0080_layer, "carbono")
 data.table::setnames(ctb0080_layer, old = "T [cmolc/kg]", new = "ctc")
 ctb0080_layer[, ctc := as.numeric(ctc)]
 summary(ctb0080_layer[, ctc])
+# There are 1740 layers with missing "ctc" values. These include organic layers, an R layer, and the
+# auger holes. This is in accordance with the documentation.
 check_empty_layer(ctb0080_layer, "ctc")
 
 # ph
