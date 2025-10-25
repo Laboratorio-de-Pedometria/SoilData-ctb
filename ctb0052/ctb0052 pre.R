@@ -38,12 +38,44 @@ ctb0052_citation <- data.table::data.table(
 gs_perfil <- "12XVwsh74gafTLJicCydx_rbcnM89HmH0FFTNVvXeUGY"
 gid_perfil <- "0"
 perfil <- google_sheet(gs_perfil, gid_perfil)
+str(perfil)
+
 # POINTS
 gs_pontos <- "1swA6UoU7MJrldXu92PZe3CY8ajIVf0oLrRRvJAxlkT4"
 gid_pontos <- "0"
 pontos <- google_sheet(gs_pontos, gid_pontos)
+str(pontos)
+
 # MERGE
 ctb0052_event <- rbindlist(list(perfil, pontos), fill = TRUE)
+str(ctb0052_event)
+
+# Fill SIBCS_classificacao with classe where missing
+ctb0052_event[is.na(SIBCS_classificacao), SIBCS_classificacao := classe]
+# RL -> NEOSSOLO LITÓLICO
+ctb0052_event[SIBCS_classificacao == "RL", SIBCS_classificacao := "NEOSSOLO LITÓLICO"]
+# CX -> CAMBISSOLO HÁPLICO
+ctb0052_event[SIBCS_classificacao == "CX", SIBCS_classificacao := "CAMBISSOLO HÁPLICO"]
+# GX -> GLEISSOLO HÁPLICO
+ctb0052_event[SIBCS_classificacao == "GX", SIBCS_classificacao := "GLEISSOLO HÁPLICO"]
+# RR -> NEOSSOLO REGOLÍTICO
+ctb0052_event[SIBCS_classificacao == "RR", SIBCS_classificacao := "NEOSSOLO REGOLÍTICO"]
+# GM -> GLEISSOLO MELÂNICO
+ctb0052_event[SIBCS_classificacao == "GM", SIBCS_classificacao := "GLEISSOLO MELÂNICO"]
+# OX -> ORGANOSSOLO HÁPLICO
+ctb0052_event[SIBCS_classificacao == "OX", SIBCS_classificacao := "ORGANOSSOLO HÁPLICO"]
+# RL/RR -> NEOSSOLO LITÓLICO
+ctb0052_event[
+  SIBCS_classificacao == "RL/RR",
+  SIBCS_classificacao := "NEOSSOLO LITÓLICO/NEOSSOLO REGOLÍTICO"
+]
+# RR/GM -> NEOSSOLO REGOLÍTICO
+ctb0052_event[
+  SIBCS_classificacao == "RR/GM",
+  SIBCS_classificacao := "NEOSSOLO REGOLÍTICO/GLEISSOLO MELÂNICO"
+]
+ctb0052_event[, .N, by = SIBCS_classificacao]
+
 str(ctb0052_event)
 data.table::fwrite(ctb0052_event, "ctb0052/ctb0052_event.csv")
 
@@ -195,48 +227,106 @@ colnames(ctb0052_points) %in% colnames(ctb0052_profile)
 ctb0052_layer <- rbindlist(list(ctb0052_profile, ctb0052_points), fill = TRUE)
 ctb0052_layer <- merge(
   ctb0052_layer,
-  ctb0052_event[, c("id_ponto", "classe", "espessura_solum (cm)")]
+  ctb0052_event[, c("id_ponto", "classe", "espessura solum (cm)", "Contato inferior")]
 )
 str(ctb0052_layer)
 
-# # Add missing layers
-# # espessura_solum
-# ctb0052_layer[, espessura_solum := `espessura_solum (cm)`]
-# # substitute ">" with "" in espessura_solum
-# ctb0052_layer[, espessura_solum := gsub(">", "", espessura_solum)]
-# # set as numeric
-# ctb0052_layer[, espessura_solum := as.numeric(espessura_solum)]
-# summary(ctb0052_layer[, espessura_solum])
+# Deal with lithic contact information  ############################################################
 
-# # lower_depth
-# ctb0052_layer[, lower_depth := profund_inf]
-# ctb0052_layer[, lower_depth := depth_slash(lower_depth), by = .I]
-# ctb0052_layer[, lower_depth := depth_plus(lower_depth), by = .I]
-# ctb0052_layer[, lower_depth := as.numeric(lower_depth)]
-# summary(ctb0052_layer[, lower_depth])
+# prof_limitante
+# This column contains the depth of the root limiting layer (cm)
+ctb0052_layer[, prof_limitante := `espessura solum (cm)`]
+# substitute ">" with "" in prof_limitante
+ctb0052_layer[grepl(">", prof_limitante), prof_limitante := Inf]
+# set as numeric
+ctb0052_layer[, prof_limitante := as.numeric(prof_limitante)]
+summary(ctb0052_layer[, prof_limitante])
 
-# # max_lower_depth
-# ctb0052_layer[, max_lower_depth := max(lower_depth, na.rm = TRUE), by = id_ponto]
-# summary(ctb0052_layer[, max_lower_depth])
+# hz_limitante
+# This column contains the symbol of the root limiting layer
+ctb0052_layer[, hz_limitante := `Contato inferior`]
+ctb0052_layer[, .N, by = hz_limitante]
 
-# # lithic_contact == TRUE if max_lower_depth < espessura_solum & classe %in% c("RL", "CX") & espessura_solum < 100
-# ctb0052_layer[
-#   , lithic_contact := ifelse(
-#     max_lower_depth < espessura_solum & classe %in% c("RL", "CX") & espessura_solum < 100,
-#     TRUE,
-#     FALSE
-#   ),
-#   by = id_ponto
-# ]
-# View(ctb0052_layer[lithic_contact == TRUE, .(id_ponto, camada, espessura_solum, max_lower_depth)])
+# lower_depth
+# Create lower_depth from profund_inf to keep the original data intact
+ctb0052_layer[, lower_depth := profund_inf]
+ctb0052_layer[, lower_depth := depth_slash(lower_depth), by = .I]
+ctb0052_layer[, lower_depth := depth_plus(lower_depth), by = .I]
+ctb0052_layer[, lower_depth := as.numeric(lower_depth)]
+summary(ctb0052_layer[, lower_depth])
 
-# # identify id_ponto with max_lower_depth < espessura_solum
-# ctb0052_layer[
-#   , exceeds_solum := ifelse(max_lower_depth < espessura_solum, TRUE, FALSE),
-#   by = id_ponto
-# ]
-# # view
-# ctb0052_layer[exceeds_solum == TRUE, .(id_ponto, lower_depth, espessura_solum, max_lower_depth)]
+# upper_depth
+# Create upper_depth from profund_sup to keep the original data intact
+ctb0052_layer[, upper_depth := profund_sup]
+ctb0052_layer[, upper_depth := depth_slash(upper_depth), by = .I]
+ctb0052_layer[, upper_depth := as.numeric(upper_depth)]
+summary(ctb0052_layer[, upper_depth])
+
+# Identify auger holes
+# The ID (id_ponto) of auger holes and soil profiles are different by the fact that auger holes
+# contains only numbers, while soil profiles contains letters and numbers
+ctb0052_layer[, is_auger := grepl("^[0-9]+$", id_ponto)]
+# Check auger holes
+ctb0052_layer[is_auger == TRUE, id_ponto]
+
+# Identify layers in witch the limiting depth (prof_limitante) is between the upper (upper_depth)
+# and lower (lower_depth) depths of the layer
+ctb0052_layer[,
+  within_solum := ifelse(
+    upper_depth < prof_limitante & lower_depth >= prof_limitante,
+    TRUE,
+    FALSE
+  ),
+  by = .I
+]
+if (FALSE) {
+  View(ctb0052_layer[
+    within_solum == TRUE & is_auger == TRUE,
+    .(id_ponto, classe, camada, upper_depth, prof_limitante, lower_depth, hz_limitante)
+  ])
+}
+
+# When this happens, and hz_limitante is not NA, set profund_inf = prof_limitante
+ctb0052_layer[
+  within_solum == TRUE & is_auger == TRUE & !is.na(hz_limitante), profund_inf := prof_limitante
+]
+ctb0052_layer[
+  within_solum == TRUE & is_auger == TRUE & !is.na(hz_limitante),
+  .(id_ponto, classe, camada, lower_depth, prof_limitante, hz_limitante)
+]
+# For each event (id_ponto), get a single occurrence of within_solum == TRUE & is_auger == TRUE
+ctb0052_layer_within <- ctb0052_layer[
+  within_solum == TRUE & is_auger == TRUE & !is.na(hz_limitante),
+  .SD[1],
+  by = id_ponto,
+  .SDcols = c("id_ponto", "camada", "upper_depth", "lower_depth", "prof_limitante", "hz_limitante")
+]
+# Set camada = hz_limitante, profund_sup = prof_limitante, profund_inf = prof_limitante + 10)
+ctb0052_layer_within[
+  ,
+  `:=` (
+    camada = hz_limitante,
+    profund_sup = prof_limitante,
+    profund_inf = prof_limitante + 10
+  )
+]
+
+# rbind the modified layers to the original data
+ctb0052_layer <- rbindlist(list(ctb0052_layer, ctb0052_layer_within), fill = TRUE)
+# sort by id_ponto and upper_depth
+data.table::setorder(ctb0052_layer, id_ponto, profund_sup)
+rm(ctb0052_layer_within)
+str(ctb0052_layer)
+
+# For other cases, when camada_obs is not NA, set camada = camada_obs
+ctb0052_layer[!is.na(camada_obs), camada := camada_obs]
+
+# Clean
+ctb0052_layer[
+  ,
+  c("is_auger", "within_solum", "upper_depth", "lower_depth", "hz_limitante",
+    "camada_obs", "prof_limitante", "Contato inferior", "espessura solum (cm)", "classe") := NULL
+]
 
 # Write to disk
 data.table::fwrite(ctb0052_layer, "ctb0052/ctb0052_layer.csv")
