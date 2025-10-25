@@ -103,26 +103,22 @@ ctb0080_event[, .N, by = coord_datum]
 ctb0080_event[coord_datum == "SAD69 / UTM zona 21S", coord_datum := 29191]
 ctb0080_event[, coord_datum := as.integer(coord_datum)]
 ctb0080_event[, .N, by = coord_datum]
-
+# Trasnform coordinates to WGS84 (EPSG: 4326)
 # Cria um objeto 'sf' (simple features) com os dados a serem transformados
 ctb0080_event_sf <- sf::st_as_sf(
   ctb0080_event[coord_datum == 29191],
   coords = c("coord_x", "coord_y"),
   crs = 29191 # Informa o sistema de coordenadas de origem
 )
-
 # Transforma as coordenadas para WGS84 (padrão GPS, EPSG: 4326)
 ctb0080_event_sf <- sf::st_transform(ctb0080_event_sf, 4326)
-
-# Extrai as novas coordenadas (Longitude e Latitude) do objeto 'sf'
-new_coords <- sf::st_coordinates(ctb0080_event_sf)
-
 # Atualiza o data.table original com as novas coordenadas e o novo datum
-ctb0080_event[coord_datum == 29191, coord_x := new_coords[, 1]] # Longitude
-ctb0080_event[coord_datum == 29191, coord_y := new_coords[, 2]] # Latitude
-ctb0080_event[coord_datum == 29191, coord_datum := 4326]       # Novo datum: WGS84
-
-
+ctb0080_event[coord_datum == 29191, coord_x := sf::st_coordinates(ctb0080_event_sf)[, 1]] # Longitude
+ctb0080_event[coord_datum == 29191, coord_y := sf::st_coordinates(ctb0080_event_sf)[, 2]] # Latitude
+ctb0080_event[coord_datum == 29191, coord_datum := 4326] # Novo datum: WGS84
+summary(ctb0080_event[, .(coord_x, coord_y)])
+ctb0080_event[, .N, by = coord_datum]
+rm(ctb0080_event_sf)
 
 # Precisão (coord) -> coord_precisao
 # We set it to NA_real_
