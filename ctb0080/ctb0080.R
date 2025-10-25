@@ -259,6 +259,17 @@ ctb0080_layer[thickness_to_add > 0, .(observacao_id, camada_nome, profund_sup, p
 
 # Check for missing layers
 check_missing_layer(ctb0080_layer)
+# There are no missing layers.
+
+# terrafina
+# old: Terra fina [g/kg]
+# new: terrafina
+data.table::setnames(ctb0080_layer, old = "Terra fina [g/kg]", new = "terrafina")
+ctb0080_layer[, terrafina := as.numeric(terrafina)]
+summary(ctb0080_layer[, terrafina])
+# There are 1740 layers with missing "terrafina" values. These include organic layers and auger
+# holes. We will keep these missing values as NA for now. 
+check_empty_layer(ctb0080_layer, "terrafina")
 
 # Sand in this document is separated into
 # Coarse sand, Fine sand
@@ -266,7 +277,6 @@ check_missing_layer(ctb0080_layer)
 # areia_grossa
 # old: "Areia grossa [g/kg]"
 # new: areia_grossa
-# 
 data.table::setnames(ctb0080_layer, old = "Areia grossa [g/kg]", new = "areia_grossa")
 ctb0080_layer[, areia_grossa := as.numeric(areia_grossa)]
 ctb0080_layer[is.na(areia_grossa), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_grossa)]
@@ -303,12 +313,7 @@ data.table::setnames(ctb0080_layer, old = "Argila [g/kg]", new = "argila")
 ctb0080_layer[, argila := as.numeric(argila)]
 ctb0080_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, argila)]
 
-# terrafina
-# old: Terra fina [g/kg]
-# new: terrafina
-data.table::setnames(ctb0080_layer, old = "Terra fina [g/kg]", new = "terrafina")
-ctb0080_layer[, terrafina := as.numeric(terrafina)]
-ctb0080_layer[is.na(terrafina), .(observacao_id, camada_nome, profund_sup, profund_inf, terrafina)]
+
 
 
 # Check the particle size distribution
