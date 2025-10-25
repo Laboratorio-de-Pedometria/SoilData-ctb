@@ -261,6 +261,14 @@ ctb0080_layer[thickness_to_add > 0, .(observacao_id, camada_nome, profund_sup, p
 check_missing_layer(ctb0080_layer)
 # There are no missing layers.
 
+# We will create a unique identifier for each layer indicating the order of the layers in each soil
+# profile. Order by observacao_id and mid_depth.
+ctb0080_layer[, mid_depth := (profund_sup + profund_inf) / 2]
+data.table::setorder(ctb0080_layer, observacao_id, mid_depth)
+ctb0080_layer[, layer_id := 1:.N, by = observacao_id]
+ctb0080_layer[, mid_depth := NULL]
+ctb0080_layer[, .N, by = layer_id]
+
 # terrafina
 # old: Terra fina [g/kg]
 # new: terrafina
@@ -396,5 +404,3 @@ if (FALSE) {
 # Write to disk ####################################################################################
 ctb0080 <- select_output_columns(ctb0080)
 data.table::fwrite(ctb0080, "ctb0080/ctb0080.csv")
-data.table::fwrite(ctb0080_event, "ctb0080/ctb0080_event.csv")
-data.table::fwrite(ctb0080_layer, "ctb0080/ctb0080_layer.csv")
