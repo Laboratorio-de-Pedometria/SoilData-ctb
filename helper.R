@@ -418,15 +418,24 @@ select_output_columns <- function(data) {
 # This function checks for equal coordinates in a data.table containing soil data.
 check_equal_coordinates <-
   function(dt) {
-    dup_coords <- dt[!(is.na(coord_x) & is.na(coord_y)), .N, by = .(coord_x, coord_y)][N > 1]
-    if (nrow(dup_coords) > 0) {
-      warning("Duplicate coordinates found:")
-      print(dup_coords)
+    dup_groups <- dt[!(is.na(coord_x) & is.na(coord_y)), .N, by = .(coord_x, coord_y)][N > 1]
+    if (nrow(dup_groups) > 0) {
+      # Build one row per coordinate pair concatenating all observacao_id that share the pair
+      dup_set <- dt[dup_groups, on = .(coord_x, coord_y), nomatch = 0L][
+        , .(coord_x, coord_y, observacao_id)
+      ]
+      dup_out <- dup_set[
+        , .(observacao_id = paste(sort(unique(observacao_id)), collapse = ", "))
+        , by = .(coord_x, coord_y)
+      ][order(coord_x, coord_y)]
+      warning("Duplicate coordinates found. Listing coordinate pairs with all observacao_id sharing them:")
+      print(dup_out)
       warning("Check the source dataset to resolve this issue.\nIf no solution is found, consider adding a random perturbation of 1 meter to the coordinates and updating the coordinate precision accordingly using the Pythagorean theorem for propagation of uncertainty.")
     } else {
       message("No duplicate coordinates found: all coordinates are unique. You can proceed.")
     }
   }
+check_duplicated_coordinates <- check_equal_coordinates
 # Check for negative validation results. ########################################################
 # This function checks for negative validation results in a data.table containing validation
 # results.
