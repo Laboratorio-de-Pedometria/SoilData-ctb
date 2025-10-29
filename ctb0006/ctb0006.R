@@ -3,21 +3,14 @@
 rm(list = ls())
 
 # Install and load required packages
-if (!require("data.table")) {
+if (!requireNamespace("data.table")) {
   install.packages("data.table")
-  library("data.table")
 }
-if (!require("openxlsx")) {
+if (!requireNamespace("openxlsx")) {
   install.packages("openxlsx")
-  library("openxlsx")
 }
-if (!require("sf")) {
+if (!requireNamespace("sf")) {
   install.packages("sf")
-  library("sf")
-}
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
 }
 
 # Source helper functions
@@ -58,20 +51,26 @@ str(ctb0006_event)
 ctb0006_event[, observacao_id := as.character(observacao_id)]
 any(table(ctb0006_event[, observacao_id]) > 1)
 
-# data_ano
-# observacao_data
+# old: observacao_data
+# new: data_ano
 data.table::setnames(ctb0006_event, old = "observacao_data", new = "data_ano")
 ctb0006_event[data_ano > 2014, data_ano := 2014]
 ctb0006_event[, data_ano := as.integer(data_ano)]
 ctb0006_event[, .N, by = data_ano]
 
 # ano_fonte
+# The sampling data is provided in the study.
 ctb0006_event[, ano_fonte := "original"]
 ctb0006_event[, .N, by = ano_fonte]
 
-# coord_datum
-# coord_sistema
+# old: coord_sistema
+# new: coord_datum
+# There are three different coordinate reference systems in the dataset:
+# 1. EPSG:31981 - SIRGAS 2000 / UTM zone 21S
+# 2. EPSG:31982 - SIRGAS 2000 / UTM zone 22S
+# 3. EPSG:4326 - WGS 84
 data.table::setnames(ctb0006_event, old = "coord_sistema", new = "coord_datum")
+ctb0006_event[, .N, by = coord_datum]
 # Harmonize the coordinate reference system as registered in the coord_sistema column
 # Start by splitting the dataset according to the coordinate reference system. Then, transform each
 # subset to a spatial object with the respective coordinate reference system. Next, transform
@@ -91,6 +90,7 @@ ctb0006_event <- lapply(ctb0006_event, function(x) {
   return(x)
 })
 ctb0006_event <- data.table::rbindlist(ctb0006_event, fill = TRUE)
+ctb0006_event[, .N, by = coord_datum]
 
 # coord_x
 ctb0006_event[, coord_x := as.numeric(coord_x)]
@@ -102,25 +102,29 @@ summary(ctb0006_event[, coord_y])
 
 # Check for duplicate coordinates
 # observacao_id obs_146 and obs_248
-# they are auger holes and have the same taxon_sibcs_2013: discard one of them as they seem to be
-# the same observation
+# they are auger holes and have the same taxon_sibcs_2013: maybe this is the same observation
+# recorded twice. We will discard one of them as they seem to be the same observation.
 ctb0006_event[, .N, by = .(coord_x, coord_y)][N > 1]
 ctb0006_event[coord_x == -53.9915 & coord_y == -29.7239, ]
 ctb0006_event <- ctb0006_event[observacao_id != "obs_146", ]
 
 # coord_fonte
+# The coordinates were collected in the field using a GPS device as reported in the study.
 ctb0006_event[, coord_fonte := as.character(coord_fonte)]
 ctb0006_event[, .N, by = coord_fonte]
 
 # coord_precisao
-# coord_precisao is missing. We assume it is 30 m because the data was collected with a GPS
-ctb0006_event[, coord_precisao := 30.0]
+# The precision of the coordinates is not reported in the study. As the coordinates were collected
+# using a GPS device, we assume a precision of 30 m.
+ctb0006_event[, coord_precisao := 30]
 
 # pais_id
-ctb0006_event[, pais_id := "BR"]
+ctb0006_event[, pais_id := as.character(pais_id)]
+ctb0006_event[, .N, by = pais_id]
 
 # estado_id
-ctb0006_event[, estado_id := "RS"]
+ctb0006_event[, estado_id := as.character(estado_id)]
+ctb0006_event[, .N, by = estado_id]
 
 # municipio_id
 ctb0006_event[, municipio_id := as.character(municipio_id)]
@@ -130,36 +134,27 @@ ctb0006_event[, .N, by = municipio_id]
 # amostra_area is missing. We assume it is 1.0 m^2 (soil profiles)
 ctb0006_event[, amostra_area := 1.0]
 
-# taxon_sibcs
-# taxon_sibcs_2013
+# old: taxon_sibcs_2013
+# new: taxon_sibcs
 data.table::setnames(ctb0006_event, old = "taxon_sibcs_2013", new = "taxon_sibcs")
 ctb0006_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0006_event[, .N, by = taxon_sibcs]
 
-# Extract taxonomic levels
-# Soil observations from auger holes are not classified at the same taxonomic level as soil
-# profiles: they are classified at the suborder level.
-ctb0006_event[, sibcs_order := strsplit(taxon_sibcs, " ")[[1]][1], by = .I]
-ctb0006_event[, sibcs_suborder := strsplit(taxon_sibcs, " ")[[1]][2], by = .I]
-ctb0006_event[, sibcs := paste(sibcs_order, sibcs_suborder)]
-ctb0006_event[, sibcs_order := NULL]
-ctb0006_event[, sibcs_suborder := NULL]
-ctb0006_event[, .N, by = sibcs]
-
 # taxon_st
-# A classificação do solo segundo o Soil Taxonomy não foi realizada.
+# Soil Taxonomy classification is missing.
 ctb0006_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie)
-# Não tenho acesso a este trabalho após a inserção das variaveis pedregosidade e rochosidade
-# Logo, irei colocar NA_character_ para as variaveis.
+# old: geo_pedregosidade
+# new: pedregosidade
+data.table::setnames(ctb0006_event, old = "geo_pedregosidade", new = "pedregosidade")
+ctb0006_event[, pedregosidade := as.character(pedregosidade)]
+ctb0006_event[, .N, by = pedregosidade]
 
-ctb0006_event[, pedregosidade := NA_character_]
-
-# Rochosidade (superficie)
-# review the work at another time
-
-ctb0006_event[, rochosidade := NA_character_]
+# old: geo_rochosidade
+# new: rochosidade
+data.table::setnames(ctb0006_event, old = "geo_rochosidade", new = "rochosidade")
+ctb0006_event[, rochosidade := as.character(rochosidade)]
+ctb0006_event[, .N, by = rochosidade]
 
 str(ctb0006_event)
 
@@ -194,24 +189,20 @@ ctb0006_layer[, profund_inf := as.numeric(profund_inf)]
 ctb0006_layer[profund_inf == profund_sup, profund_inf := profund_inf + 20]
 summary(ctb0006_layer[, profund_inf])
 
-# missing layers
-# are there any?
-ctb0006_layer[
-  shift(profund_inf) != profund_sup & profund_sup > 0,
-  .(observacao_id, profund_sup, profund_inf)
-]
+# check for missing layers
+check_missing_layer(ctb0006_layer)
 
 # camada_id
-# For each observacao_id, sort by profund_sup and profunf_inf
-# and assign a unique camada_id
+# For each observacao_id, sort by profund_sup and profund_inf
 ctb0006_layer <- ctb0006_layer[order(observacao_id, profund_sup, profund_inf)]
 ctb0006_layer[, camada_id := as.integer(camada_id)]
 ctb0006_layer[, .N, by = camada_id]
 
-# terrafina_xxx -> terrafina
+# old: terrafina_xxx
+# new: terrafina
 data.table::setnames(ctb0006_layer, old = "terrafina_xxx", new = "terrafina")
 ctb0006_layer[, terrafina := as.numeric(terrafina)]
-# Correct inconsistent values
+# Correct one inconsistent value
 ctb0006_layer[
   observacao_id == "perfil-20" & camada_nome == "Btg2",
   terrafina := ifelse(terrafina == 70, 670, terrafina)
@@ -222,44 +213,58 @@ ctb0006_layer[observacao_id == "perfil-20" & camada_nome == "Btg2", camada_curad
   " dados (planilha de Excel)."
 )]
 summary(ctb0006_layer[, terrafina])
+# Layers missing fine earth content are mostly R and CR layers. There is a C3 layer (perfil-67) that
+# consists of gravel and cobbles (terrafina = 0).
 ctb0006_layer[is.na(terrafina), .(observacao_id, camada_nome, profund_sup, profund_inf, terrafina)]
 
-# argila_xxx_xxx -> argila
+# old: argila_xxx_xxx
+# new: argila
 data.table::setnames(ctb0006_layer, old = "argila_xxx_xxx", new = "argila")
 ctb0006_layer[, argila := as.numeric(argila)]
 summary(ctb0006_layer[, argila])
+# Layers missing clay content are the same layers missing fine earth content.
 ctb0006_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, argila)]
 
-# silte_xxx_xxx -> silte
+# old: silte_xxx_xxx
+# new: silte
 data.table::setnames(ctb0006_layer, old = "silte_xxx_xxx", new = "silte")
 ctb0006_layer[, silte := as.numeric(silte)]
 summary(ctb0006_layer[, silte])
+# Layers missing silt content are the same layers missing fine earth content.
 ctb0006_layer[is.na(silte), .(observacao_id, camada_nome, profund_sup, profund_inf, silte)]
 
 # areia
 ctb0006_layer[, areia := as.numeric(areiagrossa2_xxx_xxx) + as.numeric(areiafina2_xxx_xxx)]
 summary(ctb0006_layer[, areia])
+# Layers missing sand content are the same layers missing fine earth content.
 ctb0006_layer[is.na(areia), .(observacao_id, camada_nome, profund_sup, profund_inf, areia)]
 
-# carbono_xxx_xxx_xxx -> carbono
+# old: carbono_xxx_xxx_xxx
+# new: carbono
 data.table::setnames(ctb0006_layer, old = "carbono_xxx_xxx_xxx", new = "carbono")
 ctb0006_layer[, carbono := as.numeric(carbono)]
 summary(ctb0006_layer[, carbono])
+# Layers missing carbon content are the same layers missing fine earth content.
 ctb0006_layer[is.na(carbono), .(observacao_id, camada_nome, profund_sup, profund_inf, carbono)]
 
-# ctc_soma_calc -> ctc
+# old: ctc_soma_calc
+# new: ctc
 data.table::setnames(ctb0006_layer, old = "ctc_soma_calc", new = "ctc")
 ctb0006_layer[, ctc := as.numeric(ctc)]
 summary(ctb0006_layer[, ctc])
+# Layers missing cation exchange capacity are the same layers missing fine earth content.
 ctb0006_layer[is.na(ctc), .(observacao_id, camada_nome, profund_sup, profund_inf, ctc)]
 
-# ph_h2o_25_eletrodo -> ph
+# old: ph_h2o_25_eletrodo
+# new: ph
 data.table::setnames(ctb0006_layer, old = "ph_h2o_25_eletrodo", new = "ph")
 ctb0006_layer[, ph := as.numeric(ph)]
 summary(ctb0006_layer[, ph])
+# Layers missing pH are the same layers missing fine earth content.
 ctb0006_layer[is.na(ph), .(observacao_id, camada_nome, profund_sup, profund_inf, ph)]
 
 # dsi
+# The dataset does not contain data on the bulk soil density.
 ctb0006_layer[, dsi := NA_real_]
 
 str(ctb0006_layer)
@@ -276,6 +281,14 @@ str(ctb0006_layer)
 # nearest soil profile to impute the missing data in the soil observations from auger holes.
 ctb0006_event[, has_layer := observacao_id %in% ctb0006_layer$observacao_id]
 ctb0006_event[, .N, by = has_layer]
+
+# Extract taxonomic levels
+ctb0006_event[, sibcs_order := strsplit(taxon_sibcs, " ")[[1]][1], by = .I]
+ctb0006_event[, sibcs_suborder := strsplit(taxon_sibcs, " ")[[1]][2], by = .I]
+ctb0006_event[, sibcs := paste(sibcs_order, sibcs_suborder)]
+ctb0006_event[, sibcs_order := NULL]
+ctb0006_event[, sibcs_suborder := NULL]
+ctb0006_event[, .N, by = sibcs]
 
 ctb0006_event_sf <- sf::st_as_sf(ctb0006_event, coords = c("coord_x", "coord_y"), crs = 4326)
 ctb0006_event_sf <- sf::st_transform(ctb0006_event_sf, crs = 29101)
@@ -299,8 +312,13 @@ ctb0006 <- merge(ctb0006_event, ctb0006_layer, all = TRUE)
 
 # Data imputation
 get_cols <- c(
-  "camada_nome", "camada_id", "amostra_id", "profund_sup", "profund_inf",
-  "terrafina", "argila", "silte", "areia", "carbono", "ctc", "ph", "dsi"
+  "camada_nome", "camada_id", "amostra_id",
+  "profund_sup", "profund_inf",
+  "terrafina", "argila", "silte", "areia",
+  "carbono",
+  "ctc",
+  "ph",
+  "dsi"
 )
 auger_holes <- unique(ctb0006$observacao_id[ctb0006$has_layer == FALSE])
 for (i in auger_holes) {

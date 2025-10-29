@@ -1,4 +1,4 @@
-# autor: Felipe Brun Vergani
+# autor: Felipe Brun Vergani and Alessandro Samuel-Rosa
 # data: 2025
 
 # Install and load required packages
@@ -10,10 +10,6 @@ if (!require("sf")) {
   install.packages("sf")
   library("sf")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
-}
 if (!require("parzer")) {
   install.packages("parzer")
   library("parzer")
@@ -22,23 +18,18 @@ if (!require("parzer")) {
 # Source helper functions
 source("./helper.R")
 
-
 # Google Sheet #####################################################################################
 # ctb0065
 # Dados de "Solos de três áreas de  restinga. 1. Morfologia, caracterização e classificação"
 # 
-# https://drive.google.com/drive/folders/1N90u15zgwHxxOU__vQJKfivjubk5_gb0
-
-
+# Google Drive: https://drive.google.com/drive/folders/1N90u15zgwHxxOU__vQJKfivjubk5_gb0
+# NotebookLM: https://notebooklm.google.com/notebook/58ded8e8-0569-479e-842c-4debb63aa02f
 ctb0065_ids <- soildata_catalog("ctb0065")
 
 # validation #####################################################################################
-
+# Load validation sheet and check
 ctb0065_validation <- google_sheet(ctb0065_ids$gs_id, ctb0065_ids$gid_validation)
-str(ctb0065_validation)
-
-# Check for negative validation results
-sum(ctb0065_validation == FALSE, na.rm = TRUE)
+check_sheet_validation(ctb0065_validation)
 
 # citation #####################################################################################
 ctb0065_citation <- google_sheet(ctb0065_ids$gs_id, ctb0065_ids$gid_citation)
@@ -62,34 +53,39 @@ ctb0065_citation <- data.table::data.table(
 )
 print(ctb0065_citation)
 
-# event #####################################################################################
+# event ############################################################################################
 ctb0065_event <- google_sheet(ctb0065_ids$gs_id, ctb0065_ids$gid_event)
 str(ctb0065_event)
 
-#PROCESS FIELDS
+# PROCESS FIELDS
 
 # observacao_id
 # ID do evento -> observacao_id
 data.table::setnames(ctb0065_event, old = "ID do evento", new = "observacao_id")
 ctb0065_event[, observacao_id := as.character(observacao_id)]
+# check for duplicated observacao_id
 any(table(ctb0065_event[, observacao_id]) > 1)
 
-
-#The year of data collection is missing, the author started 
-#the master's degree in 1992, so we estimate that he obtained the data collection in 1993.
-#It is necessary to contact the author to find out the actual year of collection.
 # data_ano
 # Ano (coleta) -> data_coleta_ano
+# The year of data collection is missing. the author started the master's degree in 1992, so we
+# estimate that he obtained the data collection in 1993. It is necessary to contact the author to
+# find out the actual year of collection.
 data.table::setnames(ctb0065_event, old = "Ano (coleta)", new = "data_ano")
 ctb0065_event[, data_ano := as.integer(data_ano)]
-ctb0065_event[, data_ano := 1993]
-# ano_fonte
-ctb0065_event[, ano_fonte := "estimativa"]
 ctb0065_event[, .N, by = data_ano]
 
+# ano_fonte
+ctb0065_event[is.na(data_ano), ano_fonte := "estimativa"]
+ctb0065_event[, .N, by = ano_fonte]
+
+# Set data_ano to 1993
+ctb0065_event[is.na(data_ano), data_ano := 1993]
+ctb0065_event[, .N, by = data_ano]
 
 # Missing seconds precision on Longitude / Latitude
-# The parzer library was added to convert the characters into values appropriate for the coordinate table.
+# The parzer library was added to convert the characters into values appropriate for the coordinate
+# table.
 # Longitude -> coord_x
 data.table::setnames(ctb0065_event, old = "Longitude", new = "coord_x")
 ctb0065_event[, coord_x := parzer::parse_lon(coord_x)]
@@ -100,52 +96,114 @@ data.table::setnames(ctb0065_event, old = "Latitude", new = "coord_y")
 ctb0065_event[, coord_y := parzer::parse_lat(coord_y)]
 summary(ctb0065_event[, coord_y])
 
-# Check for duplicate coordinates
-any(ctb0065_event[, .N, by = .(coord_x, coord_y)][, N] > 1)
-
+# Datum (coord) -> coord_datum
 data.table::setnames(ctb0065_event, old = "Datum (coord)", new = "coord_datum")
-#Inferimos que os "#N/A" na planilha possam ser SAD69...
-# DELETA a coluna 'coord_datum' para eliminar qualquer problema de tipo
-# (factor, logical, etc.).
-ctb0065_event[, coord_datum := NULL]
-ctb0065_event[, coord_datum := "N/A"]
-ctb0065_event[coord_datum == "N/A", coord_datum := 4618L]
-ctb0065_event[, coord_datum := as.integer(coord_datum)]
+ctb0065_event[, coord_datum := as.character(coord_datum)]
+ctb0065_event[, .N, by = coord_datum]
+# The datum is missing in the spreadsheet ("#N/A"). However, based on the approximate sampling year,
+# we can infer that the datum used was SAD69, which was widely used in Brazil until the mid-1990s.
+# Thus, we set the missing datum to "SAD69"., EPSG code 4618.
+ctb0065_event[is.na(coord_datum), coord_datum := 4618L]
 ctb0065_event[, .N, by = coord_datum]
 
 # Transform coordinates to WGS84
-# Filtra apenas os dados em SAD69 (4618) para a transformação
+# Filter only data in SAD69 (4618) for transformation
 ctb0065_event_sf <- sf::st_as_sf(
   ctb0065_event[coord_datum == 4618],
   coords = c("coord_x", "coord_y"), crs = 4618
 )
-# Transforma de SAD69 (4618) para WGS84 (4326)
+# Transform coordinates to WGS84
 ctb0065_event_sf <- sf::st_transform(ctb0065_event_sf, 4326)
-ctb0065_event_sf <- sf::st_coordinates(ctb0065_event_sf)
-
-# Atualiza a tabela original com as novas coordenadas e o novo datum
-ctb0065_event[coord_datum == 4618, coord_x := ctb0065_event_sf[, 1]]
-ctb0065_event[coord_datum == 4618, coord_y := ctb0065_event_sf[, 2]]
+# Update the coordinates in the data.table
+ctb0065_event[coord_datum == 4618, coord_x := sf::st_coordinates(ctb0065_event_sf)[, 1]]
+ctb0065_event[coord_datum == 4618, coord_y := sf::st_coordinates(ctb0065_event_sf)[, 2]]
 ctb0065_event[coord_datum == 4618, coord_datum := 4326]
-
-summary(ctb0065_event[, .(coord_datum, coord_x, coord_y)])
+rm(ctb0065_event_sf)
+ctb0065_event[, .N, by = coord_datum]
+summary(ctb0065_event[, .(coord_x, coord_y)])
 
 # Precisão (coord) [m] -> coord_precisao
-# Coordinates were attributed with little knowledge of the precision. We set it to NA_real_
+# The document does not specify whether the coordinates were obtained via GPS, from a particular
+# mapping project, or what the measurement error or precision is. They appear to have been obtained
+# from maps. Therefore, we will set the precision to 1800 meters for all events.
 data.table::setnames(ctb0065_event, old = "Precisão (coord) [m]", new = "coord_precisao")
-ctb0065_event[, coord_precisao := NA_real_]
+ctb0065_event[, coord_precisao := as.numeric(coord_precisao)]
+ctb0065_event[is.na(coord_precisao), coord_precisao := 1800]
+summary(ctb0065_event[, coord_precisao])
 
 # Fonte (coord) -> coord_fonte
 data.table::setnames(ctb0065_event, old = "Fonte (coord)", new = "coord_fonte")
-ctb0065_event[, coord_fonte := NA_real_]
+ctb0065_event[, coord_fonte := as.character(coord_fonte)]
+ctb0065_event[, .N, by = coord_fonte]
+
+# Events in the water
+# The current coordinates of the events LGR-P, LGR-MD, and LGR-MS place them in the water. We add
+# new coordinates for these events based the description in the document and analysis of satellite
+# images in Google Earth.
+# LGR-P: 22°11'17"S 41°25'56"W
+ctb0065_event[observacao_id == "LGR-P", `:=`(
+  coord_x = -(41 + 25 / 60 + 56 / 3600),
+  coord_y = -(22 + 11 / 60 + 17 / 3600),
+  coord_fonte = "Historical images in Google Earth"
+)]
+# LGR-MD: 22°11'25"S 41°26'14"W
+ctb0065_event[observacao_id == "LGR-MD", `:=`(
+  coord_x = -(41 + 26 / 60 + 14 / 3600),
+  coord_y = -(22 + 11 / 60 + 25 / 3600),
+  coord_fonte = "Historical images in Google Earth"
+)]
+# LGR-MS: 22°11'13"S 41°26'15"W
+ctb0065_event[observacao_id == "LGR-MS", `:=`(
+  coord_x = -(41 + 26 / 60 + 15 / 3600),
+  coord_y = -(22 + 11 / 60 + 13 / 3600),
+  coord_fonte = "Historical images in Google Earth"
+)]
+
+# Check for duplicate coordinates
+ctb0065_event[, coord_duplicated := .N > 1, by = .(coord_y, coord_x)]
+ctb0065_event[coord_duplicated == TRUE, .(observacao_id, coord_x, coord_y)]
+# Some of the other events share the same coordinates. We will add a small jitter to pass checks.
+ctb0065_event_sf <- sf::st_as_sf(
+  ctb0065_event[coord_duplicated == TRUE],
+  coords = c("coord_x", "coord_y"), crs = 4326
+)
+# Transform to UTM
+ctb0065_event_sf <- sf::st_transform(ctb0065_event_sf, 31983)
+# Jitter
+set.seed(42)
+amount <- 1 # meters
+ctb0065_event_sf <- sf::st_jitter(ctb0065_event_sf, amount = amount)
+# Transform back to WGS84
+ctb0065_event_sf <- sf::st_transform(ctb0065_event_sf, 4326)
+# Update the coordinates in the data.table()
+ctb0065_event[coord_duplicated == TRUE, coord_x := sf::st_coordinates(ctb0065_event_sf)[, 1]]
+ctb0065_event[coord_duplicated == TRUE, coord_y := sf::st_coordinates(ctb0065_event_sf)[, 2]]
+# Update coord_precisao
+# The precision is updated by combining the original precision with the jitter amount using
+# the Pythagorean theorem.
+ctb0065_event[
+  coord_duplicated == TRUE,
+  coord_precisao := sqrt(coord_precisao^2 + (amount * sqrt(2))^2)
+]
+summary(ctb0065_event[, coord_precisao])
+# Remove temporary columns
+ctb0065_event[, coord_duplicated := NULL]
+rm(ctb0065_event_sf)
+# Check again for duplicate coordinates
+ctb0065_event[, coord_duplicated := .N > 1, by = .(coord_y, coord_x)]
+ctb0065_event[coord_duplicated == TRUE, .(observacao_id, coord_x, coord_y)]
+# No more duplicate coordinates
+ctb0065_event[, coord_duplicated := NULL]
 
 # País -> pais_id
 data.table::setnames(ctb0065_event, old = "País", new = "pais_id")
-ctb0065_event[, pais_id := "BR"]
+ctb0065_event[, pais_id := as.character(pais_id)]
+ctb0065_event[, .N, by = pais_id]
 
 # Estado (UF) -> estado_id
 data.table::setnames(ctb0065_event, old = "Estado (UF)", new = "estado_id")
-ctb0065_event[, estado_id := "RJ"]
+ctb0065_event[, estado_id := as.character(estado_id)]
+ctb0065_event[, .N, by = estado_id]
 
 # Município -> municipio_id
 data.table::setnames(ctb0065_event, old = "Município", new = "municipio_id")
@@ -157,27 +215,28 @@ data.table::setnames(ctb0065_event, old = "Área amostrada [m^2]", new = "amostr
 ctb0065_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0065_event[, amostra_area])
 
-
 # Classificação de solo (1988) <- taxon_sibcs
 data.table::setnames(ctb0065_event, old = "Classificação do Solo (1988)", new = "taxon_sibcs")
 ctb0065_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0065_event[, .N, by = taxon_sibcs]
 
-# taxon_st_1999
+# Soil Taxonomy (1994) -> taxon_st
+# The Soil Taxonomy classification is available in the original document, but the spreadsheet
+# provided does not contain this information.
+data.table::setnames(ctb0065_event, old = "Soil Taxonomy (1994)", new = "taxon_st")
+ctb0065_event[, taxon_st := as.character(taxon_st)]
+ctb0065_event[, .N, by = taxon_st]
 
-ctb0065_event[, taxon_st := NA_character_]
-
-# Pedregosidade (superficie)
-# Stoneness is missing in this document...
-
+# pedregosidade
+# The report does not mention the presence of stones or gravel in the profiles studied. However,
+# the layer data indicates some presence of gravel in certain layers. We will set this field to NA
+# in the event data and address it in the layer data.
 ctb0065_event[, pedregosidade := NA_character_]
 
-# Rochosidade (superficie)
-# Roughness is missing in this document, however, based on the estimated analysis, 
-# there is no roughness in this work.
-
-ctb0065_event[, rochosidade := NA_character_]
-
+# rochosidade
+# The document does not provide information about rockiness. Based on an analysis of the data and
+# document, we can infer that the profiles do not exhibit rockiness. 
+ctb0065_event[, rochosidade := "ausente"]
 
 str(ctb0065_event)
 
@@ -205,19 +264,14 @@ ctb0065_layer[, .N, by = camada_nome]
 # old: ID da amostra
 # new: amostra_id
 data.table::setnames(ctb0065_layer, old = "ID da amostra", new = "amostra_id")
-ctb0065_layer[, amostra_id := NA_real_]
-
-# perfil_id
-# old: Perfil
-# new: perfil_id
-data.table::setnames(ctb0065_layer, old = "Perfil", new = "perfil_id")
-ctb0065_layer[, perfil_id := as.character(perfil_id)]
-ctb0065_layer[, .N, by = perfil_id]
+ctb0065_layer[, amostra_id := as.character(amostra_id)]
+ctb0065_layer[, .N, by = amostra_id]
 
 # profund_sup
 # old: Profundidade inicial [cm]
 # new: profund_sup
 data.table::setnames(ctb0065_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+ctb0065_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0065_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0065_layer[, profund_sup])
 
@@ -225,6 +279,8 @@ summary(ctb0065_layer[, profund_sup])
 # old: Profundidade final [cm]
 # new: profund_inf
 data.table::setnames(ctb0065_layer, old = "Profundidade final [cm]", new = "profund_inf")
+ctb0065_layer[, profund_inf := depth_slash(profund_inf), by = .I]
+ctb0065_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0065_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0065_layer[, profund_inf])
 
@@ -234,49 +290,61 @@ ctb0065_layer[, camada_id := 1:.N, by = observacao_id]
 ctb0065_layer[, .N, by = camada_id]
 summary(ctb0065_layer[, camada_id])
 
+# Check for missing layers
+check_missing_layer(ctb0065_layer)
+
 # terrafina
 # old: Fração fina [< 2mm~] (%)
 # new: terrafina
-#terrafina is missing for some -13, -10 and -10, -5 layers.
 data.table::setnames(ctb0065_layer, old = "Fração fina [< 2mm~] (%)", new = "terrafina")
 ctb0065_layer[, terrafina := as.numeric(terrafina) * 10]
-ctb0065_layer[is.na(terrafina), .(observacao_id, camada_nome, profund_sup, profund_inf, terrafina)]
+summary(ctb0065_layer[, terrafina])
+# Fine earth fraction is missing for three layers.
+check_empty_layer(ctb0065_layer, "terrafina")
+# Two layers consist of organic material only (O1 and O2 horizons), while the third is a surface
+# layer composed of recent alluvium. We keep these layers as NA for now.
 
 # areia_grossa
 # old: Areia grossa (%)
 # new: areia_grossa
-#Areia_grossa is missing for some -13, -10 and -10, -5 layers.
+# Areia_grossa is missing for some -13, -10 and -10, -5 layers.
 data.table::setnames(ctb0065_layer, old = "Areia grossa (%)", new = "areia_grossa")
 ctb0065_layer[, areia_grossa := as.numeric(areia_grossa) * 10]
-ctb0065_layer[is.na(areia_grossa), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_grossa)]
+summary(ctb0065_layer[, areia_grossa])
+# Coarse sand is missing for three layers, the same layers where fine earth fraction is missing.
+check_empty_layer(ctb0065_layer, "areia_grossa")
 
 # areia_fina
 # old: Areia fina (%)
 # new: areia_fina
-#areia_fina is missing for some -13, -10 and -10, -5 layers.
 data.table::setnames(ctb0065_layer, old = "Areia fina (%)", new = "areia_fina")
 ctb0065_layer[, areia_fina := as.numeric(areia_fina) * 10]
-ctb0065_layer[is.na(areia_fina), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_fina)]
+summary(ctb0065_layer[, areia_fina])
+# Fine sand is missing for three layers, the same layers where fine earth fraction is missing.
+check_empty_layer(ctb0065_layer, "areia_fina")
 
 # areia
-# criação da coluna areia 
-ctb0065_layer[, areia:= areia_grossa+areia_fina]
+# criação da coluna areia
+ctb0065_layer[, areia := areia_grossa + areia_fina]
+summary(ctb0065_layer[, areia])
 
 # silte
 # old: Silte (%)
 # new: silte
-#Silte is missing for some -13, -10 and -10, -5 layers.
 data.table::setnames(ctb0065_layer, old = "Silte (%)", new = "silte")
 ctb0065_layer[, silte := as.numeric(silte) * 10]
-ctb0065_layer[is.na(silte), .(observacao_id, camada_nome, profund_sup, profund_inf, silte)]
+summary(ctb0065_layer[, silte])
+# Silt is missing for three layers, the same layers where fine earth fraction is missing.
+check_empty_layer(ctb0065_layer, "silte")
 
 # argila
 # old: Argila (%)
 # new: argila
-#Argila is missing for some -13, -10 and -10, -5 layers.
 data.table::setnames(ctb0065_layer, old = "Argila (%)", new = "argila")
 ctb0065_layer[, argila := as.numeric(argila) * 10]
-ctb0065_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, argila)]
+summary(ctb0065_layer[, argila])
+# Clay is missing for three layers, the same layers where fine earth fraction is missing.
+check_empty_layer(ctb0065_layer, "argila")
 
 # Check the particle size distribution
 # The sum of argila, silte and areia should be 1000 g/kg
@@ -285,9 +353,6 @@ psd_lims <- 900:1100
 # Check the limits
 ctb0065_layer[!psd %in% psd_lims & !is.na(psd), .N]
 # 0 layers have a sum of the particle size distribution outside the limits.
-# Print the rows with psd != 1000
-cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
-ctb0065_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 
 # carbono
 # old: C (orgânico) (g/kg)
@@ -295,6 +360,9 @@ ctb0065_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 data.table::setnames(ctb0065_layer, old = "C (orgânico) (g/kg)", new = "carbono")
 ctb0065_layer[, carbono := as.numeric(carbono)]
 summary(ctb0065_layer[, carbono])
+# The carbon content is missing for two layers. One corresponds to the A0 horizon, which is
+# recent alluvium. The other is O1 horizon, which is organic material. We will keep these as NA for
+# now.
 check_empty_layer(ctb0065_layer, "carbono")
 
 # ctc
@@ -303,6 +371,7 @@ check_empty_layer(ctb0065_layer, "carbono")
 data.table::setnames(ctb0065_layer, old = "CTC pH 7,0 (cmolc/kg)", new = "ctc")
 ctb0065_layer[, ctc := as.numeric(ctc)]
 summary(ctb0065_layer[, ctc])
+# CTC is missing for two layers, the same layers where carbon content is missing.
 check_empty_layer(ctb0065_layer, "ctc")
 
 # ph
@@ -311,6 +380,7 @@ check_empty_layer(ctb0065_layer, "ctc")
 data.table::setnames(ctb0065_layer, old = "H2O (pH)", new = "ph")
 ctb0065_layer[, ph := as.numeric(ph)]
 summary(ctb0065_layer[, ph])
+# pH is missing for two layers, the same layers where carbon content is missing.
 check_empty_layer(ctb0065_layer, "ph")
 
 # dsi
@@ -319,6 +389,11 @@ check_empty_layer(ctb0065_layer, "ph")
 data.table::setnames(ctb0065_layer, old = "Densidade do solo (g/cm^3)", new = "dsi")
 ctb0065_layer[, dsi := as.numeric(dsi)]
 summary(ctb0065_layer[, dsi])
+# The bulk density is missing for 18 layers. According to the document, this happened due to the
+# difficulty in collecting undisturbed samples in layers with too much organic material, too many
+# roots, or other issues such as extreme cimentation (Bshx layer) or excess water in very sandy
+# layers. We will keep these as NA for now.
+check_empty_layer(ctb0065_layer, "dsi")
 
 str(ctb0065_layer)
 
@@ -326,12 +401,13 @@ str(ctb0065_layer)
 # events and layers
 ctb0065 <- merge(ctb0065_event, ctb0065_layer, all = TRUE)
 ctb0065[, dataset_id := "ctb0065"]
+
 # citation
 ctb0065 <- merge(ctb0065, ctb0065_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0065)
-#Layers: 36
-#Events: 8
-#Georeferenced events: 7
+# Layers: 36
+# Events: 8
+# Georeferenced events: 7
 
 # Plot using mapview
 if (FALSE) {
@@ -345,5 +421,3 @@ if (FALSE) {
 # Write to disk ####################################################################################
 ctb0065 <- select_output_columns(ctb0065)
 data.table::fwrite(ctb0065, "ctb0065/ctb0065.csv")
-data.table::fwrite(ctb0065_event, "ctb0065/ctb0065_event.csv")
-data.table::fwrite(ctb0065_layer, "ctb0065/ctb0065_layer.csv")

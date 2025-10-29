@@ -9,17 +9,11 @@ if (!require("data.table")) {
 if (!require("sf")) {
   install.packages("sf")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-}
 
 # Source helper functions
 source("./helper.R")
 
-
-# ATTENTION: MOVED TO GOOGLE DRIVE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
+# ATTENTION: The source files were already moved to the Google Drive folder.
 
 # ownCloud #########################################################################################
 # ctb0053
@@ -38,38 +32,54 @@ ctb0053_event <- data.table::fread(file_path, dec = ",")
 str(ctb0053_event)
 
 # Process fields
+
+# CSOLO
+# The source data contains a column "CSOLO" indicating whether the soil was collected or not. 
+# Values are 1, 0, and NA. We will treat this column as is, but we will check
+# the events where soil was not collected once we merge the event and layer tables.
+ctb0053_event[, .N, by = CSOLO]
+
 # observacao_id
 # old: UA
 data.table::setnames(ctb0053_event, old = "UA", new = "observacao_id")
 ctb0053_event[, observacao_id := as.character(observacao_id)]
+# Check for duplicated observacao_id
 ctb0053_event[, .N, by = observacao_id][N > 1]
 
-# data_ano
 # old: DATA
+# data_ano
 data.table::setnames(ctb0053_event, old = "DATA", new = "data_ano")
 ctb0053_event[, data_ano := as.Date(data_ano, format = "%d/%m/%Y")]
 ctb0053_event[, data_ano := as.integer(format(data_ano, "%Y"))]
 ctb0053_event[, .N, by = data_ano]
 
 # ano_fonte
-# A data de coleta é informada no trabalho de origem dos dados.
+# The year of data collection is reported in the original work.
 ctb0053_event[!is.na(data_ano), ano_fonte := "original"]
 
-# coord_x
 # old: E
 # new: coord_x
 data.table::setnames(ctb0053_event, old = "E", new = "coord_x")
 ctb0053_event[, coord_x := as.numeric(coord_x)]
 summary(ctb0053_event[, coord_x])
+# There are 104 events missing coord_x. Out of those, only one had soil collected. So, maybe, these
+# sites were not visited at all.
+ctb0053_event[is.na(coord_x), .N, by = CSOLO]
 
-# coord_y
 # old: N
 # new: coord_y
 data.table::setnames(ctb0053_event, old = "N", new = "coord_y")
 ctb0053_event[, coord_y := as.numeric(coord_y)]
-# Incorrectly recorded as 880611 (falls in Antarctica)
-ctb0053_event[observacao_id == "RO_279", coord_y := 8806011]
 summary(ctb0053_event[, coord_y])
+# There are 104 events missing coord_y. Out of those, only one had soil collected. So, maybe, these
+# sites were not visited at all.
+ctb0053_event[is.na(coord_y), .N, by = CSOLO]
+# CHECK!!!
+# ctb0053_event[observacao_id == "RO_279", coord_y]
+# The value of coord_y for the event "RO_279" appears to be incorrect.
+# It is recorded as 8806011, which is in Antarctica.
+# ctb0053_event[observacao_id == "RO_279", coord_y := 8806011]
+# summary(ctb0053_event[, coord_y])
 
 # coord_datum
 # "ZONA" is a letter between H and P.
@@ -113,6 +123,7 @@ for (crs in crs_list) {
   rm(ctb0053_event_sf)
 }
 ctb0053_event[, .N, by = coord_datum]
+# There are 104 events missing the coordinate reference system.
 
 # check for duplicated coordinates
 ctb0053_event[, coord_duplicated := .N > 1, by = .(coord_y, coord_x)]
@@ -120,25 +131,24 @@ ctb0053_event[coord_duplicated == TRUE & !is.na(coord_x), .(observacao_id, coord
 ctb0053_event[, coord_duplicated := NULL]
 
 # coord_fonte
-# The source of the coordinates is missing. The reports mention the use of GPS.
+# The source of the coordinates is missing. The source report mentions the use of GPS.
 ctb0053_event[, coord_fonte := "GPS"]
 
 # coord_precisao
-# The precision of the coordinates is missing. We assume it is 30 meters.
+# The precision of the coordinates is missing in the original work. Here we assume it is 30 meters,
+# but this is just a guess.
 ctb0053_event[, coord_precisao := 30]
 
 # pais_id
-# pais_id is missing. We set it to "BR"
+# The country ID is missing in the original work. We set it to "BR".
 ctb0053_event[, pais_id := "BR"]
 
-# estado_id
 # old: UF
 # new: estado_id
 data.table::setnames(ctb0053_event, old = "UF", new = "estado_id")
 ctb0053_event[, estado_id := as.character(estado_id)]
 ctb0053_event[, .N, by = estado_id]
 
-# municipio_id
 # old: MUN
 # new: municipio_id
 data.table::setnames(ctb0053_event, old = "MUN", new = "municipio_id")
@@ -146,25 +156,28 @@ ctb0053_event[, municipio_id := as.character(municipio_id)]
 ctb0053_event[, .N, by = municipio_id]
 
 # amostra_area
-# amostra_area is missing. We set it to round(pi * 0.1^2, 2)
+# The sampling area is missing in the original work. We set it to round(pi * 0.1^2, 2)
 ctb0053_event[, amostra_area := round(pi * 0.1^2, 2)]
 
 # taxon_sibcs
-# The soil classification is missing. We set it to NA_character_
+# The soil classification is missing in the original work. We set it to NA_character_.
 ctb0053_event[, taxon_sibcs := NA_character_]
 
 # taxon_st
-# US Soil Taxonomy is missing. We set it to NA_character_
+# US Soil Taxonomy is missing in the original work. We set it to NA_character_
 ctb0053_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie)
-# OwnCloud nao tenho acesso
-
+# pedregosidade
+# The stoniness is missing in the original work. We set it to NA_character_. For some soil
+# samples, it is possible to infer the presence of coarse fragments from the field campaign
+# pictures. Those are available at
+# https://snif.florestal.gov.br/pt-br/temas-florestais/ifn/
 ctb0053_event[, pedregosidade := NA_character_]
 
-# Rochosidade (superficie)
-# OwnCloud nao tenho acesso
-
+# rochosidade
+# The rockiness is missing in the original work. We set it to NA_character_. For some soil
+# samples, it is possible to infer the presence of rock outcrops from the field campaign pictures.
+# Those are available at https://snif.florestal.gov.br/pt-br/temas-florestais/ifn/.
 ctb0053_event[, rochosidade := NA_character_]
 
 str(ctb0053_event)
@@ -178,6 +191,7 @@ ctb0053_layer <- data.table::fread(
 str(ctb0053_layer)
 
 # Process fields
+
 # observacao_id
 # old: IDENTIFICAÇÃO RO-LOCAL
 # The field "IDENTIFICAÇÃO RO-LOCAL" supposedly is the same as "UA" in the event table. The
@@ -197,14 +211,12 @@ ctb0053_layer[, observacao_id := paste0(observacao_id, "_", `COLETA - Tipo`)]
 ctb0053_layer[, `COLETA - Tipo` := NULL]
 ctb0053_layer[, .N, by = observacao_id]
 
-# camada_nome
 # old: COLETA - Profundidade (cm)
 # new: camada_nome
 data.table::setnames(ctb0053_layer, old = "COLETA - Profundidade (cm)", new = "camada_nome")
 ctb0053_layer[, camada_nome := as.character(camada_nome)]
 ctb0053_layer[, .N, by = camada_nome]
 
-# amostra_id
 # old: PROTOCOLO DO LABORATÓRIO
 # new: amostra_id
 data.table::setnames(ctb0053_layer, old = "PROTOCOLO DO LABORATÓRIO", new = "amostra_id")
@@ -231,11 +243,13 @@ ctb0053_layer[, .N, by = camada_id]
 
 # check for missing layers
 check_missing_layer(ctb0053_layer)
-# add missing layers: all samples are from 0-20 and 30-50 cm
+
+# Add missing layers: all samples are from 0-20 and 30-50 cm. We will add the 20-30 cm layer.
+# In the future, this missing layers could be created in the source spreadsheet.
 ctb0053_layer <- add_missing_layer(ctb0053_layer)
 check_missing_layer(ctb0053_layer)
 
-# create layer name
+# Create layer name if missing after adding missing layers.
 ctb0053_layer[is.na(camada_nome), camada_nome := paste0(profund_sup, "-", profund_inf)]
 ctb0053_layer[, .N, by = camada_nome]
 
@@ -247,76 +261,88 @@ summary(ctb0053_layer[, profund_mid])
 # Data on the fine earth fraction is missing. We set it to NA_real_.
 ctb0053_layer[, terrafina := NA_real_]
 
-# argila
 # old: Argila (g/Kg)
 # new: argila
 data.table::setnames(ctb0053_layer, old = "Argila (g/Kg)", new = "argila")
 ctb0053_layer[, argila := as.numeric(argila)]
 check_empty_layer(ctb0053_layer, "argila")
-# fill empty layers
+# There are 599 layers with missing argila. Most of those are layers we added previously.
+# Fill empty layers when possible.
 ctb0053_layer[, argila := fill_empty_layer(y = argila, x = profund_mid), by = observacao_id]
 check_empty_layer(ctb0053_layer, "argila")
+# After filling, there are still 17 layers with missing argila.
 summary(ctb0053_layer[, argila])
 
-# silte
 # old: Silte (g/Kg)
 # new: silte
 data.table::setnames(ctb0053_layer, old = "Silte (g/Kg)", new = "silte")
 ctb0053_layer[, silte := as.numeric(silte)]
 check_empty_layer(ctb0053_layer, "silte")
-# fill empty layers
+# There are 599 layers with missing silte. Most of those are layers we added previously.
+# Fill empty layers when possible.
 ctb0053_layer[, silte := fill_empty_layer(y = silte, x = profund_mid), by = observacao_id]
 check_empty_layer(ctb0053_layer, "silte")
+# After filling, there are still 17 layers with missing silte.
 summary(ctb0053_layer[, silte])
 
-# areia
-# old: A.Grossa (g/Kg) + A.Fina (g/Kg)
-# new: areia
+# old: A.Grossa (g/Kg)
+# new: areia_grossa
 data.table::setnames(ctb0053_layer, old = "A.Grossa (g/Kg)", new = "areia_grossa")
+# old: A.Fina (g/Kg)
+# new: areia_fina
 data.table::setnames(ctb0053_layer, old = "A.Fina (g/Kg)", new = "areia_fina")
+# areia = areia_grossa + areia_fina
 ctb0053_layer[, areia := as.numeric(areia_grossa) + as.numeric(areia_fina)]
 check_empty_layer(ctb0053_layer, "areia")
-# fill empty layers
+# There are 599 layers with missing areia. Most of those are layers we added previously.
+# Fill empty layers when possible.
 ctb0053_layer[, areia := fill_empty_layer(y = areia, x = profund_mid), by = observacao_id]
 check_empty_layer(ctb0053_layer, "areia")
+# After filling, there are still 17 layers with missing areia.
 summary(ctb0053_layer[, areia])
 
-# carbono
 # old: C (g/Kg)
 # new: carbono
 data.table::setnames(ctb0053_layer, old = "C (g/Kg)", new = "carbono")
 ctb0053_layer[, carbono := as.numeric(carbono)]
 check_empty_layer(ctb0053_layer, "carbono")
-# fill empty layers
+# There are 597 layers with missing carbono. Most of those are layers we added previously.
+# Fill empty layers when possible.
 ctb0053_layer[, carbono := fill_empty_layer(y = carbono, x = profund_mid), by = observacao_id]
 check_empty_layer(ctb0053_layer, "carbono")
+# After filling, there are still 13 layers with missing carbono.
 summary(ctb0053_layer[, carbono])
 
-# ph
 # old: pH (H2O)
 # new: ph
 data.table::setnames(ctb0053_layer, old = "pH (H2O)", new = "ph")
 ctb0053_layer[, ph := as.numeric(ph)]
 check_empty_layer(ctb0053_layer, "ph")
-# fill empty layers
+# There are 597 layers with missing ph. Most of those are layers we added previously.
+# Fill empty layers when possible.
 ctb0053_layer[, ph := fill_empty_layer(y = ph, x = profund_mid), by = observacao_id]
 check_empty_layer(ctb0053_layer, "ph")
+# After filling, there are still 13 layers with missing ph.
 summary(ctb0053_layer[, ph])
 
-# ctc
 # old: CTC Total pH 7
 # new: ctc
 data.table::setnames(ctb0053_layer, old = "CTC Total pH 7", new = "ctc")
 ctb0053_layer[, ctc := as.numeric(ctc)]
 check_empty_layer(ctb0053_layer, "ctc")
-# fill empty layers
+# There are 598 layers with missing ctc. Most of those are layers we added previously.
+# Fill empty layers when possible.
 ctb0053_layer[, ctc := fill_empty_layer(y = ctc, x = profund_mid), by = observacao_id]
 check_empty_layer(ctb0053_layer, "ctc")
+# After filling, there are still 15 layers with missing ctc.
 summary(ctb0053_layer[, ctc])
 
 # dsi
-# Bulk soil density is missing. We set it to NA_real_
-# The study reports the particle density
+# The source document states that the bulk soil density was measured. However, after checking the
+# dataset, it seems that this information is incorrect: the reported values are too high, most of
+# them above 2.5 kg/m3. Apparently, the bulk density was expected to be measured, but what was
+# actually measured was the particle density. Therefore, the bulk density (dsi) is missing in the
+# original work. We set it to NA_real_.
 ctb0053_layer[, dsi := NA_real_]
 
 str(ctb0053_layer)
@@ -330,48 +356,74 @@ ctb0053_layer[, observacao_id := gsub("_GRANEL", "", observacao_id)]
 ctb0053 <- merge(ctb0053_event, ctb0053_layer, all = TRUE)
 
 # Reset observacao_id
-# Note that some events do not have layers.
 ctb0053[!is.na(observacao_id_new), observacao_id := observacao_id_new]
 ctb0053[, observacao_id_new := NULL]
-ctb0053[, observacao_id]
+ctb0053[, unique(observacao_id)]
+
+# Some events do not have layers. How those correlate with CSOLO?
+ctb0053[CSOLO == 1, ]
+# Some of the folowing events have layers with soil data, which is unexpected.
+ ctb0053[CSOLO == 0, ]
+# Some of the folowing events have layers with soil data, which is unexpected. Specifically, if 
+# the event ID has "GRANEL" or "INDEFORMADA", those are layers with soil data. We will keep them
+# for now.
+ctb0053[is.na(CSOLO), .(observacao_id, profund_sup, profund_inf, argila, silte, areia, carbono, ph, ctc)]
 
 # Three layers have no corresponding event data (RO_365_GRANEL, RO_365_INDEFORMADA, and
 # RO_503_GRANEL). We set data_ano to the most frequent value in the dataset and set ano_fonte =
 # "estimativa"
+ctb0053[is.na(data_ano), observacao_id]
 ctb0053[is.na(data_ano), ano_fonte := "estimativa"]
 ctb0053[is.na(data_ano), data_ano := as.integer(names(which.max(table(ctb0053$data_ano))))]
 
 # Set the dataset_id
 ctb0053[, dataset_id := "ctb0053"]
+
 # citation
 ctb0053 <- merge(ctb0053, ctb0053_citation, by = "dataset_id", all.x = TRUE)
 
+# Duplicated coordinates
+# After merging events and layers, and accounting for the two sample types (disturbed and
+# undisturbed), we create some duplicated coordinates. We will jitter the coordinates slightly to
+# pass checks for duplicated observations.
+# First we create a data.table with unique coordinates
+ctb0053_sf <- unique(ctb0053[!is.na(coord_x) & !is.na(coord_y), .(observacao_id, coord_x, coord_y)])
+# Check for duplicated coordinates
+ctb0053_sf[, coord_duplicated := .N > 1, by = .(coord_y, coord_x)]
+ctb0053_sf[coord_duplicated == TRUE & !is.na(coord_x), .(observacao_id, coord_x, coord_y)]
 # Jitter coordinates of events to pass checks for duplicated observations
 # Start by creating spatial object
 ctb0053_sf <- sf::st_as_sf(
-  ctb0053[coord_datum == 4326, ],
+  ctb0053_sf,
   coords = c("coord_x", "coord_y"), crs = 4326
 )
 # Then transform to projected coordinates
 ctb0053_sf <- sf::st_transform(ctb0053_sf, crs = 32720)
+# Jitter coordinates
+set.seed(1984) # For reproducibility
+amount <- 1
+ctb0053_sf <- sf::st_jitter(ctb0053_sf, amount = amount)
+# Then transform back to WGS84
+ctb0053_sf <- sf::st_transform(ctb0053_sf, crs = 4326)
+# Extract coordinates
 ctb0053_sf <- data.table(
   observacao_id = ctb0053_sf$observacao_id,
   coord_x = sf::st_coordinates(ctb0053_sf)[, 1],
   coord_y = sf::st_coordinates(ctb0053_sf)[, 2]
 )
-# Jitter coordinates
-set.seed(1984) # For reproducibility
-ctb0053_sf[, coord_x := coord_x + runif(1, -1, 1), by = observacao_id]
-set.seed(2001)
-ctb0053_sf[, coord_y := coord_y + runif(1, -1, 1), by = observacao_id]
-# Then transform back to WGS84
-ctb0053_sf <- sf::st_as_sf(
+# Merge back to main data.table
+ctb0053 <- merge(
+  ctb0053,
   ctb0053_sf,
-  coords = c("coord_x", "coord_y"), crs = 32720
+  by = "observacao_id",
+  suffixes = c("_old", ""),
+  all.x = TRUE
 )
-ctb0053_sf <- sf::st_transform(ctb0053_sf, crs = 4326)
-ctb0053[coord_datum == 4326, coord_x := sf::st_coordinates(ctb0053_sf)[, 1]]
-ctb0053[coord_datum == 4326, coord_y := sf::st_coordinates(ctb0053_sf)[, 2]]
+# Replace old coordinates with new coordinates.
+ctb0053[is.na(coord_x), coord_x := coord_x_old]
+ctb0053[is.na(coord_y), coord_y := coord_y_old]
+ctb0053[, coord_x_old := NULL]
+ctb0053[, coord_y_old := NULL]
 rm(ctb0053_sf)
 
 summary_soildata(ctb0053)

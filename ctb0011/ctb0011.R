@@ -3,17 +3,11 @@
 rm(list = ls())
 
 # Install and load required packages
-if (!require("data.table")) {
+if (!requireNamespace("data.table")) {
   install.packages("data.table")
-  library("data.table")
 }
-if (!require("sf")) {
+if (!requireNamespace("sf")) {
   install.packages("sf")
-  library("sf")
-}
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
 }
 
 # Source helper functions
@@ -61,26 +55,26 @@ str(ctb0011_event)
 
 # Process fields
 
-# ID do evento -> observacao_id
-
+# old: ID do evento
+# new: observacao_id
 data.table::setnames(ctb0011_event, old = "ID do evento", new = "observacao_id")
 ctb0011_event[, observacao_id := as.character(observacao_id)]
 # Check if there are duplicated IDs
 any(table(ctb0011_event[, observacao_id]) > 1)
 
-# data_ano
-# Ano (coleta) -> data_ano
+# old: Ano (coleta)
+# new: data_ano
 data.table::setnames(ctb0011_event, old = "Ano (coleta)", new = "data_ano")
 ctb0011_event[, data_ano := as.integer(data_ano)]
 ctb0011_event[, .N, by = data_ano]
 
 # ano_fonte
-# A fonte da data de coleta não foi especificada. Assumimos que é "original".
+# A data de coleta (ano) foi informada no trabalho de origem dos dados.
 ctb0011_event[!is.na(data_ano), ano_fonte := "original"]
 ctb0011_event[, .N, by = ano_fonte]
 
-# coord_x
-# Longitude grau -> coord_x
+# old: Longitude grau
+# new: coord_x
 # coord_x = (Longitude grau + Longitude minuto / 60) * -1
 data.table::setnames(ctb0011_event, old = "Longitude grau", new = "longitude_grau")
 ctb0011_event[, longitude_grau := as.numeric(longitude_grau)]
@@ -89,8 +83,8 @@ ctb0011_event[, longitude_minuto := as.numeric(longitude_minuto)]
 ctb0011_event[, coord_x := (longitude_grau + longitude_minuto / 60) * -1]
 summary(ctb0011_event[, coord_x])
 
-# coord_y
-# Latitude grau -> coord_y
+# old: Latitude grau
+# new: coord_y
 # coord_y = (Latitude grau + Latitude minuto / 60) * -1
 data.table::setnames(ctb0011_event, old = "Latitude grau", new = "latitude_grau")
 ctb0011_event[, latitude_grau := as.numeric(latitude_grau)]
@@ -103,54 +97,68 @@ summary(ctb0011_event[, coord_y])
 ctb0011_event[, .N, by = .(coord_x, coord_y)][N > 1]
 
 # coord_datum
-# coord_datum is missing. We assume it is WGS 84 (EPSG:4326)
-ctb0011_event[, coord_datum := 4326]
-
-# coord_precisao
-# coord_precisao is missing. We assume it is 30.0
-ctb0011_event[, coord_precisao := 30.0]
+# The coordinate reference system (datum) is not informed in the original work.
+# Since the coordinates are in degrees and the study was carried out in 2007, we assume it is a
+# geographic coordinate system based on the WGS84 datum (EPSG: 4326).
+ctb0011_event[!is.na(coord_x) & !is.na(coord_y), coord_datum := 4326]
+ctb0011_event[, .N, by = coord_datum]
 
 # coord_fonte
-# coord_fonte is missing. We assume it is GPS
-ctb0011_event[, coord_fonte := "GPS"]
+# The source of the coordinates is not informed in the original work. However, we assume that the
+# coordinates were collected in the field using a GPS device.
+ctb0011_event[!is.na(coord_x) & !is.na(coord_y), coord_fonte := "GPS"]
+ctb0011_event[, .N, by = coord_fonte]
 
-# pais_id
+# coord_precisao
+# The precision of the coordinates is not informed in the original work. As we assumed that the
+# coordinates were collected in the field using a GPS device, we assume a precision of 30 m.
+ctb0011_event[!is.na(coord_x) & !is.na(coord_y), coord_precisao := 30.0]
+summary(ctb0011_event[, coord_precisao])
+
 # old: País
+# new: pais_id
 data.table::setnames(ctb0011_event, old = "País", new = "pais_id")
 ctb0011_event[, pais_id := as.character(pais_id)]
 ctb0011_event[, .N, by = pais_id]
 
-# Estado (UF) -> estado_id
+# old: Estado (UF)
+# new: estado_id
 data.table::setnames(ctb0011_event, old = "Estado (UF)", new = "estado_id")
 ctb0011_event[, estado_id := as.character(estado_id)]
 ctb0011_event[, .N, by = estado_id]
 
-# Município -> municipio_id
+# old: Município
+# new: municipio_id
 data.table::setnames(ctb0011_event, old = "Município", new = "municipio_id")
 ctb0011_event[, municipio_id := as.character(municipio_id)]
 ctb0011_event[, .N, by = municipio_id]
 
 # amostra_area
-# amostra_area is missing. We assume it is 1.0
+# The area of the sampling unit (amostra_area) is not informed in the original work. Since
+# the sampling was done in soil profiles, we assume that the area of the sampling unit is 1.0 m².
 ctb0011_event[, amostra_area := 1.0]
+summary(ctb0011_event[, amostra_area])
 
-# Classificação do solo -> taxon_sibcs
+# old: Classificação do solo
+# new: taxon_sibcs
 data.table::setnames(ctb0011_event, old = "Classificação do solo", new = "taxon_sibcs")
 ctb0011_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0011_event[, .N, by = taxon_sibcs]
 
 # taxon_st
-# Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
+# The soil classification according to the USDA Soil Taxonomy (taxon_st) is not informed in the
+# original work.
 ctb0011_event[, taxon_st := NA_character_]
 
-
-# Pedregosidade (superficie)
+# old: Pedregosidade
+# new: pedregosidade
 data.table::setnames(ctb0011_event, old = "Pedregosidade", new = "pedregosidade")
 ctb0011_event[, pedregosidade := as.character(pedregosidade)]
 ctb0011_event[, .N, by = pedregosidade]
 
-# Rochosidade (superficie)
-data.table::setnames(ctb0011_event, old = "rochosidade", new = "rochosidade")
+# old: Rochosidade
+# new: rochosidade
+data.table::setnames(ctb0011_event, old = "Rochosidade", new = "rochosidade")
 ctb0011_event[, rochosidade := as.character(rochosidade)]
 ctb0011_event[, .N, by = rochosidade]
 
@@ -162,30 +170,42 @@ str(ctb0011_layer)
 
 # Process fields
 
-# ID do evento -> observacao_id
+# old: ID do evento
+# new: observacao_id
 data.table::setnames(ctb0011_layer, old = "ID do evento", new = "observacao_id")
 ctb0011_layer[, observacao_id := as.character(observacao_id)]
 ctb0011_layer[, .N, by = observacao_id]
 
-# ID da camada -> camada_nome
+# old: ID da camada
+# new: camada_nome
 data.table::setnames(ctb0011_layer, old = "ID da camada", new = "camada_nome")
 ctb0011_layer[, camada_nome := as.character(camada_nome)]
-# Filter out samples from saprolite
+
+# Saprolite
+# This dataset also contains samples from saprolite (saprolito) found in different parts of the
+# soil profiles. We will filter them out.
 ctb0011_layer <- ctb0011_layer[Saprolito == "FALSE"]
 
 # amostra_id
 ctb0011_layer[, amostra_id := NA]
 
-# Limite Superior [cm] -> profund_sup
+# old: Limite Superior [cm]
+# new: profund_sup
 data.table::setnames(ctb0011_layer, old = "Limite Superior [cm]", new = "profund_sup")
+ctb0011_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0011_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0011_layer[, profund_sup])
 
-# Limite Inferior [cm] -> profund_inf
+# old: Limite Inferior [cm]
+# new: profund_inf
 data.table::setnames(ctb0011_layer, old = "Limite Inferior [cm]", new = "profund_inf")
+ctb0011_layer[, profund_inf := depth_slash(profund_inf), by = .I]
 ctb0011_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0011_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0011_layer[, profund_inf])
+
+# check for equal layer depths
+ctb0011_layer[profund_sup == profund_inf, .(observacao_id, camada_nome, profund_sup, profund_inf)]
 
 # check for missing layers
 any_missing_layer(ctb0011_layer)
@@ -195,50 +215,76 @@ ctb0011_layer <- ctb0011_layer[order(observacao_id, profund_sup, profund_inf)]
 ctb0011_layer[, camada_id := 1:.N, by = observacao_id]
 ctb0011_layer[, .N, by = camada_id]
 
-# terrafina
-# Terra fina [g/kg] -> terrafina
+# old: Terra fina [g/kg]
+# new: terrafina
 data.table::setnames(ctb0011_layer, old = "Terra fina [g/kg]", new = "terrafina")
 ctb0011_layer[, terrafina := as.numeric(terrafina)]
 summary(ctb0011_layer[, terrafina])
+# Terrafina is missing for some layers: R layers.
+ctb0011_layer[is.na(terrafina), .(observacao_id, camada_nome, profund_sup, profund_inf, terrafina)]
 
-# Argila [g/kg] -> argila
-# Argila is missing for some layers: R layers and RCr layers with very little fine earth material
+# old: Argila [g/kg]
+# new: argila
 data.table::setnames(ctb0011_layer, old = "Argila [g/kg]", new = "argila")
 ctb0011_layer[, argila := as.numeric(argila)]
 summary(ctb0011_layer[, argila])
-ctb0011_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, argila)]
+# Clay is missing for R layers and for RCr and Cr layers with very little fine earth material.
+ctb0011_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, terrafina, argila)]
 
-# Silte [g/kg] -> silte
+# old: Silte [g/kg]
+# new: silte
 data.table::setnames(ctb0011_layer, old = "Silte [g/kg]", new = "silte")
 ctb0011_layer[, silte := as.numeric(silte)]
 summary(ctb0011_layer[, silte])
+# Silte is missing for some layers: R layers. Also, for some layers with very little fine earth
+# material (e.g., RCr and Cr layers).
+ctb0011_layer[is.na(silte), .(observacao_id, camada_nome, profund_sup, profund_inf, terrafina, silte)]
 
-# areia
-# Areia grossa [g/kg] -> areia_grossa
+# old: Areia grossa [g/kg]
+# new: areia_grossa
 data.table::setnames(ctb0011_layer, old = "Areia grossa [g/kg]", new = "areia_grossa")
-# Areia fina [g/kg] -> areia_fina
+# old: Areia fina [g/kg]
+# new: areia_fina
 data.table::setnames(ctb0011_layer, old = "Areia fina [g/kg]", new = "areia_fina")
 # areia
 ctb0011_layer[, areia := as.numeric(areia_grossa) + as.numeric(areia_fina)]
 summary(ctb0011_layer[, areia])
+# Sand is missing for some layers: R layers. Also, for some layers with very little fine earth
+# material (e.g., RCr and Cr layers).
+ctb0011_layer[is.na(areia), .(observacao_id, camada_nome, profund_inf, profund_inf, terrafina, areia)]
 
-# Corg [g/kg] -> carbono
+# old: Corg [g/kg]
+# new: carbono
 data.table::setnames(ctb0011_layer, old = "Corg [g/kg]", new = "carbono")
 ctb0011_layer[, carbono := as.numeric(carbono)]
 summary(ctb0011_layer[, carbono])
+# Carbon is missing for some layers: R layers. Also, for some layers with very little fine earth
+# material (e.g., RCr and Cr layers).
+ctb0011_layer[is.na(carbono), .(observacao_id, camada_nome, profund_sup, profund_inf, terrafina, carbono)]
 
-# CTC pH 7,0 [cmolc/kg] -> ctc
+# old: CTC pH 7,0 [cmolc/kg]
+# new: ctc
 data.table::setnames(ctb0011_layer, old = "CTC pH 7,0 [cmolc/kg]", new = "ctc")
 ctb0011_layer[, ctc := as.numeric(ctc)]
 summary(ctb0011_layer[, ctc])
+# CTC is missing for some layers: R layers. Also, for some layers with very little fine earth
+# material (e.g., RCr and Cr layers).
+ctb0011_layer[is.na(ctc), .(observacao_id, camada_nome, profund_sup, profund_inf, terrafina, ctc)]
 
-# pH em H_2O -> ph
+# old: pH em H_2O
+# new: ph
 data.table::setnames(ctb0011_layer, old = "pH em H_2O", new = "ph")
 ctb0011_layer[, ph := as.numeric(ph)]
 summary(ctb0011_layer[, ph])
+# pH is missing for some layers: R layers. Also, for some layers with very little fine earth
+# material (e.g., RCr and Cr layers).
+ctb0011_layer[is.na(ph), .(observacao_id, camada_nome, profund_sup, profund_inf, terrafina, ph)]
 
 # dsi
+# The soil bulk density (dsi) is not informed in the original work.
 ctb0011_layer[, dsi := NA_real_]
+
+str(ctb0011_layer)
 
 # Merge ############################################################################################
 # events and layers

@@ -148,9 +148,6 @@ ctb0028_event[, pedregosidade := as.character(pedregosidade)]
 data.table::setnames(ctb0028_event, old = "Rochosidade", new = "rochosidade")
 ctb0028_event[, rochosidade := as.character(rochosidade)]
 
-
-
-
 str(ctb0028_event)
 
 # layer ############################################################################################

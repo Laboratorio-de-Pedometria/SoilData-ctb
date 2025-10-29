@@ -2,6 +2,20 @@
 # author: Alessandro Samuel-Rosa
 # data: 2025
 
+# Install and load required packages
+if (!requireNamespace("data.table")) {
+  install.packages("data.table")
+}
+if (!requireNamespace("sf")) {
+  install.packages("sf")
+}
+if (!requireNamespace("mapview")) {
+  install.packages("mapview")
+}
+if (!requireNamespace("parzer")) {
+  install.packages("parzer")
+}
+
 # Describe soil data ###############################################################################
 # This function summarizes a data.frame containing soil data.
 # It prints the column names, number of layers, number of events, and number of georeferenced events.
@@ -130,7 +144,7 @@ any_missing_layer <- function(layer_data) {
   layer_data <- layer_data[order(observacao_id, profund_sup, profund_inf)]
   # Check for each observacao_id if there is a missing layer
   missing_layers <- layer_data[
-    shift(profund_inf) != profund_sup & profund_sup > 0,
+    data.table::shift(profund_inf) != profund_sup & profund_sup > 0,
     .(observacao_id, camada_nome, profund_sup, profund_inf)
   ]
   if (nrow(missing_layers) > 0) {
@@ -139,9 +153,11 @@ any_missing_layer <- function(layer_data) {
       "Check the source dataset if this is correct or if there has been an error ",
       "when recording the layer depth limits."
     )
+    # Return the missing layers
+    return(missing_layers)
+  } else {
+    message("No missing layers were found. You can proceed.")
   }
-  # Return the missing layers
-  return(missing_layers)
 }
 check_missing_layer <- any_missing_layer
 
@@ -164,26 +180,32 @@ check_missing_layer <- any_missing_layer
 # necessary columns for event ID, depth top, depth bottom, and layer ID.
 add_missing_layer <- function(
     x, event.id = "observacao_id", depth.top = "profund_sup", depth.bottom = "profund_inf",
-    layer.id = "camada_id") {
+    layer.id = "camada_id", layer.name = "camada_nome") {
   
   # Ensure x is a data.table
   data.table::setDT(x)
 
   # Rename columns
-  old_names <- c(event.id, depth.top, depth.bottom, layer.id)
-  new_names <- c("event_id", "depth_top", "depth_bottom", "layer_id")
+  old_names <- c(event.id, depth.top, depth.bottom, layer.id, layer.name)
+  new_names <- c("event_id", "depth_top", "depth_bottom", "layer_id", "layer_name")
   data.table::setnames(x, old = old_names, new = new_names)
 
   # Check for each event_id if it is missing the top layer, i.e. min(depth_top) > 0
   x[, missing_top := min(depth_top) > 0, by = event_id]
   
-  # If the top layer is missing, add a row to the data.table
-  # For the new row, set depth_top = 0 and depth_bottom = min(depth_top)
-  x <- rbind(x, x[missing_top == TRUE, .(
-      event_id = event_id,
-      depth_top = 0,
-      depth_bottom = min(depth_top)
-    )], fill = TRUE)
+  # If the top layer is missing
+  if (any(x$missing_top)) {
+    message("Missing top layer found. Adding a new row with depth_top = 0.")
+    # Add a row to the data.table. Then, for the new row, set
+    # depth_top = 0 and depth_bottom = min(depth_top)
+    x <- rbind(x, x[missing_top == TRUE, .(
+        event_id = event_id,
+        depth_top = 0,
+        depth_bottom = min(depth_top)
+      )], fill = TRUE)
+  } else {
+    message("No missing top layer found.")
+  }
   x[, missing_top := NULL]
   
   # Order x by profile_id and depth_top
@@ -192,11 +214,14 @@ add_missing_layer <- function(
   # Create a new data.table to store the missing layers
   missing_layers <- x[, .(
     depth_top = depth_bottom[-.N],
-    depth_bottom = shift(depth_top, type = "lead")[-.N]
+    depth_bottom = data.table::shift(depth_top, type = "lead")[-.N]
   ), by = event_id][depth_top != depth_bottom]
 
   # Combine the original data with the missing layers
   result <- rbind(x, missing_layers, fill = TRUE)
+
+  # Set layer_name using the depth limits (top-bottom)
+  result[is.na(layer_name), layer_name := paste0(depth_top, "-", depth_bottom)]
 
   # Order the result by event.id and depth_top
   data.table::setorder(result, event_id, depth_top)
@@ -236,6 +261,7 @@ check_repeated_layer <- function(data) {
   }
   return(repeated_layers)
 }
+check_duplicated_layer <- check_repeated_layer
 
 # Check for empty layers ###########################################################################
 # This function checks for empty layers in a data.table containing soil layer data.
@@ -274,20 +300,27 @@ check_empty_layer <- find_empty_layer
 # fill the missing values. Otherwise, it returns the original vector 'y' unchanged.
 # y: numeric vector with missing values (NA) to be filled
 # x: numeric vector representing the x-coordinates corresponding to 'y'
+# ylim: range of acceptable values for 'y'
 # Returns: numeric vector with missing values filled using spline interpolation, or the original
 #          vector 'y' if conditions are not met
 # Example usage: fill_empty_layer(c(1, NA, 3), c(1, 2, 3)) # returns c(1, 2, 3)
 # Note: The function includes several checks to ensure that spline interpolation is only applied
 # when appropriate, such as when there are enough non-missing values and no consecutive missing
 # values. It prints a message to the console indicating whether interpolation was performed.
-fill_empty_layer <- function(y, x) {
+fill_empty_layer <- function(y, x, ylim) {
   # Check if y is numeric
   if (!is.numeric(y)) {
     stop("y must be a numeric vector")
   }
   # Standard output message when conditions for interpolation are not met
   no_interpolation_message <-
-    "Conditions not met. Spline interpolation not applied. Returning original vector."
+    "NA values found. Conditions not met. Spline interpolation not applied. Returning original vector."
+  
+  # If no NA, return y
+  if (all(!is.na(y))) {
+    message("No NA values found. Returning original vector.")
+    return(y)
+  }
 
   # If only one point, return it
   if (length(y) == 1) {
@@ -315,6 +348,7 @@ fill_empty_layer <- function(y, x) {
     return(y)
   }
   # If three points, two not NA, and y[3] is NA, return y
+  # This avoids extrapolation with only two points
   if (length(y) == 3 & sum(!is.na(y)) == 2 & is.na(y[3])) {
     message(no_interpolation_message)
     return(y)
@@ -325,19 +359,14 @@ fill_empty_layer <- function(y, x) {
     return(y)
   }
   # Else, return spline
-  message("Conditions met. Spline interpolation applied.")
-  spline(y = y, x = x, xout = x, method = "natural")$y
-}
-
-# Set GPS precision ################################################################################
-# This function sets the GPS precision for soil data collection.
-# It returns a numeric value representing the precision in meters.
-# Returns: numeric value representing the GPS precision (default is 30 meters)
-# Example usage: set_gps_precision() # returns 30
-# Note: The function can be modified to return different precision values based on the requirements
-# of the soil data collection protocol.
-set_gps_precision <- function() {
-  return(30)
+  message("NA values found. Conditions met. Spline interpolation applied.")
+  out <- spline(y = y, x = x, xout = x, method = "natural")$y
+  # Correct values outside ylim if ylim is provided
+  if (!missing(ylim)) {
+    out[out < ylim[1]] <- ylim[1]
+    out[out > ylim[2]] <- ylim[2]
+  }
+  return(out)
 }
 
 # Select columns for final output ##################################################################
@@ -361,7 +390,7 @@ select_output_columns <- function(data) {
     "amostra_area",
     "taxon_sibcs", "taxon_st",
     "pedregosidade", "rochosidade",
-    "camada_nome", "amostra_id",
+    "camada_nome", "amostra_id", "camada_id",
     "profund_sup", "profund_inf",
     "terrafina",
     "argila", "silte", "areia",
@@ -371,5 +400,99 @@ select_output_columns <- function(data) {
   if (length(missing_cols) > 0) {
     stop(paste("Missing columns:", paste(missing_cols, collapse = ", ")))
   }
+  # Check if spatial coordinates are in decimal degrees (WGS84). If not, raise an error,
+  # warning the user to convert them before proceeding.
+  if (any(data$coord_x < -180 | data$coord_x > 180 | data$coord_y < -90 | data$coord_y > 90, na.rm = TRUE)) {
+    stop(paste0("Spatial coordinates (coord_x, coord_y) must be in decimal degrees (WGS84).\n",
+    "Please convert them before proceeding."))
+  }
+  # Check if the sample points that have spatial coordinates (coord_x, coord_y) fall within the
+  # bounding box of the Brazilian territory.
+  bb <- c(-73.9872354804, -33.7683777809, -34.7299934555, 5.24448639569)
+  if (any(data$coord_x < bb[1] | data$coord_x > bb[2] | data$coord_y < bb[3] | data$coord_y > bb[4], na.rm = TRUE)) {
+    stop(paste0("Some spatial coordinates (coord_x, coord_y) fall outside the bounding box of Brazil.\n",
+                 "Please check and correct them before proceeding."))
+  }
   return(data[, ..target_columns])
+}
+# Check for equal coordinates ######################################################################
+# This function checks for equal coordinates in a data.table containing soil data.
+check_equal_coordinates <-
+  function(dt) {
+    dup_groups <- dt[!(is.na(coord_x) & is.na(coord_y)), .N, by = .(coord_x, coord_y)][N > 1]
+    if (nrow(dup_groups) > 0) {
+      # Build one row per coordinate pair concatenating all observacao_id that share the pair
+      dup_set <- dt[dup_groups, on = .(coord_x, coord_y), nomatch = 0L][
+        , .(coord_x, coord_y, observacao_id)
+      ]
+      dup_out <- dup_set[
+        , .(observacao_id = paste(sort(unique(observacao_id)), collapse = ", "))
+        , by = .(coord_x, coord_y)
+      ][order(coord_x, coord_y)]
+      warning("Duplicate coordinates found. Listing coordinate pairs with all observacao_id sharing them:")
+      print(dup_out)
+      warning("Check the source dataset to resolve this issue.\nIf no solution is found, consider adding a random perturbation of 1 meter to the coordinates and updating the coordinate precision accordingly using the Pythagorean theorem for propagation of uncertainty.")
+    } else {
+      message("No duplicate coordinates found: all coordinates are unique. You can proceed.")
+    }
+  }
+check_duplicated_coordinates <- check_equal_coordinates
+# Check for negative validation results. ########################################################
+# This function checks for negative validation results in a data.table containing validation
+# results.
+check_sheet_validation <- function(dt) {
+  neg_results <- sum(dt == FALSE, na.rm = TRUE)
+  if (neg_results > 0) {
+    stop(
+      paste0(
+          "Sheet validation failed with ",
+          neg_results,
+          " negative results. Please check the validation sheet for details.\n",
+          "Consult with the data provider, person responsible for data entry, or soil expert to resolve the issues before proceeding."
+        )
+      )
+    } else {
+      message("Sheet validation passed with no negative results. You can proceed.")
+    }
+  }
+# Check for equal layer depths #####################################################################
+# This function checks for layers where the upper and lower depth limits are equal.
+# data: data.table containing soil layer data with 'profund_sup' and 'profund_inf' columns.
+# Returns: data.table with layers having equal depths.
+check_equal_depths <- function(data) {
+  equal_depths <- data[profund_sup == profund_inf,
+    .(observacao_id, camada_nome, profund_sup, profund_inf)
+  ]
+  if (nrow(equal_depths) > 0) {
+    message(
+      "Layers with equal upper and lower depth limits were found. ",
+      "This might indicate an issue with the data recording, such as a layer with zero thickness."
+    )
+    print(equal_depths)
+  } else {
+    message("No layers with equal upper and lower depth limits were found. You can proceed.")
+  }
+  return(invisible(equal_depths))
+}
+# Check for inverted or negative layer depths ######################################################
+# This function checks for layers with inverted depth limits (profund_inf < profund_sup)
+# or negative depth values. These can sometimes indicate special cases like organic layers
+# above the mineral soil surface (negative depths) or data entry errors.
+# data: data.table containing soil layer data with 'profund_sup' and 'profund_inf' columns.
+# Returns: data.table with layers having inverted or negative depths.
+check_depth_inversion <- function(data) {
+  inverted_depths <- data[profund_inf < profund_sup | profund_sup < 0,
+    .(observacao_id, camada_nome, profund_sup, profund_inf)
+  ]
+  if (nrow(inverted_depths) > 0) {
+    message(
+      "Layers with inverted or negative depths were found. ",
+      "This might indicate organic layers recorded with negative depths or data entry errors. ",
+      "Please review the identified layers."
+    )
+    print(inverted_depths)
+  } else {
+    message("No layers with inverted or negative depths were found. You can proceed.")
+  }
+  return(invisible(inverted_depths))
 }

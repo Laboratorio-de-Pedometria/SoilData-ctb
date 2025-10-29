@@ -1,4 +1,4 @@
-# autor: Felipe Brun Vergani
+# autor: Felipe Brun Vergani and Alessandro Samuel-Rosa
 # data: 2025
 
 # Install and load required packages
@@ -10,30 +10,20 @@ if (!require("sf")) {
   install.packages("sf")
   library("sf")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
-}
 if (!require("parzer")) {
   install.packages("parzer")
   library("parzer")
 }
 
-
-
 # Source helper functions
 source("./helper.R")
-
-
 
 # Google Sheet #####################################################################################
 # ctb0064
 # Dados de "Caracterização, Gênese, Classificação e Aptidão Agrícola de
 # uma Sequência de Solos do Terciário na Região de Campos, RJ"
-# 
-# https://docs.google.com/spreadsheets/d/1WIrft56We5JloJFaQeWrGCx-LrfodyYpU_7AvCvoRDU/edit?usp=sharing
-
-
+#
+# Google Drive: https://drive.google.com/drive/u/0/folders/1QaxiNiQ1O2Z7UFDnNoLvdIdx3WekaHGe
 ctb0064_ids <- soildata_catalog("ctb0064")
 
 # validation #####################################################################################
@@ -47,7 +37,6 @@ sum(ctb0064_validation == FALSE, na.rm = TRUE)
 # citation #####################################################################################
 ctb0064_citation <- google_sheet(ctb0064_ids$gs_id, ctb0064_ids$gid_citation)
 str(ctb0064_citation)
-
 
 # dataset_titulo
 # Check for the string "Título" in column "campo". Then get the corresponding row value from column
@@ -71,13 +60,13 @@ print(ctb0064_citation)
 ctb0064_event <- google_sheet(ctb0064_ids$gs_id, ctb0064_ids$gid_event)
 str(ctb0064_event)
 
-#PROCESS FIELDS
-
+# PROCESS FIELDS
 
 # observacao_id
 # ID do evento -> observacao_id
 data.table::setnames(ctb0064_event, old = "ID do evento", new = "observacao_id")
 ctb0064_event[, observacao_id := as.character(observacao_id)]
+# check for duplicated observacao_id
 any(table(ctb0064_event[, observacao_id]) > 1)
 
 # data_ano
@@ -87,9 +76,14 @@ ctb0064_event[, data_ano := as.integer(data_ano)]
 ctb0064_event[, .N, by = data_ano]
 
 # ano_fonte
-ctb0064_event[!is.na(data_ano), ano_fonte := "Original"]
+# The sampling date is not reported in the dataset. However, the thesis was defended in 1985. So, 
+# we can guess that the data collection was done in 1984 or earlier. We will set the year to 1984.
+ctb0064_event[, ano_fonte := NA_character_]
+ctb0064_event[is.na(data_ano), ano_fonte := "Estimativa"]
 ctb0064_event[, .N, by = ano_fonte]
 
+# Set data_ano to 1984 where missing
+ctb0064_event[is.na(data_ano), data_ano := 1984]
 
 # Longitude -> coord_x
 data.table::setnames(ctb0064_event, old = "Longitude", new = "coord_x")
@@ -102,48 +96,48 @@ ctb0064_event[, coord_y := parzer::parse_lat(coord_y)]
 summary(ctb0064_event[, coord_y])
 
 # Datum (coord) -> coord_datum
-# Córrego Alegre
+# https://www.pedometria.org/livros/modelo-de-dados/evento/espacial/
+# Córrego Alegre; EPSG:4225
 data.table::setnames(ctb0064_event, old = "Datum (coord)", new = "coord_datum")
-ctb0064_event[, coord_datum := NULL]
-ctb0064_event[, coord_datum := 4618]
-ctb0064_event[, coord_datum := as.integer(coord_datum)]
+ctb0064_event[, coord_datum := as.character(coord_datum)]
+ctb0064_event[coord_datum == "Córrego Alegre", coord_datum := 4225]
 
-#  Converte o data.table para um objeto espacial (sf)
-# Informamos que o sistema de coordenadas (CRS) original é 4618
+# Converte o data.table para um objeto espacial (sf)
+# Informamos que o sistema de coordenadas (CRS) original é 4225
 ctb0064_event_sf <- sf::st_as_sf(
   ctb0064_event,
   coords = c("coord_x", "coord_y"),
-  crs = 4618
+  crs = 4225
 )
 
-#  Transforma as coordenadas para WGS84 (EPSG: 4326)
-ctb0064_event_sf_wgs84 <- sf::st_transform(ctb0064_event_sf, 4618)
+# Transforma as coordenadas para WGS84 (EPSG: 4326)
+ctb0064_event_sf_wgs84 <- sf::st_transform(ctb0064_event_sf, 4326)
 
-#  Extrai as novas coordenadas (já em WGS84) do objeto sf
+# Extrai as novas coordenadas (já em WGS84) do objeto sf
 new_coords <- sf::st_coordinates(ctb0064_event_sf_wgs84)
 
-#  Atualiza a tabela original com as coordenadas convertidas e o novo datum
+# Atualiza a tabela original com as coordenadas convertidas e o novo datum
 ctb0064_event[, coord_x := new_coords[, 1]] # Novas longitudes
 ctb0064_event[, coord_y := new_coords[, 2]] # Novas latitudes
-ctb0064_event[, coord_datum := 4326]      # Novo datum: WGS84
-
-summary(ctb0064_event[, .(coord_datum, coord_x, coord_y)])
-
+ctb0064_event[coord_datum == 4225, coord_datum := 4326] # Novo datum: WGS84
+rm(ctb0064_event_sf, ctb0064_event_sf_wgs84, new_coords)
+ctb0064_event[, .N, by = coord_datum]
+summary(ctb0064_event[, .(coord_x, coord_y)])
 
 # Precisão (coord) -> coord_precisao
-
 data.table::setnames(ctb0064_event, old = "Precisão (coord)", new = "coord_precisao")
 ctb0064_event[, coord_precisao := as.character(coord_precisao)]
-summary(ctb0064_event[, coord_precisao])
+ctb0064_event[, .N, by = coord_precisao]
 
 # Fonte (coord) -> coord_fonte
 data.table::setnames(ctb0064_event, old = "Fonte (coord)", new = "coord_fonte")
-ctb0064_event[, coord_fonte := as.character(coord_precisao)]
-summary(ctb0064_event[, coord_fonte])
+ctb0064_event[, coord_fonte := as.character(coord_fonte)]
+ctb0064_event[, .N, by = coord_fonte]
 
 # País -> pais_id
 data.table::setnames(ctb0064_event, old = "País", new = "pais_id")
-ctb0064_event[, pais_id := "BR"]
+ctb0064_event[, pais_id := as.character(pais_id)]
+ctb0064_event[, .N, by = pais_id]
 
 # Estado (UF) -> estado_id
 data.table::setnames(ctb0064_event, old = "Estado (UF)", new = "estado_id")
@@ -170,22 +164,18 @@ data.table::setnames(ctb0064_event, old = "SoilTaxonomy (1975)", new = "taxon_st
 ctb0064_event[, taxon_st := as.character(taxon_st)]
 ctb0064_event[, .N, by = taxon_st]
 
-
-#no information on stoniness and rockiness in this work###############
-# Pedregosidade (superficie) 
-
+# pedregosidade
+# The thesis mentions the presence of gravel in some profiles. This is reported in the layer
+# descriptions. However, there is no specific column for gravel content in the event table. So, we
+# will set pedregosidade to NA and complete this information later on.
 ctb0064_event[, pedregosidade := NA_character_]
 
-# Rochosidade (superficie)
-
-ctb0064_event[, rochosidade := NA_character_]
-
-######################################################################
-
+# rochosidade
+# In the thesis, there is no specific mention of rockiness in the described profiles. So we
+# will assume that rockiness is absent in all profiles.
+ctb0064_event[, rochosidade := "Ausente"]
 
 str(ctb0064_event)
-
-
 
 # layers ###########################################################################################
 ctb0064_layer <- google_sheet(ctb0064_ids$gs_id, ctb0064_ids$gid_layer)
@@ -211,6 +201,7 @@ ctb0064_layer[, amostra_id := NA_character_]
 # old: Profundidade inicial [cm]
 # new: profund_sup
 data.table::setnames(ctb0064_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+ctb0064_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0064_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0064_layer[, profund_sup])
 
@@ -218,47 +209,62 @@ summary(ctb0064_layer[, profund_sup])
 # old: Profundidade final [cm]
 # new: profund_inf
 data.table::setnames(ctb0064_layer, old = "Profundidade final [cm]", new = "profund_inf")
+ctb0064_layer[, profund_inf := depth_slash(profund_inf), by = .I]
+ctb0064_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0064_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0064_layer[, profund_inf])
 
-# areia_grossa
-# old: "Areia grossa  [%]"
-# new: areia_grossa
-data.table::setnames(ctb0064_layer, old = "Areia grossa  [%]", new = "areia_grossa")
-ctb0064_layer[, areia_grossa := as.numeric(areia_grossa)*10]
-ctb0064_layer[is.na(areia_grossa), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_grossa)]
+# camada_id
+# We will create a unique identifier for each layer.
+ctb0064_layer <- ctb0064_layer[order(observacao_id, profund_sup, profund_inf)]
+ctb0064_layer[, camada_id := 1:.N, by = observacao_id]
+ctb0064_layer[, .N, by = camada_id]
 
-# areia_fina
-# old: "Areia fina [%]"
-# new: areia_fina
-data.table::setnames(ctb0064_layer, old = "Areia fina [%]", new = "areia_fina")
-ctb0064_layer[, areia_fina := as.numeric(areia_fina)*10]
-ctb0064_layer[is.na(areia_fina), .(observacao_id, camada_nome, profund_sup, profund_inf, areia_fina)]
-
-# areia
-# criação da coluna areia 
-ctb0064_layer[, areia:= areia_grossa+areia_fina]
-
-# silte
-# old: Silte [%]
-# new: silte
-data.table::setnames(ctb0064_layer, old = "Silte [%]", new = "silte")
-ctb0064_layer[, silte := as.numeric(silte)*10]
-ctb0064_layer[is.na(silte), .(observacao_id, camada_nome, profund_sup, profund_inf, silte)]
-
-# argila
-# old: Argila < 0,002 mm [%]
-# new: argila
-data.table::setnames(ctb0064_layer, old = "Argila <0,002 mm [%]", new = "argila")
-ctb0064_layer[, argila := as.numeric(argila)*10]
-ctb0064_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, argila)]
+# Check for missing layers
+check_missing_layer(ctb0064_layer)
 
 # terrafina
 # old: Terra fina <2 mm [%]
 # new: terrafina
 data.table::setnames(ctb0064_layer, old = "Terra fina <2 mm [%]", new = "terrafina")
 ctb0064_layer[, terrafina := as.numeric(terrafina)*10]
-ctb0064_layer[is.na(argila), .(observacao_id, camada_nome, profund_sup, profund_inf, terrafina)]
+summary(ctb0064_layer[, terrafina])
+
+# areia_grossa
+# old: "Areia grossa [%]"
+# new: areia_grossa
+data.table::setnames(ctb0064_layer, old = "Areia grossa [%]", new = "areia_grossa")
+ctb0064_layer[, areia_grossa := as.numeric(areia_grossa) * 10]
+summary(ctb0064_layer[, areia_grossa])
+
+# areia_fina
+# old: "Areia fina [%]"
+# new: areia_fina
+data.table::setnames(ctb0064_layer, old = "Areia fina [%]", new = "areia_fina")
+ctb0064_layer[, areia_fina := as.numeric(areia_fina) * 10]
+summary(ctb0064_layer[, areia_fina])
+
+# areia
+# criação da coluna areia
+ctb0064_layer[, areia := areia_grossa + areia_fina]
+summary(ctb0064_layer[, areia])
+# There are no missing values in the areia column
+
+# silte
+# old: Silte [%]
+# new: silte
+data.table::setnames(ctb0064_layer, old = "Silte [%]", new = "silte")
+ctb0064_layer[, silte := as.numeric(silte) * 10]
+summary(ctb0064_layer[, silte])
+# There are no missing values in the silte column
+
+# argila
+# old: Argila < 0,002 mm [%]
+# new: argila
+data.table::setnames(ctb0064_layer, old = "Argila <0,002 mm [%]", new = "argila")
+ctb0064_layer[, argila := as.numeric(argila) * 10]
+summary(ctb0064_layer[, argila])
+# There are no missing values in the argila column
 
 # Check the particle size distribution
 # The sum of argila, silte and areia should be 1000 g/kg
@@ -267,17 +273,14 @@ psd_lims <- 900:1100
 # Check the limits
 ctb0064_layer[!psd %in% psd_lims & !is.na(psd), .N]
 # 0 layers have a sum of the particle size distribution outside the limits.
-# Print the rows with psd != 1000
-cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
-ctb0064_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 
 # carbono
 # old: C orgânico [%]
 # new: carbono
 data.table::setnames(ctb0064_layer, old = "C orgânico [%]", new = "carbono")
-ctb0064_layer[, carbono := as.numeric(carbono)*10]
+ctb0064_layer[, carbono := as.numeric(carbono) * 10]
 summary(ctb0064_layer[, carbono])
-check_empty_layer(ctb0064_layer, "carbono")
+# There are no missing values in the carbono column
 
 # ctc
 # old: Valor T [meq/100g]
@@ -285,7 +288,7 @@ check_empty_layer(ctb0064_layer, "carbono")
 data.table::setnames(ctb0064_layer, old = "Valor T [meq/100g]", new = "ctc")
 ctb0064_layer[, ctc := as.numeric(ctc)]
 summary(ctb0064_layer[, ctc])
-check_empty_layer(ctb0064_layer, "ctc")
+# There are no missing values in the ctc column
 
 # ph
 # old: pH em água
@@ -293,7 +296,7 @@ check_empty_layer(ctb0064_layer, "ctc")
 data.table::setnames(ctb0064_layer, old = "pH em água", new = "ph")
 ctb0064_layer[, ph := as.numeric(ph)]
 summary(ctb0064_layer[, ph])
-check_empty_layer(ctb0064_layer, "ph")
+# There are no missing values in the ph column
 
 # dsi
 # old: Densidade aparente [g/cm^3]
@@ -301,6 +304,9 @@ check_empty_layer(ctb0064_layer, "ph")
 data.table::setnames(ctb0064_layer, old = "Densidade aparente [g/cm^3]", new = "dsi")
 ctb0064_layer[, dsi := as.numeric(dsi)]
 summary(ctb0064_layer[, dsi])
+# There are two missing values in the dsi column, both in the P2 profile. These will be left as NA 
+# as the bulk density was not measured in these layers.
+check_empty_layer(ctb0064_layer, "dsi")
 
 str(ctb0064_layer)
 
@@ -308,14 +314,13 @@ str(ctb0064_layer)
 # events and layers
 ctb0064 <- merge(ctb0064_event, ctb0064_layer, all = TRUE)
 ctb0064[, dataset_id := "ctb0064"]
+
 # citation
 ctb0064 <- merge(ctb0064, ctb0064_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0064)
-
-#Layers: 39
-#Events: 5
-#Georeferenced events: 5
-
+# Layers: 39
+# Events: 5
+# Georeferenced events: 5
 
 # Plot using mapview
 if (FALSE) {

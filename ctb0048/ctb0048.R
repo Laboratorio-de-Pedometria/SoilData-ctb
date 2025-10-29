@@ -12,9 +12,6 @@ if (!require("sf")) {
 if (!require("openxlsx")) {
   install.packages("openxlsx")
 }
-if (!require("mapview")) {
-  install.packages("mapview")
-}
 
 # Source helper functions
 source("./helper.R")
@@ -51,6 +48,7 @@ str(ctb0048_event)
 # Process fields
 # observacao_id
 ctb0048_event[, observacao_id := as.character(observacao_id)]
+# Check for duplicated observacao_id
 ctb0048_event[, .N, by = observacao_id][N > 1]
 
 # data_ano
@@ -60,15 +58,17 @@ ctb0048_event[, data_ano := as.integer(data_ano)]
 ctb0048_event[, .N, by = data_ano]
 
 # ano_fonte
-# A data de coleta no campo está especificada no documento de origem dos dados
+# The year of data collection is specified in the source document of the data.
 ctb0048_event[, ano_fonte := "original"]
 ctb0048_event[, .N, by = ano_fonte]
 
 # coord_x
+# There are eigth events without coordinates
 ctb0048_event[, coord_x := as.numeric(coord_x)]
 summary(ctb0048_event[, coord_x])
 
 # coord_y
+# There are eigth events without coordinates
 ctb0048_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0048_event[, coord_y])
 
@@ -90,8 +90,8 @@ ctb0048_event[, coord_datum := as.integer(coord_datum)]
 rm(ctb0048_event_sf)
 ctb0048_event[, .N, by = coord_datum]
 
-# check for duplicated coordinates
-ctb0048_event[, .N, by = .(coord_x, coord_y)][N > 1]
+# check for duplicated coordinates, except NAs
+ctb0048_event[!is.na(coord_x) & !is.na(coord_y), .N, by = .(coord_x, coord_y)][N > 1]
 
 # coord_precisao
 ctb0048_event[, coord_precisao := as.numeric(coord_precisao)]
@@ -117,25 +117,37 @@ ctb0048_event[, .N, by = municipio_id]
 ctb0048_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0048_event[, amostra_area])
 
-# taxon_sibcs
 # taxon_sibcs_2006
+# taxon_sibcs
 data.table::setnames(ctb0048_event, old = "taxon_sibcs_2006", new = "taxon_sibcs")
 ctb0048_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0048_event[, .N, by = taxon_sibcs]
 
 # taxon_st
-# Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
+# The Soil Taxonomy classification is not available in this dataset.
 ctb0048_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie)
-# this document don't  have pedregosidade info
+# pedregosidade
+# The stoniness information is not available in this dataset. However, we can make inferences based
+# on the soil class. If Latossolo, Chernossolo, or Nitossolo, we assume pedregosidade = "ausente".
+# If Neossolo, we assume pedregosidade = NA_character_. This could be improved by checking the
+# original data source and authors.
+ctb0048_event[, pedregosidade := ifelse(
+  grepl("Latossolo|Chernossolo|Nitossolo", taxon_sibcs),
+  "ausente", NA_character_
+)]
+ctb0048_event[, .N, by = pedregosidade]
 
-ctb0048_event[, pedregosidade := NA_character_]
-
-# Rochosidade (superficie)
-# this document don't  have rochosidade info
-
-ctb0048_event[, rochosidade := NA_character_]
+# rochosidade
+# The rockiness information is not available in this dataset. However, we can make inferences based
+# on the soil class. If Latossolo, Chernossolo, or Nitossolo, we assume rochosidade = "ausente".
+# If Neossolo, we assume rochosidade = NA_character_. This could be improved by checking the
+# original data source and authors.
+ctb0048_event[, rochosidade := ifelse(
+  grepl("Latossolo|Chernossolo|Nitossolo", taxon_sibcs),
+  "ausente", NA_character_
+)]
+ctb0048_event[, .N, by = rochosidade]
 
 str(ctb0048_event)
 
@@ -185,19 +197,22 @@ ctb0048_layer[, profund_mid := (profund_sup + profund_inf) / 2]
 summary(ctb0048_layer[, profund_mid])
 
 # terrafina
-# terrafina is missing. We assume it is 1000 g/kg because all layers are Ap, Bt, or Bw
-ctb0048_layer[, terrafina := 1000]
+# The content of fine earth is not available in this dataset. However, we can make inferences based
+# on the soil class. If Latossolo, Chernossolo, or Nitossolo, we assume terrafina = 1000 g/kg.
+# If Neossolo, we assume terrafina is missing. We assume it is 1000 g/kg because all layers are Ap,
+# Bt, or Bw (see camada_nome). We will do this after merging events and layers.
+ctb0048_layer[, terrafina := NA_real_]
 
 # argila
 # argila_xxx_xxx * 10
 data.table::setnames(ctb0048_layer, old = "argila_xxx_xxx", new = "argila")
 ctb0048_layer[, argila := as.numeric(argila) * 10]
 summary(ctb0048_layer[, argila])
-find_empty_layer(ctb0048_layer, "argila")
+check_empty_layer(ctb0048_layer, "argila")
 # Fill empty layers
 ctb0048_layer[, argila := fill_empty_layer(y = argila, x = profund_mid), by = observacao_id]
 ctb0048_layer[, argila := round(argila)]
-find_empty_layer(ctb0048_layer, "argila")
+check_empty_layer(ctb0048_layer, "argila")
 summary(ctb0048_layer[, argila])
 
 # silte
@@ -256,12 +271,8 @@ ctb0048_layer[, ctc := round(ctc)]
 summary(ctb0048_layer[, ctc])
 
 # dsi
-# dsi is missing. We assume it is NA_real_
+# The soil bulk density information is not available in this dataset.
 ctb0048_layer[, dsi := NA_real_]
-
-# Remove unused columns
-# profund_mid
-ctb0048_layer[, profund_mid := NULL]
 
 str(ctb0048_layer)
 
@@ -269,6 +280,16 @@ str(ctb0048_layer)
 # events and layers
 ctb0048 <- merge(ctb0048_event, ctb0048_layer, all = TRUE)
 ctb0048[, dataset_id := "ctb0048"]
+
+# terrafina
+# Fill terrafina based on soil class (taxon_sibcs) and assuming all layers are Ap, Bt, or Bw.
+ctb0048[
+  grepl("Latossolo|Chernossolo|Nitossolo", taxon_sibcs) & grepl("Ap|Bt|Bw", camada_nome),
+  terrafina := 1000
+]
+summary(ctb0048[, terrafina])
+check_empty_layer(ctb0048, "terrafina")
+
 # citation
 ctb0048 <- merge(ctb0048, ctb0048_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0048)

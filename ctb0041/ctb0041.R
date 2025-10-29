@@ -3,14 +3,11 @@
 rm(list = ls())
 
 # Install and load required packages
-if (!require("data.table")) {
+if (!requireNamespace("data.table")) {
   install.packages("data.table")
 }
-if (!require("sf")) {
+if (!requireNamespace("sf")) {
   install.packages("sf")
-}
-if (!require("mapview")) {
-  install.packages("mapview")
 }
 
 # Source helper functions
@@ -122,7 +119,7 @@ ctb0041_event[, .N, by = coord_fonte]
 # As the source of the coordinates is GPS, we set the precision to 30 m.
 data.table::setnames(ctb0041_event, old = "Precisão (coord)", new = "coord_precisao")
 ctb0041_event[, coord_precisao := as.numeric(coord_precisao)]
-ctb0041_event[, coord_precisao := set_gps_precision()]
+ctb0041_event[, coord_precisao := 30]
 summary(ctb0041_event[, coord_precisao])
 
 # País -> pais_id

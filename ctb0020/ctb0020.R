@@ -3,10 +3,10 @@
 rm(list = ls())
 
 # Install and load required packages
-if (!require("data.table")) {
+if (!requireNamespace("data.table")) {
   install.packages("data.table")
 }
-if (!require("openxlsx")) {
+if (!requireNamespace("openxlsx")) {
   install.packages("openxlsx")
 }
 
@@ -51,14 +51,18 @@ ctb0020_event[, observacao_id := as.character(observacao_id)]
 # Check if there are duplicated IDs
 ctb0020_event[, .N, by = observacao_id][N > 1]
 
-# observacao_data -> data_ano
+# old: observacao_data
+# new: data_ano
 data.table::setnames(ctb0020_event, old = "observacao_data", new = "data_ano")
+ctb0020_event[, .N, by = data_ano]
+# Convert Excel date to R Date and then extract the year
 t0 <- "1899-12-30"
 ctb0020_event[, data_ano := as.Date(data_ano, origin = t0, format = "%Y-%m-%d")]
 ctb0020_event[, data_ano := as.integer(format(data_ano, "%Y"))]
 ctb0020_event[, .N, by = data_ano]
 
 # ano_fonte
+# The year of sampling is informed in the publication.
 ctb0020_event[, ano_fonte := "original"]
 ctb0020_event[, .N, by = ano_fonte]
 
@@ -86,16 +90,19 @@ ctb0020_event[, coord_y := eval(parse(text = coord_y)) * -1, by = .I]
 ctb0020_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0020_event[, coord_y])
 
-# coord_sistema -> coord_datum
+# old: coord_sistema
+# new: coord_datum
 data.table::setnames(ctb0020_event, old = "coord_sistema", new = "coord_datum")
 ctb0020_event[, coord_datum := gsub("EPSG:", "", x = coord_datum)]
 ctb0020_event[, coord_datum := as.integer(coord_datum)]
+ctb0020_event[, .N, by = coord_datum]
 
 # Check for duplicate coordinates
 ctb0020_event[, .N, by = .(coord_x, coord_y)][N > 1]
-
-# jitter coordinates (up to 30 m)
 # Two fields were sampled in each farm/treatment. They have the same coordinates.
+# We will jitter the coordinates up to 30 m to make them unique. But first we need to transform
+# to a projected coordinate system (SIRGAS 2000 / UTM zone 24S - EPSG:32724), then jitter, and
+# finally transform back to WGS 84 (EPSG:4326).
 id_duplicated <- ctb0020_event[, duplicated(.SD, by = c("coord_x", "coord_y"))]
 ctb0020_event_sf <- sf::st_as_sf(
   ctb0020_event[id_duplicated],
@@ -103,20 +110,28 @@ ctb0020_event_sf <- sf::st_as_sf(
 )
 ctb0020_event_sf <- sf::st_transform(ctb0020_event_sf, crs = 32724)
 set.seed(1984)
-ctb0020_event_sf <- sf::st_jitter(ctb0020_event_sf, amount = 30)
+amount <- 30 # meters
+# Jitter the coordinates up to 'amount' meters
+ctb0020_event_sf <- sf::st_jitter(ctb0020_event_sf, amount = amount)
 ctb0020_event_sf <- sf::st_transform(ctb0020_event_sf, crs = 4326)
 ctb0020_event_sf <- sf::st_coordinates(ctb0020_event_sf)
 ctb0020_event[id_duplicated, coord_x := ctb0020_event_sf[, 1]]
 ctb0020_event[id_duplicated, coord_y := ctb0020_event_sf[, 2]]
-
-# coord_precisao
-# coord_precisao is missing. We assume it is 30.0 m due to the jittering process
-ctb0020_event[, coord_precisao := as.numeric(coord_precisao) + runif(.N, 0, 30)]
-summary(ctb0020_event[, coord_precisao])
+# Check for duplicate coordinates
+ctb0020_event[, .N, by = .(coord_x, coord_y)][N > 1]
 
 # coord_fonte
+# The coordinates were obtained using a GPS device.
 ctb0020_event[, coord_fonte := as.character(coord_fonte)]
 ctb0020_event[, .N, by = coord_fonte]
+
+# coord_precisao
+ctb0020_event[, coord_precisao := as.numeric(coord_precisao)]
+summary(ctb0020_event[, coord_precisao])
+# The precision of the coordinates is informed in the publication as being 10 m. We add 30 m to it,
+# due to the jittering process above.
+ctb0020_event[!is.na(coord_precisao), coord_precisao := coord_precisao + amount]
+summary(ctb0020_event[, coord_precisao])
 
 # pais_id
 ctb0020_event[, pais_id := as.character(pais_id)]
@@ -131,6 +146,7 @@ ctb0020_event[, municipio_id := as.character(municipio_id)]
 ctb0020_event[, .N, by = municipio_id]
 
 # amostra_area
+# The area of each sample is not informed in the publication.
 ctb0020_event[, amostra_area := NA_real_]
 
 # taxon_sibcs
@@ -144,18 +160,20 @@ ctb0020_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0020_event[, .N, by = taxon_sibcs]
 
 # taxon_st
-# Classificação do solo segundo o Soil Taxonomy não está disponível neste dataset.
+# The soil classification according to the Soil Taxonomy is not available in this dataset.
 ctb0020_event[, taxon_st := NA_character_]
 
-# Pedregosidade (superficie)
-# Não tenho acesso a este trabalho após a inserção das variaveis pedregosidade e rochosidade
-# Logo, irei colocar NA_character_ para as variaveis.
-ctb0020_event[, pedregosidade := NA_character_]
+# pedregosidade
+# The study did not inform the presence of stones in the soil profiles. However, we can guess from
+# the soil texture, the soil class and the region that there are no stones in the profiles.
+# Therefore, we assume that there are no stones in the profiles.
+ctb0020_event[, pedregosidade := "ausente"]
 
-# Rochosidade (superficie)
-# Não tenho acesso a este trabalho após a inserção das variaveis pedregosidade e rochosidade
-# Logo, irei colocar NA_character_ para as variaveis.
-ctb0020_event[, rochosidade := NA_character_]
+# rochosidade
+# The study did not inform the presence of bedrock in the soil profiles. However, we can guess
+# from the soil texture, the soil class and the region that there is no bedrock in the profiles.
+# Therefore, we assume that there is no bedrock in the profiles.
+ctb0020_event[, rochosidade := "ausente"]
 
 str(ctb0020_event)
 
@@ -167,14 +185,16 @@ str(ctb0020_layer)
 # Process fields
 
 # observacao_id
+# Each sampling point has four layers.
 ctb0020_layer[, observacao_id := as.character(observacao_id)]
-ctb0020_layer[, .N, by = observacao_id]
+ctb0020_layer[, .N, by = observacao_id] # should be 4
 
 # camada_nome
 ctb0020_layer[, camada_nome := as.character(camada_nome)]
 ctb0020_layer[, .N, by = camada_nome]
 
-# ID da amostra -> amostra_id
+# old: ID da amostra
+# new: amostra_id
 # amostra_id in this dataset indicates the field ID in a farm/treatment
 # Two fields were sampled in each farm/treatment.
 ctb0020_layer[, amostra_id := as.character(amostra_id)]
@@ -197,7 +217,8 @@ ctb0020_layer[, camada_id := 1:.N, by = observacao_id]
 ctb0020_layer[, .N, by = camada_id]
 
 # terrafina
-# terrafina is missing in this dataset. We assume it is 1000 g/kg.
+# The fine earth fraction in not informed in the dataset and the publication is not available.
+# Based on the soil texture and class, we assume that the fine earth fraction is 100%.
 ctb0020_layer[, terrafina := 1000]
 
 # argila
@@ -208,24 +229,24 @@ summary(ctb0020_layer[, argila])
 ctb0020_layer[, silte := as.numeric(silte)]
 summary(ctb0020_layer[, silte])
 
-# areia
 # old: areia_total
 # new: areia
-setnames(ctb0020_layer, old = "areia_total", new = "areia")
+data.table::setnames(ctb0020_layer, old = "areia_total", new = "areia")
 ctb0020_layer[, areia := as.numeric(areia)]
 summary(ctb0020_layer[, areia])
 
-# carbono_cromo_xxx_xxx -> carbono
-setnames(ctb0020_layer, old = "carbono_cromo_xxx_xxx", new = "carbono")
+# old: carbono_cromo_xxx_xxx
+# new: carbono
+data.table::setnames(ctb0020_layer, old = "carbono_cromo_xxx_xxx", new = "carbono")
 ctb0020_layer[, carbono := as.numeric(carbono)]
 summary(ctb0020_layer[, carbono])
 
 # ctc
-# ctc is missing
+# The cation exchange capacity is not informed in the dataset and the publication is not available.
 ctb0020_layer[, ctc := NA_real_]
 
 # ph
-# ph is missing
+# The pH is not informed in the dataset and the publication is not available.
 ctb0020_layer[, ph := NA_real_]
 
 # dsi_cilindro -> dsi
@@ -247,12 +268,16 @@ summary_soildata(ctb0020)
 # Georeferenced events: 34
 
 # Check soil classification with respect to the clay content
-# For each soil profile (event), get the maximum clay content of all layers. If the maximum clay
-# content is greater than 150 g/kg, the soil classification remains Latossolo. Otherwise, it is
-# changed to Neossolo Quartzarênico.
+# For each soil profile (event), get the maximum clay and sand contents for() all layers. If the
+# maximum clay content is greater than 150 g/kg and the maximum sand content is less than 700 g/kg,
+# the soil classification remains Latossolo. Otherwise, it is changed to Neossolo Quartzarênico.
 ctb0020[, max_clay := max(argila, na.rm = TRUE), by = observacao_id]
-# Check if the maximum clay content is greater than 150 g/kg
-ctb0020[, taxon_sibcs := ifelse(max_clay > 150, "Latossolo", "Neossolo Quartzarênico")]
+ctb0020[, max_sand := max(areia, na.rm = TRUE), by = observacao_id]
+unique(ctb0020[, .(max_clay, max_sand, taxon_sibcs), by = observacao_id])
+# Check if the maximum clay content is greater than 150 g/kg and the maximum sand content is less
+# than 700 g/kg
+ctb0020[, taxon_sibcs :=
+  ifelse(max_clay > 150 & max_sand < 700, "Latossolo", "Neossolo Quartzarênico")]
 ctb0020[, .N, by = .(taxon_sibcs)]
 # remove soil_class
 ctb0020[, max_clay := NULL]

@@ -17,7 +17,8 @@ source("./helper.R")
 # ctb0044
 # Dados de "Caracterização de Solos e Avaliação da Vulnerabilidade de Ambientes no Parque Nacional
 # de Itatiaia, Brasil"
-# https://drive.google.com/drive/folders/1j_CPeBHyMT-LpDc651xQATnr2RuoVVwO
+# Google Drive: https://drive.google.com/drive/folders/1j_CPeBHyMT-LpDc651xQATnr2RuoVVwO
+# NotebookLM: https://notebooklm.google.com/notebook/109d19f8-c76c-4875-bac0-783f8867d7e8
 gs <- "14isyQnb-2cc8F51vF-C-DVosqJr801kwUIWrxoKspLc"
 gid_validation <- 88779986
 gid_citation <- 0
@@ -26,10 +27,7 @@ gid_layer <- 771766248
 
 # validation #######################################################################################
 ctb0044_validation <- google_sheet(gs, gid_validation)
-str(ctb0044_validation)
-
-# Check for negative validation results
-sum(ctb0044_validation == FALSE, na.rm = TRUE)
+check_sheet_validation(ctb0044_validation)
 
 # citation #########################################################################################
 ctb0044_citation <- google_sheet(gs, gid_citation)
@@ -268,7 +266,10 @@ ctb0044_layer[, terrafina := as.numeric(terrafina) * 10]
 summary(ctb0044_layer[, terrafina])
 check_empty_layer(ctb0044_layer, "terrafina")
 # Fill empty layers
-ctb0044_layer[, terrafina := fill_empty_layer(y = terrafina, x = profund_mid), by = observacao_id]
+ctb0044_layer[,
+  terrafina := fill_empty_layer(y = terrafina, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
 check_empty_layer(ctb0044_layer, "terrafina")
 
 # Clay content
@@ -280,7 +281,10 @@ ctb0044_layer[, argila := as.numeric(argila) * 10]
 summary(ctb0044_layer[, argila])
 check_empty_layer(ctb0044_layer, "argila")
 # Fill empty layers
-ctb0044_layer[, argila := fill_empty_layer(y = argila, x = profund_mid), by = observacao_id]
+ctb0044_layer[,
+  argila := fill_empty_layer(y = argila, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
 ctb0044_layer[, argila := round(argila)]
 check_empty_layer(ctb0044_layer, "argila")
 
@@ -293,7 +297,10 @@ ctb0044_layer[, silte := as.numeric(silte) * 10]
 summary(ctb0044_layer[, silte])
 check_empty_layer(ctb0044_layer, "silte")
 # Fill empty layers
-ctb0044_layer[, silte := fill_empty_layer(y = silte, x = profund_mid), by = observacao_id]
+ctb0044_layer[,
+  silte := fill_empty_layer(y = silte, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
 ctb0044_layer[, silte := round(silte)]
 check_empty_layer(ctb0044_layer, "silte")
 
@@ -306,7 +313,10 @@ ctb0044_layer[, areia := as.numeric(areia) * 10]
 summary(ctb0044_layer[, areia])
 check_empty_layer(ctb0044_layer, "areia")
 # Fill empty layers
-ctb0044_layer[, areia := fill_empty_layer(y = areia, x = profund_mid), by = observacao_id]
+ctb0044_layer[,
+  areia := fill_empty_layer(y = areia, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
 ctb0044_layer[, areia := round(areia)]
 check_empty_layer(ctb0044_layer, "areia")
 
@@ -324,7 +334,10 @@ ctb0044_layer[, carbono := as.numeric(carbono) * 10]
 summary(ctb0044_layer[, carbono])
 check_empty_layer(ctb0044_layer, "carbono")
 # Fill empty layers
-ctb0044_layer[, carbono := fill_empty_layer(y = carbono, x = profund_mid), by = observacao_id]
+ctb0044_layer[,
+  carbono := fill_empty_layer(y = carbono, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
 ctb0044_layer[, carbono := round(carbono)]
 check_empty_layer(ctb0044_layer, "carbono")
 summary(ctb0044_layer[, carbono])
@@ -378,9 +391,17 @@ str(ctb0044_layer)
 # events and layers
 ctb0044 <- merge(ctb0044_event, ctb0044_layer, all = TRUE)
 ctb0044[, dataset_id := "ctb0044"]
+
+# Column 'use' reports some observations of rock outcrops ("rock"). We can identify the respective
+# layers as R layers with 20 cm.
+ctb0044[use == "rock" & is.na(camada_nome), `:=` (
+  camada_nome = "R",
+  profund_sup = 0,
+  profund_inf = 20
+)]
+
 # citation
 ctb0044 <- merge(ctb0044, ctb0044_citation, by = "dataset_id", all.x = TRUE)
-cat("ATTENTION! There are some events that consist of rock outcrops: we need to process them!\n")
 summary_soildata(ctb0044)
 # Layers: 431
 # Events: 162
@@ -401,5 +422,3 @@ if (FALSE) {
 # Write to disk ####################################################################################
 ctb0044 <- select_output_columns(ctb0044)
 data.table::fwrite(ctb0044, "ctb0044/ctb0044.csv")
-data.table::fwrite(ctb0044_event, "ctb0044/ctb0044_event.csv")
-data.table::fwrite(ctb0044_layer, "ctb0044/ctb0044_layer.csv")
