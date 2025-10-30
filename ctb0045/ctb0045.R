@@ -106,8 +106,8 @@ summary(ctb0045_event[, coord_precisao])
 
 # País -> pais_id
 data.table::setnames(ctb0045_event, old = "País", new = "pais_id")
-ctb0045_event[, pais_id := "BR"]
-
+ctb0045_event[, pais_id := as.character(pais_id)]
+ctb0045_event[, .N, by = pais_id]
 
 # Estado (UF) -> estado_id
 data.table::setnames(ctb0045_event, old = "Estado (UF)", new = "estado_id")
