@@ -198,28 +198,34 @@ summary(ctb0102_layer[, terrafina])
 # There are four layers missing "terrafina" values. These are B/C and C horizons.
 check_empty_layer(ctb0102_layer, "terrafina")
 
-# This work is separated from  Coarse Sand, Fine Sand
-
-#areia grossa
+# This work has Coarse Sand and Fine Sand
+# areia grossa
 # old: Areia Grossa (2 - 0,20 mm) [%]
 # new: areia_grossa
 data.table::setnames(ctb0102_layer, old = "Areia Grossa (2 - 0,20 mm) [%]", new = "areia_grossa")
-ctb0102_layer[, areia_grossa := as.numeric(areia_grossa)*10]
+ctb0102_layer[, areia_grossa := as.numeric(areia_grossa) * 10]
 summary(ctb0102_layer[, areia_grossa])
+# There are two layers missing "areia_grossa" values. These are C horizons.
+check_empty_layer(ctb0102_layer, "areia_grossa")
 
-
-
-#areia fina
+# areia fina
 # old: Areia Fina (0,20 - 0,05 mm) [%]
 # new: areia_fina
 data.table::setnames(ctb0102_layer, old = "Areia Fina (0,20 - 0,05 mm) [%]", new = "areia_fina")
-ctb0102_layer[, areia_fina := as.numeric(areia_fina)*10]
+ctb0102_layer[, areia_fina := as.numeric(areia_fina) * 10]
 summary(ctb0102_layer[, areia_fina])
+# There are two layers missing "areia_fina" values. These are C horizons.
+check_empty_layer(ctb0102_layer, "areia_fina")
 
-
-#areia 
-ctb0102_layer[, areia := areia_grossa  + areia_fina]
+# areia
+ctb0102_layer[, areia := areia_grossa + areia_fina]
 summary(ctb0102_layer[, areia])
+# There are two layers missing "areia" values. These are C horizons.
+check_empty_layer(ctb0102_layer, "areia")
+# Fill missing areia values
+
+
+#
 
 
 #silte
