@@ -82,15 +82,18 @@ ctb0104_event[coord_datum == "WGS84", coord_datum := 4326]
 ctb0104_event[, coord_datum := as.integer(coord_datum)]
 ctb0104_event[, .N, by = coord_datum]
 
-# Precisão (coord) -> coord_precisao
-# missing in this document
-data.table::setnames(ctb0104_event, old = "Precisão (coord)", new = "coord_precisao")
-ctb0104_event[, coord_precisao := NA_real_]
-
 # Fonte (coord) -> coord_fonte
 data.table::setnames(ctb0104_event, old = "Fonte (coord)", new = "coord_fonte")
 ctb0104_event[, coord_fonte := as.character(coord_fonte)]
+ctb0104_event[, .N, by = coord_fonte]
 
+# Precisão (coord) -> coord_precisao
+# The coordinates were estimated by our team using Google Maps and utilizing the images available in
+# the original document. So we will set a precision of approximately 100 meters.
+data.table::setnames(ctb0104_event, old = "Precisão (coord)", new = "coord_precisao")
+ctb0104_event[, coord_precisao := as.numeric(coord_precisao)]
+ctb0104_event[is.na(coord_precisao), coord_precisao := 100]
+summary(ctb0104_event[, coord_precisao])
 
 # País -> pais_id
 data.table::setnames(ctb0104_event, old = "País", new = "pais_id")
