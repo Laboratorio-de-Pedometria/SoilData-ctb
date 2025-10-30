@@ -17,6 +17,9 @@ ctb0102_validation <- google_sheet(ctb0102_ids$gs_id, ctb0102_ids$gid_validation
 check_sheet_validation(ctb0102_validation)
 
 # citation #########################################################################################
+ctb0102_citation <- google_sheet(ctb0102_ids$gs_id, ctb0102_ids$gid_citation)
+str(ctb0102_citation)
+
 # dataset_titulo
 # Check for the string "Título" in column "campo". Then get the corresponding row value from column
 # "valor".
