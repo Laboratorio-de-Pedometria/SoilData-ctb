@@ -172,11 +172,11 @@ ctb0102_layer[, .N, by = camada_nome]
 # amostra_id is missing in this document.
 ctb0102_layer[, amostra_id := NA_real_]
 
-
 # profund_sup
 # old: Profundidade Inicial [cm]
 # new: profund_sup
 data.table::setnames(ctb0102_layer, old = "Profundidade Inicial [cm]", new = "profund_sup")
+ctb0102_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0102_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0102_layer[, profund_sup])
 
@@ -184,10 +184,12 @@ summary(ctb0102_layer[, profund_sup])
 # old: Profundidade Final [cm]
 # new: profund_inf
 data.table::setnames(ctb0102_layer, old = "Profundidade Final [cm]", new = "profund_inf")
+ctb0102_layer[, profund_inf := depth_slash(profund_inf), by = .I]
+ctb0102_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0102_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0102_layer[, profund_inf])
 
-#This work is separated from  Coarse Sand, Fine Sand
+# This work is separated from  Coarse Sand, Fine Sand
 
 #areia grossa
 # old: Areia Grossa (2 - 0,20 mm) [%]
@@ -227,7 +229,7 @@ ctb0102_layer[, argila := as.numeric(argila)*10]
 summary(ctb0102_layer[, argila])
 
 
-#terrafina
+# terrafina
 # old: "Terra Fina (< 2 mm) [%]"
 # new: terrafina
 data.table::setnames(ctb0102_layer, old= "Terra Fina (< 2 mm) [%]", new = "terrafina")
