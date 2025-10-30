@@ -42,13 +42,13 @@ print(ctb0102_citation)
 ctb0102_event <- google_sheet(ctb0102_ids$gs_id, ctb0102_ids$gid_event)
 str(ctb0102_event)
 
-#PROCESS FIELDS
-
+# PROCESS FIELDS
 
 # observacao_id
 # ID do evento -> observacao_id
 data.table::setnames(ctb0102_event, old = "ID do evento", new = "observacao_id")
 ctb0102_event[, observacao_id := as.character(observacao_id)]
+# Check for duplicate observacao_id
 any(table(ctb0102_event[, observacao_id]) > 1)
 
 # data_ano
@@ -61,23 +61,22 @@ ctb0102_event[, .N, by = data_ano]
 ctb0102_event[!is.na(data_ano), ano_fonte := "Original"]
 ctb0102_event[, .N, by = ano_fonte]
 
-
 # Longitude -> coord_x
 data.table::setnames(ctb0102_event, old = "Longitude", new = "coord_x")
-#We use gsub to switch, because in the spreadsheets we have everything in ,
+# We use gsub to switch, because in the spreadsheets we have everything in ,
 ctb0102_event[, coord_x := gsub(",", ".", coord_x, fixed = TRUE)]
 ctb0102_event[, coord_x := parzer::parse_lon(coord_x)]
 summary(ctb0102_event[, coord_x])
 
 # Latitude -> coord_y
 data.table::setnames(ctb0102_event, old = "Latitude", new = "coord_y")
-#We use gsub to switch, because in the spreadsheets we have everything in ,
+# We use gsub to switch, because in the spreadsheets we have everything in ,
 ctb0102_event[, coord_y := gsub(",", ".", coord_y, fixed = TRUE)]
 ctb0102_event[, coord_y := parzer::parse_lat(coord_y)]
 summary(ctb0102_event[, coord_y])
 
 # Check for duplicate coordinates
-ctb0102_event[, .N, by = .(coord_x, coord_y)][N > 1]
+check_equal_coordinates(ctb0102_event)
 
 # Datum (coord) -> coord_datum
 # We don't have but with parzer function => ESPG automatic
