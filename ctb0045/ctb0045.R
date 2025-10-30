@@ -136,17 +136,16 @@ ctb0045_event[, .N, by = taxon_sibcs]
 ctb0045_event[, taxon_st := NA_character_]
 ctb0045_event[, .N, by = taxon_st]
 
-# Pedregosidade (superficie) 
+# pedregosidade
+# The stoniness was infered by our team based on the visual asessment of soil profile pictures
+# provided in the original document.
 data.table::setnames(ctb0045_event, old = "Pedregosidade", new = "pedregosidade")
 ctb0045_event[, pedregosidade := as.character(pedregosidade)]
 ctb0045_event[, .N, by = pedregosidade]
 
-# Rochosidade (superficie)
+# rochosidade
 # missing in this document.
-
 ctb0045_event[, rochosidade := NA_character_]
-
-
 
 str(ctb0045_event)
 
