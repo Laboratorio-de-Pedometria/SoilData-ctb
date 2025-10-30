@@ -97,8 +97,8 @@ summary(ctb0104_event[, coord_precisao])
 
 # País -> pais_id
 data.table::setnames(ctb0104_event, old = "País", new = "pais_id")
-ctb0104_event[, pais_id := "BR"]
-
+ctb0104_event[, pais_id := as.character(pais_id)]
+ctb0104_event[, .N, by = pais_id]
 
 # Estado (UF) -> estado_id
 data.table::setnames(ctb0104_event, old = "Estado (UF)", new = "estado_id")
@@ -111,31 +111,36 @@ ctb0104_event[, municipio_id := as.character(municipio_id)]
 ctb0104_event[, .N, by = municipio_id]
 
 # Área do evento [m^2] -> amostra_area
-#
 data.table::setnames(ctb0104_event, old = "Área do evento [m^2]", new = "amostra_area")
 ctb0104_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0104_event[, amostra_area])
 
 # taxon_sibcs
-# missing this soil taxon.
-ctb0104_event[, taxon_sibcs := NA_character_]
-
+# Soil classification is missing in this document. However, based on the detailed descriptions of
+# the soil characteristics provided in the sources, it is highly probable that the soils studied
+# are Arenosols, which correspond to the classification Neossolo Quartzarênico in the Brazilian
+# System of Soil Classification (SiBCS).
+ctb0104_event[, taxon_sibcs := "Neossolo Quartzarênico"]
+ctb0104_event[, .N, by = taxon_sibcs]
 
 # taxon_st 
 # missing this soil taxonomy on document
 ctb0104_event[, taxon_st := NA_character_]
 ctb0104_event[, .N, by = taxon_st]
 
-# Pedregosidade (superficie) 
-# missing in this document.
-ctb0104_event[, pedregosidade := NA_character_]
+# pedregosidade
+# The stoniness information is missing in this document. However, based on the detailed descriptions
+# of the soil characteristics provided in the sources, it is highly probable that the soils studied
+# have no stoniness.
+ctb0104_event[, pedregosidade := "Sem Pedregosidade"]
+ctb0104_event[, .N, by = pedregosidade]
 
-# Rochosidade (superficie)
-# missing in this document.
-
-ctb0104_event[, rochosidade := NA_character_]
-
-
+# rochosidade
+# The rockiness information is missing in this document. However, based on the detailed descriptions
+# of the soil characteristics provided in the sources, it is highly probable that the soils studied
+# have no rockiness.
+ctb0104_event[, rochosidade := "Sem Rochosidade"]
+ctb0104_event[, .N, by = rochosidade]
 
 str(ctb0104_event)
 
