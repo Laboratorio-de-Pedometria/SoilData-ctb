@@ -83,8 +83,13 @@ summary(ctb0045_event[, coord_y])
 check_equal_coordinates(ctb0045_event)
 
 # DATUM -> coord_datum
+# WGS84
 data.table::setnames(ctb0045_event, old = "Datum (coord)", new = "coord_datum")
-ctb0045_event[, coord_datum := 4326]
+ctb0045_event[, coord_datum := as.character(coord_datum)]
+ctb0045_event[, .N, by = coord_datum]
+ctb0045_event[coord_datum == "WGS84", coord_datum := 4326]
+ctb0045_event[, coord_datum := as.integer(coord_datum)]
+ctb0045_event[, .N, by = coord_datum]
 
 # Precisão (coord) -> coord_precisao
 # We set it to NA_real_ (missing)
