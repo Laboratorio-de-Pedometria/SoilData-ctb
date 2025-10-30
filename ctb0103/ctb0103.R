@@ -1,32 +1,8 @@
-# autor: Felipe Brun Vergani
+# autor: Felipe Brun Vergani and Alessandro Samuel-Rosa
 # data: 2025
 
-# Install and load required packages
-if (!require("data.table")) {
-  install.packages("data.table")
-  library("data.table")
-}
-if (!require("sf")) {
-  install.packages("sf")
-  library("sf")
-}
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
-}
-if (!require("parzer")) {
-  install.packages("parzer")
-  library("parzer")
-}
-if (!require("dplyr")) {
-  install.packages("dplyr")
-  library("dplyr")
-}
-
-# Source helper functions
+# Source helper functions and packages
 source("./helper.R")
-
-
 
 # Google Sheet #####################################################################################
 # ctb0103
@@ -281,12 +257,12 @@ summary_soildata(ctb0103)
 
 
 # Plot using mapview
-if (TRUE) {
+if (interactive()) {
   ctb0103_sf <- sf::st_as_sf(
     ctb0103[coord_datum == 4326 & !is.na(coord_x) & !is.na(coord_y)],
     coords = c("coord_x", "coord_y"), crs = 4326
   )
-  mapview::mapview(ctb0103_sf["carbono"])
+  mapview::mapview(ctb0103_sf["argila"])
 }
 
 # Write to disk ####################################################################################
