@@ -120,16 +120,16 @@ ctb0045_event[, municipio_id := as.character(municipio_id)]
 ctb0045_event[, .N, by = municipio_id]
 
 # Área do evento [m^2] -> amostra_area
-#
 data.table::setnames(ctb0045_event, old = "Área do evento [m^2]", new = "amostra_area")
 ctb0045_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0045_event[, amostra_area])
 
 # Classe do solo  -> taxon_sibcs
+# The authors determined the soil class at the sampling points through a combination of existing
+# external sources (maps and databases) and subsequent field verification/classification.
 data.table::setnames(ctb0045_event, old = "Classe do solo", new = "taxon_sibcs")
 ctb0045_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0045_event[, .N, by = taxon_sibcs]
-
 
 # taxon_st 
 # missing this soil taxonomy on document
