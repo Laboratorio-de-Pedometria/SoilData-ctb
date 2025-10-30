@@ -356,12 +356,10 @@ ctb0102_layer[,
 check_empty_layer(ctb0102_layer, "ph")
 # All missing ph values have been filled.
 
-# dsi 
-# no dsi information in this work
+# dsi
+# Soil bulk density (dsi) is missing in this document.
 ctb0102_layer[, dsi := NA_real_]
 summary(ctb0102_layer[, dsi])
-
-
 
 str(ctb0102_layer)
 
