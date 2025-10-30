@@ -91,14 +91,17 @@ ctb0045_event[coord_datum == "WGS84", coord_datum := 4326]
 ctb0045_event[, coord_datum := as.integer(coord_datum)]
 ctb0045_event[, .N, by = coord_datum]
 
+# Fonte (coord) -> coord_fonte
+data.table::setnames(ctb0045_event, old = "Fonte (coord)", new = "coord_fonte")
+ctb0045_event[, coord_fonte := as.character(coord_fonte)]
+ctb0045_event[, .N, by = coord_fonte]
+
 # Precisão (coord) -> coord_precisao
 # We set it to NA_real_ (missing)
 data.table::setnames(ctb0045_event, old = "Precisão (coord)", new = "coord_precisao")
 ctb0045_event[, coord_precisao := NA_real_]
 
-# Fonte (coord) -> coord_fonte
-data.table::setnames(ctb0045_event, old = "Fonte (coord)", new = "coord_fonte")
-ctb0045_event[, coord_fonte := as.character(coord_fonte)]
+
 
 
 # País -> pais_id
