@@ -1,18 +1,7 @@
 # autor: Felipe Brun Vergani and Alessandro Samuel-Rosa
 # data: 2025
 
-# Install and load required packages
-if (!requireNamespace("data.table")) {
-  install.packages("data.table")
-}
-if (!requireNamespace("sf")) {
-  install.packages("sf")
-}
-if (!requireNamespace("mapview")) {
-  install.packages("mapview")
-}
-
-# Source helper functions
+# Source helper functions and packages
 source("./helper.R")
 
 # Google Sheet #####################################################################################
@@ -158,16 +147,15 @@ str(ctb0092_layer)
 data.table::setnames(ctb0092_layer, old = "ID do evento", new = "observacao_id")
 ctb0092_layer[, observacao_id := as.character(observacao_id)]
 ctb0092_layer[, .N, by = observacao_id]
-# Most soil profiles have two layers, but a few have only one layer. Maybe in these profiles the
-# authors encountered the bedrock. We need to check this information with them.
+# Soil profiles have different number of layers. This is because the authors sampled the soil
+# profiles until they reached the bedrock or some lithic contact.
 
 # ID da camada -> camada_nome
 data.table::setnames(ctb0092_layer, old = "ID da camada", new = "camada_nome")
 ctb0092_layer[, camada_nome := as.character(camada_nome)]
 ctb0092_layer[, .N, by = camada_nome]
-# Most layers are 0-20 cm and 20-40 cm. A few profiles have layers with inferior limits such as 15,
-# 25, and 35. These layers could indicate that the authors reached some lithic contact. We need to
-# check this information with the authors.
+# Most layers are 0-20 cm and 20-40 cm, and some of them are R layers added later one based on 
+# communication with the authors.
 
 # ID da amostra -> amostra_id
 data.table::setnames(ctb0092_layer, old = "ID da amostra", new = "amostra_id")
@@ -191,8 +179,14 @@ ctb0092_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0092_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0092_layer[, profund_inf])
 
-# Check for equal layer depths
-ctb0092_layer[profund_sup == profund_inf]
+# Check for duplicated layers
+check_duplicated_layer(ctb0092_layer)
+
+# Check for layers with equal top and bottom depths
+check_equal_depths(ctb0092_layer)
+
+# Check for negative layer depths
+check_depth_inversion(ctb0092_layer)
 
 # camada_id
 # We will create a unique identifier for each layer.
@@ -220,23 +214,36 @@ summary(ctb0092_layer[, terrafina])
 data.table::setnames(ctb0092_layer, old = "Areia total [%]", new = "areia")
 ctb0092_layer[, areia := as.numeric(areia) * 10]
 summary(ctb0092_layer[, areia])
-# There is one layer with missing sand content (SC2_B27; 10-20). We added this layer mannually to
-# the dataset as to ensure completeness of the soil profile. However, this is the only event with a
-# a gap between the two layers (0-10 cm and 20-40 cm). It could be a typo, or maybe the authors did
-# not complete the laboratory analysis for this layer yet.
+# There are are 39 layers with missing sand content. One of them is soil profile SC2_B27 (10-20). We
+# added this layer mannually to the dataset as to ensure completeness of the soil profile. However,
+# this is the only event with a a gap between the two layers (0-10 cm and 20-40 cm). It could be a
+# typo, or maybe the authors did not complete the laboratory analysis for this layer yet. The other
+# 38 layers with missing are R layers added later one based on communication with the authors.
 check_empty_layer(ctb0092_layer, "areia")
 # Fill empty layer
-ctb0092_layer[, areia := fill_empty_layer(areia, mid_depth, c(0, 1000)), by = observacao_id]
+ctb0092_layer[,
+  areia := fill_empty_layer(y = areia, x = mid_depth, ylim = c(0, 1000)),
+  by = observacao_id
+]
+# Check again for empty layers
+check_empty_layer(ctb0092_layer, "areia")
+# The interpolation did not fill any new layer.
 
 # Silte [%] -> silte
 # silte = silte * 10
 data.table::setnames(ctb0092_layer, old = "Silte [%]", new = "silte")
 ctb0092_layer[, silte := as.numeric(silte) * 10]
 summary(ctb0092_layer[, silte])
-# There is one layer with missing silt content (SC2_B27; 10-20). See comments for sand content.
+# There are 39 layers with missing silt content. See comments for sand content.
 check_empty_layer(ctb0092_layer, "silte")
 # Fill empty layer
-ctb0092_layer[, silte := fill_empty_layer(silte, mid_depth, c(0, 1000)), by = observacao_id]
+ctb0092_layer[,
+  silte := fill_empty_layer(y = silte, x = mid_depth, ylim = c(0, 1000)),
+  by = observacao_id
+]
+# Check again for empty layers
+check_empty_layer(ctb0092_layer, "silte")
+# The interpolation did not fill any new layer.
 
 # argila
 # old: Argila [%]
@@ -245,10 +252,13 @@ ctb0092_layer[, silte := fill_empty_layer(silte, mid_depth, c(0, 1000)), by = ob
 data.table::setnames(ctb0092_layer, old = "Argila [%]", new = "argila")
 ctb0092_layer[, argila := as.numeric(argila) * 10]
 summary(ctb0092_layer[, argila])
-# There is one layer with missing clay content (SC2_B27; 10-20). See comments for sand content.
+# There are 39 layers with missing clay content. See comments for sand content.
 check_empty_layer(ctb0092_layer, "argila")
 # Fill empty layer
 ctb0092_layer[, argila := fill_empty_layer(argila, mid_depth, c(0, 1000)), by = observacao_id]
+# Check again for empty layers
+check_empty_layer(ctb0092_layer, "argila")
+# The interpolation did not fill any new layer.
 
 # Check the particle size distribution
 # We accept a maximum difference of 100 g/kg (10%) in the sum of the particle size fractions.
@@ -270,10 +280,15 @@ ctb0092_layer[
 data.table::setnames(ctb0092_layer, old = "C total [%]", new = "carbono")
 ctb0092_layer[, carbono := as.numeric(carbono) * 10] # convert to g/kg
 summary(ctb0092_layer[, carbono])
-# There is one layer missing carbon content (B27, 10-20 cm). See comments for sand content.
+# There are 39 layers with missing carbon content. See comments for sand content.
 check_empty_layer(ctb0092_layer, "carbono")
 # Fill empty layer
-ctb0092_layer[, carbono := fill_empty_layer(carbono, mid_depth, c(0, 1000)), by = observacao_id]
+ctb0092_layer[,
+  carbono := fill_empty_layer(y = carbono, x = mid_depth, ylim = c(0, 1000)),
+  by = observacao_id
+]
+# Check again for empty layers
+check_empty_layer(ctb0092_layer, "carbono")
 
 # ctc
 # The cation exchange capacity is not informed in this dataset. Maybe the authors have this
@@ -300,7 +315,7 @@ ctb0092[, dataset_id := "ctb0092"]
 # citation
 ctb0092 <- merge(ctb0092, ctb0092_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0092)
-# Layers: 70
+# Layers: 108
 # Events: 38
 # Georeferenced events: 38
 
@@ -310,7 +325,7 @@ if (FALSE) {
     ctb0092[coord_datum == 4326],
     coords = c("coord_x", "coord_y"), crs = 4326
   )
-  mapview::mapview(ctb0092_sf["carbono"])
+  mapview::mapview(ctb0092_sf["argila"])
 }
 
 # Write to disk ####################################################################################

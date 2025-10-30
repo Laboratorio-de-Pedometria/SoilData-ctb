@@ -1,54 +1,31 @@
-# autor: Felipe Brun Vergani
+# autor: Felipe Brun Vergani and Alessandro Samuel-Rosa
 # data: 2025
 
 # Install and load required packages
-if (!require("data.table")) {
-  install.packages("data.table")
-  library("data.table")
-}
-if (!require("sf")) {
-  install.packages("sf")
-  library("sf")
-}
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
-}
-if (!require("parzer")) {
-  install.packages("parzer")
-  library("parzer")
-}
 if (!require("dplyr")) {
   install.packages("dplyr")
   library("dplyr")
 }
 
-# Source helper functions
+# Source helper functions and packages
 source("./helper.R")
-
-
 
 # Google Sheet #####################################################################################
 # ctb0045
-# Dados de "Parâmetros Físicos e Químicos de Referência em Solos de Unidades de Conservação Florestal da Bacia do Paraná 3, Brasil"
+# Dados de "Parâmetros Físicos e Químicos de Referência em Solos de Unidades de Conservação
+# Florestal da Bacia do Paraná 3, Brasil"
 # 
-# https://docs.google.com/spreadsheets/d/1dEOi5WTEwpBk8xvHvYfYNPf3neQRRn-nQFyPc0vx-kE/edit?usp=sharing
-
-
+# Google Drive: https://drive.google.com/drive/folders/1Dzp7lP2A70rugRwuQSQORntkbdG7przn
+# NotebookLM: https://notebooklm.google.com/notebook/cd6a491e-da10-4110-bd65-5317f3653a05
 ctb0045_ids <- soildata_catalog("ctb0045")
 
 # validation #####################################################################################
-
 ctb0045_validation <- google_sheet(ctb0045_ids$gs_id, ctb0045_ids$gid_validation)
-str(ctb0045_validation)
-
-# Check for negative validation results
-sum(ctb0045_validation == FALSE, na.rm = TRUE)
+check_sheet_validation(ctb0045_validation)
 
 # citation #####################################################################################
 ctb0045_citation <- google_sheet(ctb0045_ids$gs_id, ctb0045_ids$gid_citation)
 str(ctb0045_citation)
-
 
 # dataset_titulo
 # Check for the string "Título" in column "campo". Then get the corresponding row value from column
@@ -72,13 +49,14 @@ print(ctb0045_citation)
 ctb0045_event <- google_sheet(ctb0045_ids$gs_id, ctb0045_ids$gid_event)
 str(ctb0045_event)
 
-#PROCESS FIELDS
-
+# PROCESS FIELDS
 
 # observacao_id
 # ID do evento -> observacao_id
 data.table::setnames(ctb0045_event, old = "ID do evento", new = "observacao_id")
 ctb0045_event[, observacao_id := as.character(observacao_id)]
+ctb0045_event[, .N, by = observacao_id]
+# Check for duplicate observacao_id
 any(table(ctb0045_event[, observacao_id]) > 1)
 
 # data_ano
@@ -91,7 +69,6 @@ ctb0045_event[, .N, by = data_ano]
 ctb0045_event[!is.na(data_ano), ano_fonte := "Original"]
 ctb0045_event[, .N, by = ano_fonte]
 
-
 # Longitude -> coord_x
 data.table::setnames(ctb0045_event, old = "Longitude", new = "coord_x")
 ctb0045_event[, coord_x := as.numeric(coord_x)]
@@ -103,26 +80,34 @@ ctb0045_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0045_event[, coord_y])
 
 # Check for duplicate coordinates
-ctb0045_event[, .N, by = .(coord_x, coord_y)][N > 1]
+check_equal_coordinates(ctb0045_event)
 
 # DATUM -> coord_datum
+# WGS84
 data.table::setnames(ctb0045_event, old = "Datum (coord)", new = "coord_datum")
-ctb0045_event[, coord_datum := 4326]
-
-# Precisão (coord) -> coord_precisao
-# We set it to NA_real_ (missing)
-data.table::setnames(ctb0045_event, old = "Precisão (coord)", new = "coord_precisao")
-ctb0045_event[, coord_precisao := NA_real_]
+ctb0045_event[, coord_datum := as.character(coord_datum)]
+ctb0045_event[, .N, by = coord_datum]
+ctb0045_event[coord_datum == "WGS84", coord_datum := 4326]
+ctb0045_event[, coord_datum := as.integer(coord_datum)]
+ctb0045_event[, .N, by = coord_datum]
 
 # Fonte (coord) -> coord_fonte
 data.table::setnames(ctb0045_event, old = "Fonte (coord)", new = "coord_fonte")
 ctb0045_event[, coord_fonte := as.character(coord_fonte)]
+ctb0045_event[, .N, by = coord_fonte]
 
+# Precisão (coord) -> coord_precisao
+# The precision of the coordinates is not informed in this dataset. However, the coordinates were
+# obtained using GPS device, so we assume a precision of 10 meters.
+data.table::setnames(ctb0045_event, old = "Precisão (coord)", new = "coord_precisao")
+ctb0045_event[, coord_precisao := as.numeric(coord_precisao)]
+ctb0045_event[is.na(coord_precisao), coord_precisao := 10]
+summary(ctb0045_event[, coord_precisao])
 
 # País -> pais_id
 data.table::setnames(ctb0045_event, old = "País", new = "pais_id")
-ctb0045_event[, pais_id := "BR"]
-
+ctb0045_event[, pais_id := as.character(pais_id)]
+ctb0045_event[, .N, by = pais_id]
 
 # Estado (UF) -> estado_id
 data.table::setnames(ctb0045_event, old = "Estado (UF)", new = "estado_id")
@@ -135,33 +120,32 @@ ctb0045_event[, municipio_id := as.character(municipio_id)]
 ctb0045_event[, .N, by = municipio_id]
 
 # Área do evento [m^2] -> amostra_area
-#
 data.table::setnames(ctb0045_event, old = "Área do evento [m^2]", new = "amostra_area")
 ctb0045_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0045_event[, amostra_area])
 
 # Classe do solo  -> taxon_sibcs
+# The authors determined the soil class at the sampling points through a combination of existing
+# external sources (maps and databases) and subsequent field verification/classification.
 data.table::setnames(ctb0045_event, old = "Classe do solo", new = "taxon_sibcs")
 ctb0045_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0045_event[, .N, by = taxon_sibcs]
-
 
 # taxon_st 
 # missing this soil taxonomy on document
 ctb0045_event[, taxon_st := NA_character_]
 ctb0045_event[, .N, by = taxon_st]
 
-# Pedregosidade (superficie) 
+# pedregosidade
+# The stoniness was infered by our team based on the visual asessment of soil profile pictures
+# provided in the original document.
 data.table::setnames(ctb0045_event, old = "Pedregosidade", new = "pedregosidade")
 ctb0045_event[, pedregosidade := as.character(pedregosidade)]
 ctb0045_event[, .N, by = pedregosidade]
 
-# Rochosidade (superficie)
+# rochosidade
 # missing in this document.
-
 ctb0045_event[, rochosidade := NA_character_]
-
-
 
 str(ctb0045_event)
 
