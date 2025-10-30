@@ -196,12 +196,16 @@ ctb0052_layer[, .N, by = amostra_id]
 ctb0052_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0052_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0052_layer[, profund_sup])
+# There are 125 layers missing "profund_sup". These are laboratory replicates for which the authors did not
+# report the depth, but are consistently identifies by "observacao_id" and "camada_id". 
 
 # profund_inf
 ctb0052_layer[, profund_inf := depth_slash(profund_inf), by = .I]
 ctb0052_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0052_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0052_layer[, profund_inf])
+# There are 125 layers missing "profund_inf". These are laboratory replicates for which the authors did not
+# report the depth, but are consistently identifies by "observacao_id" and "camada_id". 
 
 # Compute average over layers
 # We compute the average of all replicates for each layer (camada_nome) in each observation
@@ -240,10 +244,11 @@ ctb0052_layer[, terrafina := as.numeric(terrafina) * 10]
 # round
 ctb0052_layer[, terrafina := round(terrafina)]
 summary(ctb0052_layer[, terrafina])
-# There are 354 layers with missing "terrafina".
+# There are 361 layers with missing "terrafina".
 check_empty_layer(ctb0052_layer, "terrafina")
-# These are auger samples and Cr or R horizon samples from soil profiles for which the authors do
-# not have any information. We keep them as NA.
+# These are mostly auger samples and Cr or R horizon samples from soil profiles for which the authors do
+# not have any information. Some of them are samples not collected by the authors, but reported in the dataset
+# for consistency. We keep them as NA.
 
 # argila
 # old: argila(%) * 10
@@ -251,9 +256,9 @@ check_empty_layer(ctb0052_layer, "terrafina")
 data.table::setnames(ctb0052_layer, old = "argila(%)", new = "argila")
 ctb0052_layer[, argila := as.numeric(argila) * 10]
 summary(ctb0052_layer[, argila])
-# There are 76 layers with missing "argila". Most of these are Cr, R/Cr, and R layers from soil
-# profiles and auger samples. We will try to fill some of these using interpolation, except for R
-# layers.
+# There are 83 layers with missing "argila". Most of these are Cr, R/Cr, and R layers from soil
+# profiles and auger samples. Some of them are layers not sampled at all. We will try to fill some of these
+# using interpolation, except for R layers.
 check_empty_layer(ctb0052_layer, "argila")
 # fill empty layers
 ctb0052_layer[!grepl("R", camada_nome, ignore.case = TRUE),
@@ -269,9 +274,9 @@ check_empty_layer(ctb0052_layer, "argila")
 data.table::setnames(ctb0052_layer, old = "silte(%)", new = "silte")
 ctb0052_layer[, silte := as.numeric(silte) * 10]
 summary(ctb0052_layer[, silte])
-# There are 76 layers with missing "silte". Most of these are Cr, R/Cr, and R layers from soil
-# profiles and auger samples. We will try to fill some of these using interpolation, except for R
-# layers.
+# There are 83 layers with missing "silte". Most of these are Cr, R/Cr, and R layers from soil
+# profiles and auger samples. Some of them are layers not sampled at all. We will try to fill some of these
+# using interpolation, except for R layers.
 check_empty_layer(ctb0052_layer, "silte")
 # fill empty layers
 ctb0052_layer[!grepl("R", camada_nome, ignore.case = TRUE),
@@ -287,9 +292,9 @@ check_empty_layer(ctb0052_layer, "silte")
 data.table::setnames(ctb0052_layer, old = "areia(%)", new = "areia")
 ctb0052_layer[, areia := as.numeric(areia) * 10]
 summary(ctb0052_layer[, areia])
-# There are 76 layers with missing "areia". Most of these are Cr, R/Cr, and R layers from soil
-# profiles and auger samples. We will try to fill some of these using interpolation, except for R
-# layers.
+# There are 83 layers with missing "areia". Most of these are Cr, R/Cr, and R layers from soil
+# profiles and auger samples. Some of them are layers not sampled at all. We will try to fill some of these
+# using interpolation, except for R layers.
 check_empty_layer(ctb0052_layer, "areia")
 # fill empty layers
 ctb0052_layer[!grepl("R", camada_nome, ignore.case = TRUE),
@@ -317,7 +322,8 @@ ctb0052_layer[, psd_check := NULL]
 data.table::setnames(ctb0052_layer, old = "pH_agua", new = "ph")
 ctb0052_layer[, ph := as.numeric(ph)]
 summary(ctb0052_layer[, ph])
-# There are 68 layers missing "ph", most of them Cr and R layers.
+# There are 75 layers missing "ph", most of them Cr and R layers. Some of them are layers not sampled at all.
+# We will try to fill some of these using interpolation, except for R layers.
 check_empty_layer(ctb0052_layer, "ph")
 # fill empty layers, except for R layers.
 ctb0052_layer[!grepl("R", camada_nome, ignore.case = TRUE),
@@ -357,7 +363,8 @@ summary(ctb0052_layer[, na])
 # ctc
 ctb0052_layer[, ctc := ca + mg + hal + k + na]
 summary(ctb0052_layer[, ctc])
-# there are 355 layers missing ctc.
+# there are 362 layers missing ctc. Some of them are layers not sampled at all. We will try to fill some of
+# these using interpolation, except for R layers.
 check_empty_layer(ctb0052_layer, "ctc")
 # fill empty layers, except for R layers.
 ctb0052_layer[!grepl("R", camada_nome, ignore.case = TRUE),
@@ -379,37 +386,39 @@ check_empty_layer(ctb0052_layer, "ctc")
 data.table::setnames(ctb0052_layer, old = "cot_DC(%)", new = "carbono")
 ctb0052_layer[, carbono := as.numeric(carbono) * 10]
 ctb0052_layer[, has_carbono := !is.na(carbono)]
-summary(ctb0052_layer[, carbono]) # 282 NAs
+summary(ctb0052_layer[, carbono]) # 289 NAs
 # cos_WCc(%) * 10 -> carbono_color
 data.table::setnames(ctb0052_layer, old = "cos_WCc(%)", new = "carbono_color")
 ctb0052_layer[, carbono_color := as.numeric(carbono_color) * 10]
-summary(ctb0052_layer[, carbono_color]) # 256 NAs
+summary(ctb0052_layer[, carbono_color]) # 263 NAs
 # cos_WCt(%) * 10 -> carbono_wet
 data.table::setnames(ctb0052_layer, old = "cos_WCt(%)", new = "carbono_wet")
 ctb0052_layer[, carbono_wet := as.numeric(carbono_wet) * 10]
-summary(ctb0052_layer[, carbono_wet]) # 151 NAs
+summary(ctb0052_layer[, carbono_wet]) # 158 NAs
 # linear model: carbono ~ carbono_wet
 lm_carbono <- lm(carbono ~ carbono_wet + I(carbono_wet^2), data = ctb0052_layer)
 summary(lm_carbono) # 0.9881
 ctb0052_layer[is.na(carbono) & !is.na(carbono_wet), carbono := predict(lm_carbono, .SD)]
-summary(ctb0052_layer[, carbono]) # 132 NAs
+summary(ctb0052_layer[, carbono]) # 139 NAs
 # linear model: carbono ~ carbono_color + I(carbono_color^2)
 # lm_carbono <- lm(carbono ~ carbono_color + I(carbono_color^2),
 #   data = ctb0052_layer[has_carbono == TRUE]
 # )
 # summary(lm_carbono) # 0.3432
 # ctb0052_layer[is.na(carbono) & !is.na(carbono_color), carbono := predict(lm_carbono, .SD)]
+set.seed(369)
 rf_carbono <- ranger::ranger(
   carbono ~ carbono_color + argila + silte + areia + terrafina + profund_inf + profund_sup + ph + ctc,
   data = ctb0052_layer[has_carbono == TRUE]
 )
-print(rf_carbono) # 0.4395323
+print(rf_carbono) # 0.4337614
 ctb0052_layer[
   is.na(carbono) & !is.na(carbono_color),
   carbono := predict(rf_carbono, .SD)$predictions
 ]
 summary(ctb0052_layer[, carbono])
-# There are 87 layers missing "carbono". Most of them are Cr, R layers.
+# There are 94 layers missing "carbono". Most of them are Cr, R layers. Some of them were not sampled at all
+# by the authors, but included in the dataset for consistency.
 check_empty_layer(ctb0052_layer, "carbono")
 # fill empty layers, except for R layers.
 ctb0052_layer[!grepl("R", camada_nome, ignore.case = TRUE),
@@ -425,7 +434,7 @@ check_empty_layer(ctb0052_layer, "carbono")
 data.table::setnames(ctb0052_layer, old = "Ds(g.cm3)", new = "dsi")
 ctb0052_layer[, dsi := as.numeric(dsi)]
 summary(ctb0052_layer[, dsi])
-# There are 359 layers missing bulk density.
+# There are 366 layers missing bulk density.
 check_empty_layer(ctb0052_layer, "dsi")
 # fill empty layers, except for R layers.
 ctb0052_layer[!grepl("R", camada_nome, ignore.case = TRUE),
