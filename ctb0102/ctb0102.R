@@ -308,9 +308,19 @@ ctb0102_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 # new: carbono
 # multiply by 10 to convert to g/kg
 data.table::setnames(ctb0102_layer, old = "C (orgânico) [%]", new = "carbono")
-ctb0102_layer[, carbono := as.numeric(carbono)]
+ctb0102_layer[, carbono := as.numeric(carbono) * 10]
 ctb0102_layer[is.na(carbono), .(observacao_id, camada_nome, profund_sup, profund_inf, carbono)]
 summary(ctb0102_layer[, carbono])
+# There are three layers missing "carbono" values. These are C horizons.
+check_empty_layer(ctb0102_layer, "carbono")
+# Fill empty layers
+ctb0102_layer[,
+  carbono := fill_empty_layer(y = carbono, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
+# Check again for empty carbono values
+check_empty_layer(ctb0102_layer, "carbono")
+# All missing carbono values have been filled.
 
 # ctc
 # old: Valor T (CTC) [cmolc/dm3]
