@@ -320,7 +320,7 @@ summary_soildata(ctb0092)
 # Georeferenced events: 38
 
 # Plot using mapview
-if (FALSE) {
+if (interactive()) {
   ctb0092_sf <- sf::st_as_sf(
     ctb0092[coord_datum == 4326],
     coords = c("coord_x", "coord_y"), crs = 4326
