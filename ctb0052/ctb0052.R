@@ -10,7 +10,7 @@ if (!requireNamespace("sf")) {
   install.packages("sf")
 }
 if (!requireNamespace("ranger")) {
-  install.packages("ranger")
+     
 }
 
 # Source helper functions
@@ -172,6 +172,7 @@ str(ctb0052_event)
 # layer ############################################################################################
 # Temporarily read from local CSV: this needs to go to Google Drive
 ctb0052_layer <- data.table::fread("ctb0052/ctb0052_layer.csv")
+str(ctb0052_layer)
 
 # Process fields
 # observacao_id
@@ -411,6 +412,7 @@ rf_carbono <- ranger::ranger(
   carbono ~ carbono_color + argila + silte + areia + terrafina + profund_inf + profund_sup + ph + ctc,
   data = ctb0052_layer[has_carbono == TRUE]
 )
+?ranger
 print(rf_carbono) # 0.4337614
 ctb0052_layer[
   is.na(carbono) & !is.na(carbono_color),
