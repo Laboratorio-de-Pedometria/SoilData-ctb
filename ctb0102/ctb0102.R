@@ -131,7 +131,7 @@ data.table::setnames(ctb0102_event, old = "SiBCS (2013)", new = "taxon_sibcs")
 ctb0102_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0102_event[, .N, by = taxon_sibcs]
 
-# taxon_st 
+# taxon_st
 # missing this soil taxonomy on document
 ctb0102_event[, taxon_st := NA_character_]
 ctb0102_event[, .N, by = taxon_st]
@@ -189,6 +189,15 @@ ctb0102_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0102_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0102_layer[, profund_inf])
 
+# terrafina
+# old: "Terra Fina (< 2 mm) [%]"
+# new: terrafina
+data.table::setnames(ctb0102_layer, old= "Terra Fina (< 2 mm) [%]", new = "terrafina")
+ctb0102_layer[, terrafina := as.numeric(terrafina) * 10]
+summary(ctb0102_layer[, terrafina])
+# There are four layers missing "terrafina" values. These are B/C and C horizons.
+check_empty_layer(ctb0102_layer, "terrafina")
+
 # This work is separated from  Coarse Sand, Fine Sand
 
 #areia grossa
@@ -228,13 +237,6 @@ data.table::setnames(ctb0102_layer, old = "Argila (< 0,002 mm) [%]", new = "argi
 ctb0102_layer[, argila := as.numeric(argila)*10]
 summary(ctb0102_layer[, argila])
 
-
-# terrafina
-# old: "Terra Fina (< 2 mm) [%]"
-# new: terrafina
-data.table::setnames(ctb0102_layer, old= "Terra Fina (< 2 mm) [%]", new = "terrafina")
-ctb0102_layer[, terrafina := as.numeric(terrafina)*10]
-summary(ctb0102_layer[, terrafina])
 
 # Check the particle size distribution
 # The sum of argila, silte and areia should be 1000 g/kg
