@@ -161,6 +161,12 @@ ctb0045_layer[, observacao_id := as.character(observacao_id)]
 ctb0045_layer[, .N, by = observacao_id]
 
 # ID da camada -> camada_nome
+# The authors originally sampled only A horizons. However, we noticed that in the original
+# spreadsheet, the upper limit of the sampled layers started at 5 cm depth. The document describes
+# that the authors removed the litter layer before sampling, but it does not mention how thick it
+# was. Therefore, we assume that the litter layer was approximately 5 cm thick, and we rename the
+# sampled layers accordingly, starting from 0 cm depth. This still has to be checked with the
+# authors.
 data.table::setnames(ctb0045_layer, old = "ID da camada", new = "camada_nome")
 ctb0045_layer[, camada_nome := as.character(camada_nome)]
 ctb0045_layer[, .N, by = camada_nome]
@@ -169,11 +175,11 @@ ctb0045_layer[, .N, by = camada_nome]
 # amostra_id is missing in this document.
 ctb0045_layer[, amostra_id := NA_real_]
 
-
 # profund_sup
 # old: Profundidade inicial [cm]
 # new: profund_sup
 data.table::setnames(ctb0045_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+ctb0045_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0045_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0045_layer[, profund_sup])
 
@@ -181,6 +187,8 @@ summary(ctb0045_layer[, profund_sup])
 # old: Profundidade final [cm]
 # new: profund_inf
 data.table::setnames(ctb0045_layer, old = "Profundidade final [cm]", new = "profund_inf")
+ctb0045_layer[, profund_inf := depth_slash(profund_inf), by = .I]
+ctb0045_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0045_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0045_layer[, profund_inf])
 
