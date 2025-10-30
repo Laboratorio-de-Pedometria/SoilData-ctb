@@ -1,52 +1,22 @@
-# autor: Felipe Brun Vergani
+# autor: Felipe Brun Vergani and Alessandro Samuel-Rosa
 # data: 2025
 
-# Install and load required packages
-if (!require("data.table")) {
-  install.packages("data.table")
-  library("data.table")
-}
-if (!require("sf")) {
-  install.packages("sf")
-  library("sf")
-}
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
-}
-if (!require("parzer")) {
-  install.packages("parzer")
-  library("parzer")
-}
-
-
-# Source helper functions
+# Source helper functions and packages
 source("./helper.R")
-
-
 
 # Google Sheet #####################################################################################
 # ctb0102
 # Dados de "Solos do Oeste do Paraná"
 # 
-# https://docs.google.com/spreadsheets/d/1NcXs3rlDQlSz4kcktgj30PbeQGaxDEiXErSBrg0nBrI/edit?usp=sharing
-
-
+# Google Drive: https://drive.google.com/drive/u/0/folders/1LyFwLmAtNVcGInJksqG0IKKzXvhhrqoV
+# NotebookLM: https://notebooklm.google.com/notebook/39204d76-b4d2-4007-a110-7de7830385da
 ctb0102_ids <- soildata_catalog("ctb0102")
 
-# validation #####################################################################################
-
+# validation #######################################################################################
 ctb0102_validation <- google_sheet(ctb0102_ids$gs_id, ctb0102_ids$gid_validation)
-str(ctb0102_validation)
+check_sheet_validation(ctb0102_validation)
 
-# Check for negative validation results
-sum(ctb0102_validation == FALSE, na.rm = TRUE)
-
-# citation #####################################################################################
-ctb0102_citation <- google_sheet(ctb0102_ids$gs_id, ctb0102_ids$gid_citation)
-str(ctb0102_citation)
-
-
+# citation #########################################################################################
 # dataset_titulo
 # Check for the string "Título" in column "campo". Then get the corresponding row value from column
 # "valor".
