@@ -116,11 +116,15 @@ ctb0104_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0104_event[, amostra_area])
 
 # taxon_sibcs
+# old: Classificação do Solo
+# new: taxon_sibcs
 # Soil classification is missing in this document. However, based on the detailed descriptions of
 # the soil characteristics provided in the sources, it is highly probable that the soils studied
 # are Arenosols, which correspond to the classification Neossolo Quartzarênico in the Brazilian
 # System of Soil Classification (SiBCS).
-ctb0104_event[, taxon_sibcs := "Neossolo Quartzarênico"]
+data.table::setnames(ctb0104_event, old = "Classificação do Solo", new = "taxon_sibcs")
+ctb0104_event[, taxon_sibcs := as.character(taxon_sibcs)]
+ctb0104_event[is.na(taxon_sibcs), taxon_sibcs := "Neossolo Quartzarênico"]
 ctb0104_event[, .N, by = taxon_sibcs]
 
 # taxon_st 
@@ -160,16 +164,15 @@ data.table::setnames(ctb0104_layer, old = "ID da camada", new = "camada_nome")
 ctb0104_layer[, camada_nome := as.character(camada_nome)]
 ctb0104_layer[, .N, by = camada_nome]
 
-
 # ID da amostra -> amostra_id
 # amostra_id is missing in this document.
 ctb0104_layer[, amostra_id := NA_real_]
-
 
 # profund_sup
 # old: Profundidade inicial [cm]
 # new: profund_sup
 data.table::setnames(ctb0104_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+ctb0104_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0104_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0104_layer[, profund_sup])
 
@@ -177,41 +180,61 @@ summary(ctb0104_layer[, profund_sup])
 # old: Profundidade final [cm]
 # new: profund_inf
 data.table::setnames(ctb0104_layer, old = "Profundidade final [cm]", new = "profund_inf")
+ctb0104_layer[, profund_inf := depth_slash(profund_inf), by = .I]
+ctb0104_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0104_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0104_layer[, profund_inf])
 
-#We have both fine sand and coarse sand in this project.
+# Check for duplicated layers
+check_duplicated_layer(ctb0104_layer)
 
-#areia grossa
-# old: Areia grossa [g/kg]
-# new: areia_grossa
-data.table::setnames(ctb0104_layer, old = "Areia grossa [g/kg]", new = "areia_grossa")
-ctb0104_layer[, areia_grossa := as.numeric(areia_grossa)]
-summary(ctb0104_layer[, areia_grossa])
+# Check for layers with equal top and bottom depths
+check_equal_depths(ctb0104_layer)
 
-#areia fina
-# old: Areia fina [g/kg]
-# new: areia_fina
-data.table::setnames(ctb0104_layer, old = "Areia fina [g/kg]", new = "areia_fina")
-ctb0104_layer[, areia_fina := as.numeric(areia_fina)]
-summary(ctb0104_layer[, areia_fina])
+# Check for negative layer depths
+check_depth_inversion(ctb0104_layer)
 
-#areia
+# camada_id
+# We will create a unique identifier for each layer.
+ctb0104_layer <- ctb0104_layer[order(observacao_id, profund_sup, profund_inf)]
+ctb0104_layer[, camada_id := 1:.N, by = observacao_id]
+ctb0104_layer[, .N, by = camada_id]
+
+# mid_depth
+ctb0104_layer[, mid_depth := (profund_sup + profund_inf) / 2]
+summary(ctb0104_layer[, mid_depth])
+
+# Check for missing layers
+# There are no missing layers in this dataset.
+check_missing_layer(ctb0104_layer)
+
+# terrafina
+# old: Terra fina [g/kg]
+# new: terrafina
+# The original document does not report the proportion of coarse fragments or the exact proportion
+# of the fine earth in relation to the whole soil. However, based on the detailed descriptions of
+# the soil characteristics provided in the sources, it is highly probable that the soils studied
+# are sandy soils with a very low high content of fine particles.
+data.table::setnames(ctb0104_layer, old = "Terra fina [g/kg]", new = "terrafina")
+ctb0104_layer[, terrafina := as.numeric(terrafina)]
+ctb0104_layer[is.na(terrafina), terrafina := 1000]
+summary(ctb0104_layer[, terrafina])
+
+# areia
 # old: Areia total [g/kg]
 # new: areia
 data.table::setnames(ctb0104_layer, old = "Areia total [g/kg]", new = "areia")
 ctb0104_layer[, areia := as.numeric(areia)]
 summary(ctb0104_layer[, areia])
 
-
-#silte
+# silte
 # old: Silte [g/kg]
 # new: silte
 data.table::setnames(ctb0104_layer, old = "Silte [g/kg]", new = "silte")
 ctb0104_layer[, silte := as.numeric(silte)]
 summary(ctb0104_layer[, silte])
 
-#argila
+# argila
 # old: Argila [g/kg]
 # new: argila
 data.table::setnames(ctb0104_layer, old = "Argila [g/kg]", new = "argila")
@@ -219,9 +242,6 @@ ctb0104_layer[, argila := as.numeric(argila)]
 summary(ctb0104_layer[, argila])
 
 
-#terrafina
-#is missingg in this document.
-ctb0104_layer[, terrafina := NA_real_]
 
 # camada_id
 # We will create a unique identifier for each layer indicating the order of the layers in each soil
