@@ -345,7 +345,16 @@ check_empty_layer(ctb0102_layer, "ctc")
 data.table::setnames(ctb0102_layer, old = "pH (H2O - 1:2,5)", new = "ph")
 ctb0102_layer[, ph := as.numeric(ph)]
 summary(ctb0102_layer[, ph])
+# There are two layers missing "ph" values. These are C horizons.
 check_empty_layer(ctb0102_layer, "ph")
+# Fill empty layers
+ctb0102_layer[,
+  ph := fill_empty_layer(y = ph, x = profund_mid),
+  by = observacao_id
+]
+# Check again for empty ph values
+check_empty_layer(ctb0102_layer, "ph")
+# All missing ph values have been filled.
 
 # dsi 
 # no dsi information in this work
