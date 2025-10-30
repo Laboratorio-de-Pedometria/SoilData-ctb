@@ -328,7 +328,16 @@ check_empty_layer(ctb0102_layer, "carbono")
 data.table::setnames(ctb0102_layer, old = "Valor T (CTC) [cmolc/dm3]", new = "ctc")
 ctb0102_layer[, ctc := as.numeric(ctc)]
 summary(ctb0102_layer[, ctc])
+# There are two layers missing "ctc" values. These are C horizons.
 check_empty_layer(ctb0102_layer, "ctc")
+# Fill empty layers
+ctb0102_layer[,
+  ctc := fill_empty_layer(y = ctc, x = profund_mid),
+  by = observacao_id
+]
+# Check again for empty ctc values
+check_empty_layer(ctb0102_layer, "ctc")
+# All missing ctc values have been filled.
 
 # ph
 # old: pH (H2O - 1:2,5)
