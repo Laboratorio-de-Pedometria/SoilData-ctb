@@ -287,7 +287,7 @@ summary_soildata(ctb0045)
 
 
 # Plot using mapview
-if (FALSE) {
+if (TRUE) {
   ctb0045_sf <- sf::st_as_sf(
     ctb0045[coord_datum == 4326],
     coords = c("coord_x", "coord_y"), crs = 4326
