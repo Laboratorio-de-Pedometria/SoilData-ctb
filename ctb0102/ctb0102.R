@@ -108,8 +108,8 @@ summary(ctb0102_event[, coord_precisao])
 
 # País -> pais_id
 data.table::setnames(ctb0102_event, old = "País", new = "pais_id")
-ctb0102_event[, pais_id := "BR"]
-
+ctb0102_event[, pais_id := as.character(pais_id)]
+ctb0102_event[, .N, by = pais_id]
 
 # Estado -> estado_id
 data.table::setnames(ctb0102_event, old = "Estado (UF)", new = "estado_id")
@@ -122,7 +122,6 @@ ctb0102_event[, municipio_id := as.character(municipio_id)]
 ctb0102_event[, .N, by = municipio_id]
 
 # Área do evento [m^2] -> amostra_area
-#
 data.table::setnames(ctb0102_event, old = "Área do evento [m^2]", new = "amostra_area")
 ctb0102_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0102_event[, amostra_area])
@@ -137,17 +136,19 @@ ctb0102_event[, .N, by = taxon_sibcs]
 ctb0102_event[, taxon_st := NA_character_]
 ctb0102_event[, .N, by = taxon_st]
 
-
-# Pedregosidade (superficie) 
-
-data.table::setnames(ctb0102_event, old="Pedregosidade", new = "pedregosidade")
+# pedregosidade
+# old: Pedregosidade
+# new: pedregosidade
+data.table::setnames(ctb0102_event, old = "Pedregosidade", new = "pedregosidade")
 ctb0102_event[, pedregosidade := as.character(pedregosidade)]
+ctb0102_event[, .N, by = pedregosidade]
 
-# Rochosidade (superficie)
-
+# rochosidade
+# old: Rochosidade
+# new: rochosidade
 data.table::setnames(ctb0102_event, old="Rochosidade", new = "rochosidade")
 ctb0102_event[, rochosidade := as.character(rochosidade)]
-
+ctb0102_event[, .N, by = rochosidade]
 
 str(ctb0102_event)
 
