@@ -77,8 +77,10 @@ check_equal_coordinates(ctb0104_event)
 
 # DATUM -> coord_datum
 data.table::setnames(ctb0104_event, old = "Datum (coord)", new = "coord_datum")
+ctb0104_event[, coord_datum := as.character(coord_datum)]
 ctb0104_event[coord_datum == "WGS84", coord_datum := 4326]
 ctb0104_event[, coord_datum := as.integer(coord_datum)]
+ctb0104_event[, .N, by = coord_datum]
 
 # Precisão (coord) -> coord_precisao
 # missing in this document
