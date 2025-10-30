@@ -289,8 +289,12 @@ check_empty_layer(ctb0102_layer, "argila")
 # All missing argila values have been filled.
 
 # Check the particle size distribution
+# Round argila, silte and areia
+ctb0102_layer[, argila := round(argila)]
+ctb0102_layer[, silte := round(silte)]
+ctb0102_layer[, areia := round(areia)]
 # The sum of argila, silte and areia should be 1000 g/kg
-ctb0102_layer[, psd := round(rowSums(.SD, na.rm = TRUE)), .SDcols = c("argila", "silte", "areia")]
+ctb0102_layer[, psd := rowSums(.SD, na.rm = TRUE), .SDcols = c("argila", "silte", "areia")]
 psd_lims <- 900:1100
 # Check the limits
 ctb0102_layer[!psd %in% psd_lims & !is.na(psd), .N]
@@ -298,8 +302,6 @@ ctb0102_layer[!psd %in% psd_lims & !is.na(psd), .N]
 # Print the rows with psd != 1000
 cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
 ctb0102_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
-
-
 
 # carbono
 # old: C (orgânico) [%]
