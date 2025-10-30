@@ -8,23 +8,17 @@ source("./helper.R")
 # ctb0103
 # Dados de "Ontogenetic shifts in habitat-association of tree species in a neotropical wetland"
 # 
-#https://docs.google.com/spreadsheets/d/1GjqbsJs0MhPLyrg_C0ox7miYPwiMcHsLU76GLz-0paI/edit?usp=sharing
-
-
+# Google Drive: https://drive.google.com/drive/u/0/folders/12rFI24SZyZz97T29Dk_uJyEs7uwnSIpa
+# NotebookLM: https://notebooklm.google.com/notebook/00838f56-f039-4a99-8bfe-26854d2af2cd
 ctb0103_ids <- soildata_catalog("ctb0103")
 
 # validation #####################################################################################
-
 ctb0103_validation <- google_sheet(ctb0103_ids$gs_id, ctb0103_ids$gid_validation)
-str(ctb0103_validation)
-
-# Check for negative validation results
-sum(ctb0103_validation == FALSE, na.rm = TRUE)
+check_sheet_validation(ctb0103_validation)
 
 # citation #####################################################################################
 ctb0103_citation <- google_sheet(ctb0103_ids$gs_id, ctb0103_ids$gid_citation)
 str(ctb0103_citation)
-
 
 # dataset_titulo
 # Check for the string "Título" in column "campo". Then get the corresponding row value from column
@@ -48,7 +42,7 @@ print(ctb0103_citation)
 ctb0103_event <- google_sheet(ctb0103_ids$gs_id, ctb0103_ids$gid_event)
 str(ctb0103_event)
 
-#PROCESS FIELDS
+# PROCESS FIELDS
 
 
 # observacao_id
