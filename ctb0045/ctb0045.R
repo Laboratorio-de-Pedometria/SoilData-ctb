@@ -302,17 +302,16 @@ str(ctb0045_layer)
 # events and layers
 ctb0045 <- merge(ctb0045_event, ctb0045_layer, all = TRUE)
 ctb0045[, dataset_id := "ctb0045"]
+
 # citation
 ctb0045 <- merge(ctb0045, ctb0045_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0045)
-
-#Layers: 73
-#Events: 73
-#Georeferenced events: 73
-
+# Layers: 146
+# Events: 73
+# Georeferenced events: 73
 
 # Plot using mapview
-if (TRUE) {
+if (interactive()) {
   ctb0045_sf <- sf::st_as_sf(
     ctb0045[coord_datum == 4326],
     coords = c("coord_x", "coord_y"), crs = 4326
