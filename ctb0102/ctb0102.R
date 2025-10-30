@@ -271,14 +271,22 @@ ctb0102_layer[,
 check_empty_layer(ctb0102_layer, "silte")
 # All missing silte values have been filled.
 
-
-#argila
+# argila
 # old: Argila (< 0,002 mm) [%]
 # new: argila
 data.table::setnames(ctb0102_layer, old = "Argila (< 0,002 mm) [%]", new = "argila")
-ctb0102_layer[, argila := as.numeric(argila)*10]
+ctb0102_layer[, argila := as.numeric(argila) * 10]
 summary(ctb0102_layer[, argila])
-
+# There are two layers missing "argila" values. These are C horizons.
+check_empty_layer(ctb0102_layer, "argila")
+# Fill empty layers
+ctb0102_layer[,
+  argila := fill_empty_layer(y = argila, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
+# Check again for empty argila values
+check_empty_layer(ctb0102_layer, "argila")
+# All missing argila values have been filled.
 
 # Check the particle size distribution
 # The sum of argila, silte and areia should be 1000 g/kg
