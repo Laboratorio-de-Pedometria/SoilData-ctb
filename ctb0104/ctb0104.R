@@ -241,20 +241,13 @@ data.table::setnames(ctb0104_layer, old = "Argila [g/kg]", new = "argila")
 ctb0104_layer[, argila := as.numeric(argila)]
 summary(ctb0104_layer[, argila])
 
-
-
-# camada_id
-# We will create a unique identifier for each layer indicating the order of the layers in each soil
-# profile. Order by observacao_id and mid_depth.
-ctb0104_layer[, mid_depth := (profund_sup + profund_inf) / 2]
-ctb0104_layer <- ctb0104_layer[order(observacao_id, mid_depth)]
-ctb0104_layer[, camada_id := 1:.N, by = observacao_id]
-ctb0104_layer[, .N, by = camada_id]
-
-
 # Check the particle size distribution
+# Round the fractions to avoid floating point issues
+ctb0104_layer[, areia := round(areia)]
+ctb0104_layer[, silte := round(silte)]
+ctb0104_layer[, argila := round(argila)]
 # The sum of argila, silte and areia should be 1000 g/kg
-ctb0104_layer[, psd := round(rowSums(.SD, na.rm = TRUE)), .SDcols = c("argila", "silte", "areia")]
+ctb0104_layer[, psd := rowSums(.SD, na.rm = TRUE), .SDcols = c("argila", "silte", "areia")]
 psd_lims <- 900:1100
 # Check the limits
 ctb0104_layer[!psd %in% psd_lims & !is.na(psd), .N]
@@ -262,8 +255,8 @@ ctb0104_layer[!psd %in% psd_lims & !is.na(psd), .N]
 # Print the rows with psd != 1000
 cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
 ctb0104_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
-
-
+# Remove the psd column
+ctb0104_layer[, psd := NULL]
 
 # carbono
 #missing in this document.
