@@ -259,23 +259,20 @@ ctb0104_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 ctb0104_layer[, psd := NULL]
 
 # carbono
-#missing in this document.
+# The carbon content was measured, but the values were not included in the spreadsheet yet.
 ctb0104_layer[, carbono := NA_real_]
 
 # ctc
-#missing in this document.
+# The cation exchange capacity was not measured in this project.
 ctb0104_layer[, ctc := NA_real_]
 
 # ph
-#missing in this document.
+# The pH was not measured in this project.
 ctb0104_layer[, ph := NA_real_]
 
-# dsi 
-#missing in this document.
+# dsi
+# The bulk soil density was measured, but the values were not included in the spreadsheet yet.
 ctb0104_layer[, dsi := NA_real_]
-
-
-
 
 str(ctb0104_layer)
 
