@@ -55,6 +55,8 @@ str(ctb0045_event)
 # ID do evento -> observacao_id
 data.table::setnames(ctb0045_event, old = "ID do evento", new = "observacao_id")
 ctb0045_event[, observacao_id := as.character(observacao_id)]
+ctb0045_event[, .N, by = observacao_id]
+# Check for duplicate observacao_id
 any(table(ctb0045_event[, observacao_id]) > 1)
 
 # data_ano
@@ -67,7 +69,6 @@ ctb0045_event[, .N, by = data_ano]
 ctb0045_event[!is.na(data_ano), ano_fonte := "Original"]
 ctb0045_event[, .N, by = ano_fonte]
 
-
 # Longitude -> coord_x
 data.table::setnames(ctb0045_event, old = "Longitude", new = "coord_x")
 ctb0045_event[, coord_x := as.numeric(coord_x)]
@@ -79,7 +80,7 @@ ctb0045_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0045_event[, coord_y])
 
 # Check for duplicate coordinates
-ctb0045_event[, .N, by = .(coord_x, coord_y)][N > 1]
+check_equal_coordinates(ctb0045_event)
 
 # DATUM -> coord_datum
 data.table::setnames(ctb0045_event, old = "Datum (coord)", new = "coord_datum")
