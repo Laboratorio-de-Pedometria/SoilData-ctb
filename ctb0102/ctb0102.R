@@ -189,6 +189,29 @@ ctb0102_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0102_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0102_layer[, profund_inf])
 
+# Check for duplicated layers
+check_duplicated_layer(ctb0102_layer)
+
+# Check for layers with equal top and bottom depths
+check_equal_depths(ctb0102_layer)
+
+# Check for negative layer depths
+check_depth_inversion(ctb0102_layer)
+
+# camada_id
+# We will create a unique identifier for each layer.
+ctb0102_layer <- ctb0102_layer[order(observacao_id, profund_sup, profund_inf)]
+ctb0102_layer[, camada_id := 1:.N, by = observacao_id]
+ctb0102_layer[, .N, by = camada_id]
+
+# profund_mid
+ctb0102_layer[, profund_mid := (profund_sup + profund_inf) / 2]
+summary(ctb0102_layer[, profund_mid])
+
+# Check for missing layers
+# There are no missing layers in this dataset.
+check_missing_layer(ctb0102_layer)
+
 # terrafina
 # old: "Terra Fina (< 2 mm) [%]"
 # new: terrafina
@@ -222,11 +245,14 @@ ctb0102_layer[, areia := areia_grossa + areia_fina]
 summary(ctb0102_layer[, areia])
 # There are two layers missing "areia" values. These are C horizons.
 check_empty_layer(ctb0102_layer, "areia")
-# Fill missing areia values
-
-
-#
-
+# Fill empty layers
+ctb0102_layer[,
+  areia := fill_empty_layer(y = areia, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
+# Check again for empty areia values
+check_empty_layer(ctb0102_layer, "areia")
+# All missing areia values have been filled.
 
 #silte
 # old: Silte (0,05 - 0,002 Mm) [%]
