@@ -280,26 +280,23 @@ str(ctb0104_layer)
 # events and layers
 ctb0104 <- merge(ctb0104_event, ctb0104_layer, all = TRUE)
 ctb0104[, dataset_id := "ctb0104"]
+
 # citation
 ctb0104 <- merge(ctb0104, ctb0104_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0104)
-
-#Layers: 36
-#Events: 9
-#Georeferenced events: 9 
-
+# Layers: 36
+# Events: 9
+# Georeferenced events: 9 
 
 # Plot using mapview
-if (TRUE) {
+if (interactive()) {
   ctb0104_sf <- sf::st_as_sf(
     ctb0104[coord_datum == 4326],
     coords = c("coord_x", "coord_y"), crs = 4326
   )
-  mapview::mapview(ctb0104_sf["carbono"])
+  mapview::mapview(ctb0104_sf["argila"])
 }
 
 # Write to disk ####################################################################################
 ctb0104 <- select_output_columns(ctb0104)
 data.table::fwrite(ctb0104, "ctb0104/ctb0104.csv")
-data.table::fwrite(ctb0104_event, "ctb0104/ctb0104_event.csv")
-data.table::fwrite(ctb0104_layer, "ctb0104/ctb0104_layer.csv")
