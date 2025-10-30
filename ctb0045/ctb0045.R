@@ -2,53 +2,30 @@
 # data: 2025
 
 # Install and load required packages
-if (!require("data.table")) {
-  install.packages("data.table")
-  library("data.table")
-}
-if (!require("sf")) {
-  install.packages("sf")
-  library("sf")
-}
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
-}
-if (!require("parzer")) {
-  install.packages("parzer")
-  library("parzer")
-}
 if (!require("dplyr")) {
   install.packages("dplyr")
   library("dplyr")
 }
 
-# Source helper functions
+# Source helper functions and packages
 source("./helper.R")
-
-
 
 # Google Sheet #####################################################################################
 # ctb0045
-# Dados de "Parâmetros Físicos e Químicos de Referência em Solos de Unidades de Conservação Florestal da Bacia do Paraná 3, Brasil"
+# Dados de "Parâmetros Físicos e Químicos de Referência em Solos de Unidades de Conservação
+# Florestal da Bacia do Paraná 3, Brasil"
 # 
-# https://docs.google.com/spreadsheets/d/1dEOi5WTEwpBk8xvHvYfYNPf3neQRRn-nQFyPc0vx-kE/edit?usp=sharing
-
-
+# Google Drive: https://drive.google.com/drive/folders/1Dzp7lP2A70rugRwuQSQORntkbdG7przn
+# NotebookLM: https://notebooklm.google.com/notebook/cd6a491e-da10-4110-bd65-5317f3653a05
 ctb0045_ids <- soildata_catalog("ctb0045")
 
 # validation #####################################################################################
-
 ctb0045_validation <- google_sheet(ctb0045_ids$gs_id, ctb0045_ids$gid_validation)
-str(ctb0045_validation)
-
-# Check for negative validation results
-sum(ctb0045_validation == FALSE, na.rm = TRUE)
+check_sheet_validation(ctb0045_validation)
 
 # citation #####################################################################################
 ctb0045_citation <- google_sheet(ctb0045_ids$gs_id, ctb0045_ids$gid_citation)
 str(ctb0045_citation)
-
 
 # dataset_titulo
 # Check for the string "Título" in column "campo". Then get the corresponding row value from column
@@ -72,8 +49,7 @@ print(ctb0045_citation)
 ctb0045_event <- google_sheet(ctb0045_ids$gs_id, ctb0045_ids$gid_event)
 str(ctb0045_event)
 
-#PROCESS FIELDS
-
+# PROCESS FIELDS
 
 # observacao_id
 # ID do evento -> observacao_id
