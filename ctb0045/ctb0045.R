@@ -164,8 +164,8 @@ ctb0045_layer[, .N, by = observacao_id]
 # The authors originally sampled only A horizons. However, we noticed that in the original
 # spreadsheet, the upper limit of the sampled layers started at 5 cm depth. The document describes
 # that the authors removed the litter layer before sampling, but it does not mention how thick it
-# was. Therefore, we assume that the litter layer was approximately 5 cm thick, and we rename the
-# sampled layers accordingly, starting from 0 cm depth. This still has to be checked with the
+# was. Therefore, we assume that the litter layer was approximately 5 cm thick, and we added a new
+# "Oo" horizon from 0 to 5 cm depth for all soil profiles. This still has to be checked with the
 # authors.
 data.table::setnames(ctb0045_layer, old = "ID da camada", new = "camada_nome")
 ctb0045_layer[, camada_nome := as.character(camada_nome)]
@@ -192,12 +192,38 @@ ctb0045_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0045_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0045_layer[, profund_inf])
 
-#areia 
+# Check for duplicated layers
+check_duplicated_layer(ctb0045_layer)
+
+# Check for layers with equal top and bottom depths
+check_equal_depths(ctb0045_layer)
+
+# Check for negative layer depths
+check_depth_inversion(ctb0045_layer)
+
+# camada_id
+# We will create a unique identifier for each layer.
+ctb0045_layer <- ctb0045_layer[order(observacao_id, profund_sup, profund_inf)]
+ctb0045_layer[, camada_id := 1:.N, by = observacao_id]
+ctb0045_layer[, .N, by = camada_id]
+
+# mid_depth
+ctb0045_layer[, mid_depth := (profund_sup + profund_inf) / 2]
+summary(ctb0045_layer[, mid_depth])
+
+# Check for missing layers
+# There are no missing layers in this dataset.
+check_missing_layer(ctb0045_layer)
+
+# areia
 # old: Areia [%]
 # new: areia
 data.table::setnames(ctb0045_layer, old = "Areia [%]", new = "areia")
-ctb0045_layer[, areia := as.numeric(areia)*10]
+ctb0045_layer[, areia := as.numeric(areia) * 10]
 summary(ctb0045_layer[, areia])
+# There are 73 layers with missing "areia" values.
+check_empty_layer(ctb0045_layer, "areia")
+# All of them are Oo horizons.
 
 #silte
 # old: Silte [%]
