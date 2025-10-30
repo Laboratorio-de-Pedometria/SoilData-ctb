@@ -97,12 +97,12 @@ ctb0045_event[, coord_fonte := as.character(coord_fonte)]
 ctb0045_event[, .N, by = coord_fonte]
 
 # Precisão (coord) -> coord_precisao
-# We set it to NA_real_ (missing)
+# The precision of the coordinates is not informed in this dataset. However, the coordinates were
+# obtained using GPS device, so we assume a precision of 10 meters.
 data.table::setnames(ctb0045_event, old = "Precisão (coord)", new = "coord_precisao")
-ctb0045_event[, coord_precisao := NA_real_]
-
-
-
+ctb0045_event[, coord_precisao := as.numeric(coord_precisao)]
+ctb0045_event[is.na(coord_precisao), coord_precisao := 10]
+summary(ctb0045_event[, coord_precisao])
 
 # País -> pais_id
 data.table::setnames(ctb0045_event, old = "País", new = "pais_id")
