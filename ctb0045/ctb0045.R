@@ -215,6 +215,14 @@ summary(ctb0045_layer[, mid_depth])
 # There are no missing layers in this dataset.
 check_missing_layer(ctb0045_layer)
 
+# terrafina
+# old: Terra fina [%]
+# new: terrafina
+data.table::setnames(ctb0045_layer, old = "Terra fina [%]", new = "terrafina")
+ctb0045_layer[, terrafina := as.numeric(terrafina) * 10]
+summary(ctb0045_layer[, terrafina])
+# All layers are missing the content of fine earth (terrafina).
+
 # areia
 # old: Areia [%]
 # new: areia
@@ -225,7 +233,7 @@ summary(ctb0045_layer[, areia])
 check_empty_layer(ctb0045_layer, "areia")
 # All of them are Oo horizons.
 
-#silte
+# silte
 # old: Silte [%]
 # new: silte
 data.table::setnames(ctb0045_layer, old = "Silte [%]", new = "silte")
@@ -240,9 +248,7 @@ ctb0045_layer[, argila := as.numeric(argila)*10]
 summary(ctb0045_layer[, argila])
 
 
-#terrafina
-#is missingg in this document.
-ctb0045_layer[, terrafina := NA_real_]
+
 
 
 # Check the particle size distribution
