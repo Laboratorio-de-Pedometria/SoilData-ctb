@@ -254,12 +254,22 @@ ctb0102_layer[,
 check_empty_layer(ctb0102_layer, "areia")
 # All missing areia values have been filled.
 
-#silte
+# silte
 # old: Silte (0,05 - 0,002 Mm) [%]
 # new: silte
 data.table::setnames(ctb0102_layer, old = "Silte (0,05 - 0,002 Mm) [%]", new = "silte")
-ctb0102_layer[, silte := as.numeric(silte)*10]
+ctb0102_layer[, silte := as.numeric(silte) * 10]
 summary(ctb0102_layer[, silte])
+# There are two layers missing "silte" values. These are C horizons.
+check_empty_layer(ctb0102_layer, "silte")
+# Fill empty layers
+ctb0102_layer[,
+  silte := fill_empty_layer(y = silte, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
+# Check again for empty silte values
+check_empty_layer(ctb0102_layer, "silte")
+# All missing silte values have been filled.
 
 
 #argila
