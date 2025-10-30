@@ -164,8 +164,13 @@ ctb0102_layer[, observacao_id := as.character(observacao_id)]
 ctb0102_layer[, .N, by = observacao_id]
 
 # ID da camada -> camada_nome
+# The authors use the suffix "n" to designate B horizons with shinny peds and increased clay content
+# in soil profiles classified as Nitossolo. This is a common practice in the region. However, the
+# correct designation for these horizons according to official guidelines would be "Bt". We change
+# the names accordingly.
 data.table::setnames(ctb0102_layer, old = "ID da camada", new = "camada_nome")
 ctb0102_layer[, camada_nome := as.character(camada_nome)]
+ctb0102_layer[grepl("Bn", camada_nome), camada_nome := gsub("Bn", "Bt", camada_nome)]
 ctb0102_layer[, .N, by = camada_nome]
 
 # ID da amostra -> amostra_id
