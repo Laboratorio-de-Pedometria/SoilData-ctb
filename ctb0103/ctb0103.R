@@ -44,11 +44,11 @@ str(ctb0103_event)
 
 # PROCESS FIELDS
 
-
 # observacao_id
 # ID do evento -> observacao_id
 data.table::setnames(ctb0103_event, old = "ID do evento", new = "observacao_id")
 ctb0103_event[, observacao_id := as.character(observacao_id)]
+# Check for duplicate observacao_id
 any(table(ctb0103_event[, observacao_id]) > 1)
 
 # data_ano
@@ -61,19 +61,31 @@ ctb0103_event[, .N, by = data_ano]
 ctb0103_event[!is.na(data_ano), ano_fonte := "Original"]
 ctb0103_event[, .N, by = ano_fonte]
 
-
 # Longitude -> coord_x
+# One of the soil profiles (sampling points) is missing the spatial coordinates. The reason is 
+# unknown.
 data.table::setnames(ctb0103_event, old = "Longitude", new = "coord_x")
 ctb0103_event[, coord_x := as.numeric(coord_x)]
 summary(ctb0103_event[, coord_x])
 
 # Latitude -> coord_y
+# One of the soil profiles (sampling points) is missing the spatial coordinates. The reason is
+# unknown.
 data.table::setnames(ctb0103_event, old = "Latitude", new = "coord_y")
 ctb0103_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0103_event[, coord_y])
 
 # Check for duplicate coordinates
-ctb0103_event[, .N, by = .(coord_x, coord_y)][N > 1]
+# There are 10 duplicates in the dataset: wait for a solution!
+check_equal_coordinates(ctb0103_event)
+
+
+
+
+
+
+
+
 
 # DATUM -> coord_datum
 data.table::setnames(ctb0103_event, old = "Datum (coord)", new = "coord_datum")
