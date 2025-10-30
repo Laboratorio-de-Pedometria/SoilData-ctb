@@ -79,22 +79,32 @@ summary(ctb0102_event[, coord_y])
 check_equal_coordinates(ctb0102_event)
 
 # Datum (coord) -> coord_datum
-# We don't have but with parzer function => ESPG automatic
+# The document does not specify the datum used for the coordinates. However, given the year of data
+# collection (2013) and the common practices in Brazil, it is reasonable to assume that the WGS84
+# datum was used. Therefore, we set coord_datum to 4326 (EPSG code for WGS84).
 data.table::setnames(ctb0102_event, old = "Datum (coord)", new = "coord_datum")
-ctb0102_event[, coord_datum := NULL]
-ctb0102_event[, coord_datum := 4326]
-
-# So we dont need transform this coordinates.
-
-# Precisão (coord) -> coord_precisao
-# We set it to NA_real_
-data.table::setnames(ctb0102_event, old = "Precisão (coord)", new = "coord_precisao")
-ctb0102_event[, coord_precisao := NA_real_]
+ctb0102_event[, coord_datum := as.character(coord_datum)]
+ctb0102_event[, .N, by = coord_datum]
+ctb0102_event[is.na(coord_datum), coord_datum := 4326]
+ctb0102_event[, coord_datum := as.integer(coord_datum)]
+ctb0102_event[, .N, by = coord_datum]
 
 # Fonte (coord) -> coord_fonte
+# The document does not provide specific information about the source of the coordinates. However,
+# the sources do include highly specific location data for every profile studied, which strongly
+# implies the use of a precise geographic measurement tool, such as a GPS device.
 data.table::setnames(ctb0102_event, old = "Fonte (coord)", new = "coord_fonte")
 ctb0102_event[, coord_fonte := as.character(coord_fonte)]
+ctb0102_event[is.na(coord_fonte), coord_fonte := "GPS device"]
+ctb0102_event[, .N, by = coord_fonte]
 
+# Precisão (coord) -> coord_precisao
+# The document does not provide specific information about the precision of the coordinates. However,
+# since the coordinates were likely obtained using a GPS device, we assume a precision of 10 meters.
+data.table::setnames(ctb0102_event, old = "Precisão (coord)", new = "coord_precisao")
+ctb0102_event[, coord_precisao := as.numeric(coord_precisao)]
+ctb0102_event[is.na(coord_precisao), coord_precisao := 10]
+summary(ctb0102_event[, coord_precisao])
 
 # País -> pais_id
 data.table::setnames(ctb0102_event, old = "País", new = "pais_id")
