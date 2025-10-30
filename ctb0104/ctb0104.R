@@ -1,54 +1,25 @@
-# autor: Felipe Brun Vergani
+# autor: Felipe Brun Vergani and Alessandro Samuel-Rosa
 # data: 2025
 
-# Install and load required packages
-if (!require("data.table")) {
-  install.packages("data.table")
-  library("data.table")
-}
-if (!require("sf")) {
-  install.packages("sf")
-  library("sf")
-}
-if (!require("mapview")) {
-  install.packages("mapview")
-  library("mapview")
-}
-if (!require("parzer")) {
-  install.packages("parzer")
-  library("parzer")
-}
-if (!require("dplyr")) {
-  install.packages("dplyr")
-  library("dplyr")
-}
-
-# Source helper functions
+# Source helper functions and packages
 source("./helper.R")
-
-
 
 # Google Sheet #####################################################################################
 # ctb0104
-# Dados de "ALTERAÇÕES DE PROPRIEDADES FÍSICO-HÍDRICAS EM SOLOS ARENOSOS DO BIOMA PAMPA SOB USOS DISTINTOS"
+# Dados de "ALTERAÇÕES DE PROPRIEDADES FÍSICO-HÍDRICAS EM SOLOS ARENOSOS DO BIOMA PAMPA SOB USOS
+# DISTINTOS"
 # 
-#https://docs.google.com/spreadsheets/d/1P51Sk9mAUr_WF9SEhyvXwpHSDoHDYRoz5Mkvm8aiFp8/edit?usp=sharing
-
-
+# Google Drive: https://drive.google.com/drive/u/0/folders/1OpI7ElGbEN1gfRieg2JwYfcN-5Nezu_x
+# NotebookLM: https://notebooklm.google.com/notebook/e937b687-f6eb-4929-b6aa-a403bed44f2c
 ctb0104_ids <- soildata_catalog("ctb0104")
 
 # validation #####################################################################################
-
 ctb0104_validation <- google_sheet(ctb0104_ids$gs_id, ctb0104_ids$gid_validation)
-str(ctb0104_validation)
-
-# Check for negative validation results
-sum(ctb0104_validation == FALSE, na.rm = TRUE)
+check_sheet_validation(ctb0104_validation)
 
 # citation #####################################################################################
 ctb0104_citation <- google_sheet(ctb0104_ids$gs_id, ctb0104_ids$gid_citation)
 str(ctb0104_citation)
-
 
 # dataset_titulo
 # Check for the string "Título" in column "campo". Then get the corresponding row value from column
