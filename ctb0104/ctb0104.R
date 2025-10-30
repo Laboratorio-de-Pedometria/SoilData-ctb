@@ -43,13 +43,13 @@ print(ctb0104_citation)
 ctb0104_event <- google_sheet(ctb0104_ids$gs_id, ctb0104_ids$gid_event)
 str(ctb0104_event)
 
-#PROCESS FIELDS
-
+# PROCESS FIELDS
 
 # observacao_id
 # ID do evento -> observacao_id
 data.table::setnames(ctb0104_event, old = "ID do evento", new = "observacao_id")
 ctb0104_event[, observacao_id := as.character(observacao_id)]
+# Check for duplicate observacao_id
 any(table(ctb0104_event[, observacao_id]) > 1)
 
 # data_ano
@@ -62,7 +62,6 @@ ctb0104_event[, .N, by = data_ano]
 ctb0104_event[!is.na(data_ano), ano_fonte := "Original"]
 ctb0104_event[, .N, by = ano_fonte]
 
-
 # Longitude -> coord_x
 data.table::setnames(ctb0104_event, old = "Longitude", new = "coord_x")
 ctb0104_event[, coord_x := as.numeric(coord_x)]
@@ -74,8 +73,7 @@ ctb0104_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0104_event[, coord_y])
 
 # Check for duplicate coordinates
-ctb0104_event[, coord_duplicated := .N > 1, by = .(coord_y, coord_x)]
-ctb0104_event[coord_duplicated == TRUE, .(observacao_id, coord_x, coord_y)]
+check_equal_coordinates(ctb0104_event)
 
 # DATUM -> coord_datum
 data.table::setnames(ctb0104_event, old = "Datum (coord)", new = "coord_datum")
