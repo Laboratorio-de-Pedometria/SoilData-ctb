@@ -239,30 +239,34 @@ check_empty_layer(ctb0045_layer, "areia")
 data.table::setnames(ctb0045_layer, old = "Silte [%]", new = "silte")
 ctb0045_layer[, silte := as.numeric(silte)*10]
 summary(ctb0045_layer[, silte])
+# There are 73 layers with missing "silte" values. All of them are Oo horizons.
 
-#argila
+# argila
 # old: Argila [%]
 # new: argila
 data.table::setnames(ctb0045_layer, old = "Argila [%]", new = "argila")
-ctb0045_layer[, argila := as.numeric(argila)*10]
+ctb0045_layer[, argila := as.numeric(argila) * 10]
 summary(ctb0045_layer[, argila])
-
-
-
-
+# There are 73 layers with missing "argila" values. All of them are Oo horizons.
 
 # Check the particle size distribution
+# Round the values to avoid floating point issues
+ctb0045_layer[, areia := round(areia)]
+ctb0045_layer[, silte := round(silte)]
+ctb0045_layer[, argila := round(argila)]
 # The sum of argila, silte and areia should be 1000 g/kg
-ctb0045_layer[, psd := round(rowSums(.SD, na.rm = TRUE)), .SDcols = c("argila", "silte", "areia")]
+ctb0045_layer[, psd := rowSums(.SD, na.rm = TRUE), .SDcols = c("argila", "silte", "areia")]
 psd_lims <- 900:1100
-# Check the limits
-ctb0045_layer[!psd %in% psd_lims & !is.na(psd), .N]
-# 0 layers have a sum of the particle size distribution outside the limits.
-# Print the rows with psd != 1000
 cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
+# Check the limits
 ctb0045_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
-
-
+# 73 layers have a sum of the particle size distribution outside the limits. All of them are Oo
+# horizons.
+# Print the rows with psd != 1000
+ctb0045_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
+# Again, all of them are Oo horizons.
+# Remove the psd column
+ctb0045_layer[, psd := NULL]
 
 # carbono
 # old: Carbono Orgânico [g/Kg]
