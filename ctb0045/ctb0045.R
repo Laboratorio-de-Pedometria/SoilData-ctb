@@ -273,8 +273,8 @@ ctb0045_layer[, psd := NULL]
 # new: carbono
 data.table::setnames(ctb0045_layer, old = "Carbono Orgânico [g/Kg]", new = "carbono")
 ctb0045_layer[, carbono := as.numeric(carbono)]
-ctb0045_layer[is.na(carbono), .(observacao_id, camada_nome, profund_sup, profund_inf, carbono)]
 summary(ctb0045_layer[, carbono])
+# There are 73 layers with missing "carbono" values. All of them are Oo horizons.
 
 # ctc
 # old: T ou CTC [cmol/dm3]
@@ -282,7 +282,7 @@ summary(ctb0045_layer[, carbono])
 data.table::setnames(ctb0045_layer, old = "T ou CTC [cmol/dm3]", new = "ctc")
 ctb0045_layer[, ctc := as.numeric(ctc)]
 summary(ctb0045_layer[, ctc])
-check_empty_layer(ctb0045_layer, "ctc")
+# There are 73 layers with missing "ctc" values. All of them are Oo horizons.
 
 # ph
 # old: pH
@@ -290,14 +290,11 @@ check_empty_layer(ctb0045_layer, "ctc")
 data.table::setnames(ctb0045_layer, old = "pH", new = "ph")
 ctb0045_layer[, ph := as.numeric(ph)]
 summary(ctb0045_layer[, ph])
-check_empty_layer(ctb0045_layer, "ph")
+# There are 73 layers with missing "ph" values. All of them are Oo horizons.
 
 # dsi 
-#missing in this document.
+# Soil bulk density (dsi) is missing in this document.
 ctb0045_layer[, dsi := NA_real_]
-
-
-
 
 str(ctb0045_layer)
 
