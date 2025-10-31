@@ -92,20 +92,15 @@ ctb0103_event[, .N, by = coord_datum]
 ctb0103_event_sf <- sf::st_as_sf(
   ctb0103_event[!is.na(coord_x) & !is.na(coord_y)],
   coords = c("coord_x", "coord_y"),
-  crs = unique(ctb0103_event$coord_datum)
+  crs = 29191
 )
 ctb0103_event_sf <- sf::st_transform(ctb0103_event_sf, crs = 4326)
-
-
-
-
-
-
-
 # Extract the transformed coordinates
-ctb0103_event[is.na(coord_x), coord_x := sf::st_coordinates(ctb0103_event_sf)[, 1]]
-ctb0103_event[is.na(coord_y), coord_y := sf::st_coordinates(ctb0103_event_sf)[, 2]]
-
+ctb0103_event[coord_datum == 29191, coord_x := sf::st_coordinates(ctb0103_event_sf)[, 1]]
+ctb0103_event[coord_datum == 29191, coord_y := sf::st_coordinates(ctb0103_event_sf)[, 2]]
+# Update the datum
+ctb0103_event[coord_datum == 29191, coord_datum := 4326]
+ctb0103_event[, .N, by = coord_datum]
 
 
 
