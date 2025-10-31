@@ -102,21 +102,20 @@ ctb0103_event[coord_datum == 29191, coord_y := sf::st_coordinates(ctb0103_event_
 ctb0103_event[coord_datum == 29191, coord_datum := 4326]
 ctb0103_event[, .N, by = coord_datum]
 
-
+# Fonte (coord) -> coord_fonte
+data.table::setnames(ctb0103_event, old = "Fonte (coord)", new = "coord_fonte")
+ctb0103_event[, coord_fonte := as.character(coord_fonte)]
+ctb0103_event[, .N, by = coord_fonte]
 
 # Precisão (coord) -> coord_precisao
 data.table::setnames(ctb0103_event, old = "Precisão (coord)", new = "coord_precisao")
 ctb0103_event[, coord_precisao := as.numeric(coord_precisao)]
-
-# Fonte (coord) -> coord_fonte
-data.table::setnames(ctb0103_event, old = "Fonte (coord)", new = "coord_fonte")
-ctb0103_event[, coord_fonte := as.character(coord_fonte)]
-
+summary(ctb0103_event[, coord_precisao])
 
 # País -> pais_id
 data.table::setnames(ctb0103_event, old = "País", new = "pais_id")
-ctb0103_event[, pais_id := "BR"]
-
+ctb0103_event[, pais_id := as.character(pais_id)]
+ctb0103_event[, .N, by = pais_id]
 
 # Estado (UF) -> estado_id
 data.table::setnames(ctb0103_event, old = "Estado (UF)", new = "estado_id")
@@ -129,32 +128,28 @@ ctb0103_event[, municipio_id := as.character(municipio_id)]
 ctb0103_event[, .N, by = municipio_id]
 
 # Área do evento [m^2] -> amostra_area
-#
 data.table::setnames(ctb0103_event, old = "Área do evento [m^2]", new = "amostra_area")
 ctb0103_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0103_event[, amostra_area])
 
 # taxon_sibcs
-# missing this soil taxon.
+# Soil classification according to the Brazilian System of Soil Classification is missing in this
+# document.
 ctb0103_event[, taxon_sibcs := NA_character_]
+ctb0103_event[, .N, by = taxon_sibcs]
 
-MT 
-Área do evento [m^2] 	
 # taxon_st 
-# missing this soil taxonomy on document
+# Soil classification according to Soil Taxonomy is missing in this document.
 ctb0103_event[, taxon_st := NA_character_]
 ctb0103_event[, .N, by = taxon_st]
 
-# Pedregosidade (superficie) 
-# missing in this document.
+# pedregosidade
+# Stoniness is missing in this document.
 ctb0103_event[, pedregosidade := NA_character_]
 
-# Rochosidade (superficie)
-# missing in this document.
-
+# rochosidade
+# Rockiness is missing in this document.
 ctb0103_event[, rochosidade := NA_character_]
-
-
 
 str(ctb0103_event)
 
