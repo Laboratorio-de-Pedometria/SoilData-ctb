@@ -264,16 +264,18 @@ check_empty_layer(ctb0103_layer, "silte")
 data.table::setnames(ctb0103_layer, old = "Argila [g/kg]", new = "argila")
 ctb0103_layer[, argila := as.numeric(argila)]
 summary(ctb0103_layer[, argila])
-
-
-# camada_id
-# We will create a unique identifier for each layer indicating the order of the layers in each soil
-# profile. Order by observacao_id and mid_depth.
-ctb0103_layer[, mid_depth := (profund_sup + profund_inf) / 2]
-ctb0103_layer <- ctb0103_layer[order(observacao_id, mid_depth)]
-ctb0103_layer[, camada_id := 1:.N, by = observacao_id]
-ctb0103_layer[, .N, by = camada_id]
-
+# There are 82 layers with missing "argila" values. Virtually all of them are 20-40 cm layers that
+# were mannually added by our team to fill gaps in the dataset.
+check_empty_layer(ctb0103_layer, "argila")
+# Fill empty layers
+ctb0103_layer[,
+  argila := fill_empty_layer(y = argila, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
+# Check again for empty layers. Only four layers remain with missing "argila" values, two in profile
+# T24-P21 and two in profile T12-P201. In the latter profile, we note that there are values for
+# "areia" but not for "silte" and "argila". This has to be checked with the original data source.
+check_empty_layer(ctb0103_layer, "argila")
 
 # Check the particle size distribution
 # The sum of argila, silte and areia should be 1000 g/kg
