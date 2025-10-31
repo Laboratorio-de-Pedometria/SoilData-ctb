@@ -277,6 +277,13 @@ ctb0103_layer[,
 # "areia" but not for "silte" and "argila". This has to be checked with the original data source.
 check_empty_layer(ctb0103_layer, "argila")
 
+# If observacao_id = "T12-P201" and camada_nome = "40-60" is missing "silte" and "argila" values, 
+# set the "areia" value to NA as well.
+ctb0103_layer[
+  observacao_id == "T12-P201" & camada_nome == "40-60" & (is.na(silte) | is.na(argila)),
+  areia := NA_real_
+]
+
 # Check the particle size distribution
 # Round the fractions to avoid small numerical errors
 ctb0103_layer[, areia := round(areia)]
