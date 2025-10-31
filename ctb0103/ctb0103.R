@@ -76,20 +76,38 @@ ctb0103_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0103_event[, coord_y])
 
 # Check for duplicate coordinates
-# There are 10 duplicates in the dataset: wait for a solution!
+# There are 10 duplicates in the dataset: we think that these are due to the precision of the GPS
+# device used to collect the coordinates. 
 check_equal_coordinates(ctb0103_event)
-
-
-
-
-
-
-
-
 
 # DATUM -> coord_datum
 data.table::setnames(ctb0103_event, old = "Datum (coord)", new = "coord_datum")
-ctb0103_event[, coord_datum := 4326]
+ctb0103_event[, coord_datum := as.character(coord_datum)]
+ctb0103_event[, .N, by = coord_datum]
+# SAD69 zona UTM 21s -> 29191
+ctb0103_event[coord_datum == "SAD69 zona UTM 21s", coord_datum := 29191]
+ctb0103_event[, coord_datum := as.integer(coord_datum)]
+ctb0103_event[, .N, by = coord_datum]
+# Transform all to EPSG:4326
+ctb0103_event_sf <- sf::st_as_sf(
+  ctb0103_event[!is.na(coord_x) & !is.na(coord_y)],
+  coords = c("coord_x", "coord_y"),
+  crs = unique(ctb0103_event$coord_datum)
+)
+ctb0103_event_sf <- sf::st_transform(ctb0103_event_sf, crs = 4326)
+
+
+
+
+
+
+
+# Extract the transformed coordinates
+ctb0103_event[is.na(coord_x), coord_x := sf::st_coordinates(ctb0103_event_sf)[, 1]]
+ctb0103_event[is.na(coord_y), coord_y := sf::st_coordinates(ctb0103_event_sf)[, 2]]
+
+
+
 
 # Precisão (coord) -> coord_precisao
 data.table::setnames(ctb0103_event, old = "Precisão (coord)", new = "coord_precisao")
@@ -125,7 +143,8 @@ summary(ctb0103_event[, amostra_area])
 # missing this soil taxon.
 ctb0103_event[, taxon_sibcs := NA_character_]
 
-
+MT 
+Área do evento [m^2] 	
 # taxon_st 
 # missing this soil taxonomy on document
 ctb0103_event[, taxon_st := NA_character_]
