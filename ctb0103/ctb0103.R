@@ -300,25 +300,36 @@ ctb0103_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 ctb0103_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 
 # carbono
-# old: MO [g/dm]
+# old: MO [g/dm^3]
 # new: carbono
-data.table::setnames(ctb0103_layer, old = "MO [g/dm]", new = "carbono")
-ctb0103_layer[, carbono := as.numeric(carbono)/1.742]
-ctb0103_layer[is.na(carbono), .(observacao_id, camada_nome, profund_sup, profund_inf, carbono)]
+data.table::setnames(ctb0103_layer, old = "MO [g/dm^3]", new = "carbono")
+ctb0103_layer[, carbono := as.numeric(carbono) * 0.58] # Convert organic matter to organic carbon
 summary(ctb0103_layer[, carbono])
+# There are 81 layers with missing "carbono" values. Virtually all of them are 20-40 cm layers that
+# were mannually added by our team to fill gaps in the dataset.
+check_empty_layer(ctb0103_layer, "carbono")
+# Fill empty layers
+ctb0103_layer[,
+  carbono := fill_empty_layer(y = carbono, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
+# Check again for empty layers. Only two layers remain with missing "carbono" values,
+# both in profile T24-P21.
+check_empty_layer(ctb0103_layer, "carbono")
 
 # ctc
+# The author measured the cation exchange capacity (CTC) but the values have not been included in
+# the spreadsheet yet. We need to check the original data source for these values.
 ctb0103_layer[, ctc := NA_real_]
 
 # ph
+# The authors measured the pH but the values have not been included in the spreadsheet yet. We need
+# to check the original data source for these values.
 ctb0103_layer[, ph := NA_real_]
 
 # dsi 
-#missing in this document.
+# The authors did not measure the bulk density.
 ctb0103_layer[, dsi := NA_real_]
-
-
-
 
 str(ctb0103_layer)
 
