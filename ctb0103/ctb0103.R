@@ -42,6 +42,8 @@ print(ctb0103_citation)
 ctb0103_event <- google_sheet(ctb0103_ids$gs_id, ctb0103_ids$gid_event)
 str(ctb0103_event)
 
+# NOTE. The coordinates of four samples is incorrect and will be updated by our team.
+
 # PROCESS FIELDS
 
 # observacao_id
@@ -337,14 +339,13 @@ str(ctb0103_layer)
 # events and layers
 ctb0103 <- merge(ctb0103_event, ctb0103_layer, all = TRUE)
 ctb0103[, dataset_id := "ctb0103"]
+
 # citation
 ctb0103 <- merge(ctb0103, ctb0103_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0103)
-
-#Layers: 237
-#Events: 92
-#Georeferenced events: 91
-
+# Layers: 240
+# Events: 80
+# Georeferenced events: 79
 
 # Plot using mapview
 if (interactive()) {
@@ -358,5 +359,3 @@ if (interactive()) {
 # Write to disk ####################################################################################
 ctb0103 <- select_output_columns(ctb0103)
 data.table::fwrite(ctb0103, "ctb0103/ctb0103.csv")
-data.table::fwrite(ctb0103_event, "ctb0103/ctb0103_event.csv")
-data.table::fwrite(ctb0103_layer, "ctb0103/ctb0103_layer.csv")
