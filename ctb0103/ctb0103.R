@@ -213,31 +213,58 @@ summary(ctb0103_layer[, profund_mid])
 # There are no missing layers in this dataset.
 check_missing_layer(ctb0103_layer)
 
+# terrafina
+# old: Terra Fina [g/kg]
+# new: terrafina
+data.table::setnames(ctb0103_layer, old = "Terra Fina [g/kg]", new = "terrafina")
+ctb0103_layer[, terrafina := as.numeric(terrafina)]
+summary(ctb0103_layer[, terrafina])
+# All layers are missing "terrafina" values. This variable is not reported in the document.
+
 # areia 
 # old: Areia [g/kg]
 # new: areia
 data.table::setnames(ctb0103_layer, old = "Areia [g/kg]", new = "areia")
 ctb0103_layer[, areia := as.numeric(areia)]
 summary(ctb0103_layer[, areia])
+# There are 81 layers with missing "areia" values. Virtually all of them are 20-40 cm layers that
+# were mannually added by our team to fill gaps in the dataset.
+check_empty_layer(ctb0103_layer, "areia")
+# Fill empty layers
+ctb0103_layer[,
+  areia := fill_empty_layer(y = areia, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
+# Check again for empty layers. Only two layers remain with missing "areia" values, both in 
+# profile T24-P21.
+check_empty_layer(ctb0103_layer, "areia")
 
-#silte
+# silte
 # old: Silte [g/kg]
 # new: silte
 data.table::setnames(ctb0103_layer, old = "Silte [g/kg]", new = "silte")
 ctb0103_layer[, silte := as.numeric(silte)]
 summary(ctb0103_layer[, silte])
+# There are 82 layers with missing "silte" values. Virtually all of them are 20-40 cm layers that
+# were mannually added by our team to fill gaps in the dataset.
+check_empty_layer(ctb0103_layer, "silte")
+# Fill empty layers
+ctb0103_layer[,
+  silte := fill_empty_layer(y = silte, x = profund_mid, ylim = c(0, 1000)),
+  by = observacao_id
+]
+# Check again for empty layers. Only four layers remain with missing "silte" values, two in profile
+# T24-P21 and two in profile T12-P201. In the latter profile, we note that there are values for
+# "areia" but not for "silte" and "argila". This has to be checked with the original data source.
+check_empty_layer(ctb0103_layer, "silte")
 
-#argila
+# argila
 # old: Argila [g/kg]
 # new: argila
 data.table::setnames(ctb0103_layer, old = "Argila [g/kg]", new = "argila")
 ctb0103_layer[, argila := as.numeric(argila)]
 summary(ctb0103_layer[, argila])
 
-
-#terrafina
-#is missingg in this document.
-ctb0103_layer[, terrafina := NA_real_]
 
 # camada_id
 # We will create a unique identifier for each layer indicating the order of the layers in each soil
