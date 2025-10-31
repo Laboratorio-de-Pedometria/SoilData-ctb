@@ -278,17 +278,19 @@ ctb0103_layer[,
 check_empty_layer(ctb0103_layer, "argila")
 
 # Check the particle size distribution
+# Round the fractions to avoid small numerical errors
+ctb0103_layer[, areia := round(areia)]
+ctb0103_layer[, silte := round(silte)]
+ctb0103_layer[, argila := round(argila)]
 # The sum of argila, silte and areia should be 1000 g/kg
-ctb0103_layer[, psd := round(rowSums(.SD, na.rm = TRUE)), .SDcols = c("argila", "silte", "areia")]
+ctb0103_layer[, psd := argila + silte + areia]
 psd_lims <- 900:1100
+cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
 # Check the limits
-ctb0103_layer[!psd %in% psd_lims & !is.na(psd), .N]
+ctb0103_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 # 0 layers have a sum of the particle size distribution outside the limits.
 # Print the rows with psd != 1000
-cols <- c("observacao_id", "camada_nome", "profund_sup", "profund_inf", "psd")
 ctb0103_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
-
-
 
 # carbono
 # old: MO [g/dm]
