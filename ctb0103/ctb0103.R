@@ -164,19 +164,20 @@ data.table::setnames(ctb0103_layer, old = "ID do evento", new = "observacao_id")
 ctb0103_layer[, observacao_id := as.character(observacao_id)]
 ctb0103_layer[, .N, by = observacao_id]
 
-# ID da camada -> camada_nome
-# missing in this document.
-ctb0103_layer[, camada_nome := NA_character_]
+# Nome da camada -> camada_nome
+data.table::setnames(ctb0103_layer, old = "Nome da camada", new = "camada_nome")
+ctb0103_layer[, camada_nome := as.character(camada_nome)]
+ctb0103_layer[, .N, by = camada_nome]
 
 # ID da amostra -> amostra_id
 # amostra_id is missing in this document.
 ctb0103_layer[, amostra_id := NA_real_]
 
-
 # profund_sup
 # old: Profundidade inicial [cm]
 # new: profund_sup
 data.table::setnames(ctb0103_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+ctb0103_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0103_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0103_layer[, profund_sup])
 
@@ -184,8 +185,12 @@ summary(ctb0103_layer[, profund_sup])
 # old: Profundidade final [cm]
 # new: profund_inf
 data.table::setnames(ctb0103_layer, old = "Profundidade final [cm]", new = "profund_inf")
+ctb0103_layer[, profund_inf := depth_slash(profund_inf), by = .I]
+ctb0103_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0103_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0103_layer[, profund_inf])
+
+
 
 #areia 
 # old: Areia [g/kg]
