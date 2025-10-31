@@ -190,9 +190,30 @@ ctb0103_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0103_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0103_layer[, profund_inf])
 
+# Check for duplicated layers
+check_duplicated_layer(ctb0103_layer)
 
+# Check for layers with equal top and bottom depths
+check_equal_depths(ctb0103_layer)
 
-#areia 
+# Check for negative layer depths
+check_depth_inversion(ctb0103_layer)
+
+# camada_id
+# We will create a unique identifier for each layer.
+ctb0103_layer <- ctb0103_layer[order(observacao_id, profund_sup, profund_inf)]
+ctb0103_layer[, camada_id := 1:.N, by = observacao_id]
+ctb0103_layer[, .N, by = camada_id]
+
+# profund_mid
+ctb0103_layer[, profund_mid := (profund_sup + profund_inf) / 2]
+summary(ctb0103_layer[, profund_mid])
+
+# Check for missing layers
+# There are no missing layers in this dataset.
+check_missing_layer(ctb0103_layer)
+
+# areia 
 # old: Areia [g/kg]
 # new: areia
 data.table::setnames(ctb0103_layer, old = "Areia [g/kg]", new = "areia")
