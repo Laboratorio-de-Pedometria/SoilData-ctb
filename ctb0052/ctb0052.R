@@ -412,7 +412,6 @@ rf_carbono <- ranger::ranger(
   carbono ~ carbono_color + argila + silte + areia + terrafina + profund_inf + profund_sup + ph + ctc,
   data = ctb0052_layer[has_carbono == TRUE]
 )
-?ranger
 print(rf_carbono) # 0.4337614
 ctb0052_layer[
   is.na(carbono) & !is.na(carbono_color),
