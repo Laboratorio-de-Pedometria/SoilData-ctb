@@ -261,7 +261,7 @@ ctb0073_layer[, mid_depth := (profund_sup + profund_inf) / 2]
 
 # Fill missing areia_muito_grossa using spline interpolation by observacao_id
 ctb0073_layer[,
-  areia_muito_grossa := fill_empty_layer(areia_muito_grossa, mid_depth),
+  areia_muito_grossa := fill_empty_layer(areia_muito_grossa, mid_depth, ylim = c(0, 1000)),
   by = observacao_id
 ]
 
@@ -276,7 +276,7 @@ summary(ctb0073_layer[, areia_grossa])
 check_empty_layer(ctb0073_layer, "areia_grossa")
 # Fill missing areia_grossa using spline interpolation by observacao_id
 ctb0073_layer[,
-  areia_grossa := fill_empty_layer(areia_grossa, mid_depth),
+  areia_grossa := fill_empty_layer(areia_grossa, mid_depth, ylim = c(0, 1000)),
   by = observacao_id
 ]
 
@@ -291,7 +291,7 @@ summary(ctb0073_layer[, areia_media])
 check_empty_layer(ctb0073_layer, "areia_media")
 # Fill missing areia_media using spline interpolation by observacao_id
 ctb0073_layer[,
-  areia_media := fill_empty_layer(areia_media, mid_depth),
+  areia_media := fill_empty_layer(areia_media, mid_depth, ylim = c(0, 1000)),
   by = observacao_id
 ]
 
@@ -306,7 +306,7 @@ summary(ctb0073_layer[, areia_fina])
 check_empty_layer(ctb0073_layer, "areia_fina")
 # Fill missing areia_fina using spline interpolation by observacao_id
 ctb0073_layer[,
-  areia_fina := fill_empty_layer(areia_fina, mid_depth),
+  areia_fina := fill_empty_layer(areia_fina, mid_depth, ylim = c(0, 1000)),
   by = observacao_id
 ]
 
@@ -321,7 +321,7 @@ summary(ctb0073_layer[, areia_muito_fina])
 check_empty_layer(ctb0073_layer, "areia_muito_fina")
 # Fill missing areia_muito_fina using spline interpolation by observacao_id
 ctb0073_layer[,
-  areia_muito_fina := fill_empty_layer(areia_muito_fina, mid_depth),
+  areia_muito_fina := fill_empty_layer(areia_muito_fina, mid_depth, ylim = c(0, 1000)),
   by = observacao_id
 ]
 
@@ -347,7 +347,7 @@ summary(ctb0073_layer[, silte])
 check_empty_layer(ctb0073_layer, "silte")
 # Fill missing silte using spline interpolation by observacao_id
 ctb0073_layer[,
-  silte := round(fill_empty_layer(silte, mid_depth)),
+  silte := round(fill_empty_layer(silte, mid_depth, ylim = c(0, 1000))),
   by = observacao_id
 ]
 
@@ -362,7 +362,7 @@ summary(ctb0073_layer[, argila])
 check_empty_layer(ctb0073_layer, "argila")
 # Fill missing argila using spline interpolation by observacao_id
 ctb0073_layer[,
-  argila := round(fill_empty_layer(argila, mid_depth)),
+  argila := round(fill_empty_layer(argila, mid_depth, ylim = c(0, 1000))),
   by = observacao_id
 ]
 
@@ -392,7 +392,7 @@ summary(ctb0073_layer[, carbono])
 check_empty_layer(ctb0073_layer, "carbono")
 # Fill missing carbono using spline interpolation by observacao_id
 ctb0073_layer[,
-  carbono := fill_empty_layer(carbono, mid_depth),
+  carbono := fill_empty_layer(carbono, mid_depth, ylim = c(0, 1000)),
   by = observacao_id
 ]
 
