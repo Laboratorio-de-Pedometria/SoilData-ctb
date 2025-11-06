@@ -116,13 +116,13 @@ ctb0104_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0104_event[, amostra_area])
 
 # taxon_sibcs
-# old: Classificação do Solo
+# old: SiBCS (2018)
 # new: taxon_sibcs
 # Soil classification is missing in this document. However, based on the detailed descriptions of
 # the soil characteristics provided in the sources, it is highly probable that the soils studied
 # are Arenosols, which correspond to the classification Neossolo Quartzarênico in the Brazilian
 # System of Soil Classification (SiBCS).
-data.table::setnames(ctb0104_event, old = "Classificação do Solo", new = "taxon_sibcs")
+data.table::setnames(ctb0104_event, old = "SiBCS (2018)", new = "taxon_sibcs")
 ctb0104_event[, taxon_sibcs := as.character(taxon_sibcs)]
 ctb0104_event[is.na(taxon_sibcs), taxon_sibcs := "Neossolo Quartzarênico"]
 ctb0104_event[, .N, by = taxon_sibcs]
@@ -207,17 +207,17 @@ summary(ctb0104_layer[, mid_depth])
 # Check for missing layers
 # There are no missing layers in this dataset.
 check_missing_layer(ctb0104_layer)
+# ATENTION. There actually are no missing layers in this dataset. However, there are coincident
+# layers: 0-5, 5-10, and 0-10 cm. The later was used to determine the total carbon and nitrogen
+# content, while the two former were used to determine all other properties. We will drop the 0-10
+# cm layers to avoid confusion.
+ctb0104_layer <- ctb0104_layer[!(profund_sup == 0 & profund_inf == 10)]
 
 # terrafina
 # old: Terra fina [g/kg]
 # new: terrafina
-# The original document does not report the proportion of coarse fragments or the exact proportion
-# of the fine earth in relation to the whole soil. However, based on the detailed descriptions of
-# the soil characteristics provided in the sources, it is highly probable that the soils studied
-# are sandy soils with a very low high content of fine particles.
 data.table::setnames(ctb0104_layer, old = "Terra fina [g/kg]", new = "terrafina")
 ctb0104_layer[, terrafina := as.numeric(terrafina)]
-ctb0104_layer[is.na(terrafina), terrafina := 1000]
 summary(ctb0104_layer[, terrafina])
 
 # areia
@@ -259,20 +259,34 @@ ctb0104_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 ctb0104_layer[, psd := NULL]
 
 # carbono
-# The carbon content was measured, but the values were not included in the spreadsheet yet.
-ctb0104_layer[, carbono := NA_real_]
+# old: MO [%]
+# new: carbono
+data.table::setnames(ctb0104_layer, old = "MO [%]", new = "carbono")
+ctb0104_layer[, carbono := as.numeric(carbono)]
+# Convert from organic matter to organic carbon using the Van Bemmelen factor (1.724)
+ctb0104_layer[, carbono := carbono / 1.724 * 10] # convert to g/kg
+summary(ctb0104_layer[, carbono])
 
 # ctc
-# The cation exchange capacity was not measured in this project.
-ctb0104_layer[, ctc := NA_real_]
+# old: CTC pH 7 [cmolc/l]
+# new: ctc
+data.table::setnames(ctb0104_layer, old = "CTC pH 7 [cmolc/l]", new = "ctc")
+ctb0104_layer[, ctc := as.numeric(ctc)]
+summary(ctb0104_layer[, ctc])
 
 # ph
-# The pH was not measured in this project.
-ctb0104_layer[, ph := NA_real_]
+# old: pH (H2O)
+# new: ph
+data.table::setnames(ctb0104_layer, old = "pH (H2O)", new = "ph")
+ctb0104_layer[, ph := as.numeric(ph)]
+summary(ctb0104_layer[, ph])
 
 # dsi
-# The bulk soil density was measured, but the values were not included in the spreadsheet yet.
-ctb0104_layer[, dsi := NA_real_]
+# old: Densidade do solo [g/cm3]
+# new: dsi
+data.table::setnames(ctb0104_layer, old = "Densidade do solo [g/cm3]", new = "dsi")
+ctb0104_layer[, dsi := as.numeric(dsi)]
+summary(ctb0104_layer[, dsi])
 
 str(ctb0104_layer)
 
