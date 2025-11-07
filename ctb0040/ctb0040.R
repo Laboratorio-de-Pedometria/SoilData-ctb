@@ -185,13 +185,16 @@ ctb0040_layer <- ctb0040_layer[order(observacao_id, profund_sup, profund_inf)]
 ctb0040_layer[, camada_id := 1:.N, by = observacao_id]
 ctb0040_layer[, .N, by = camada_id]
 
-# Terra fina [%v] -> terrafina
-# A proporção da fração terra fina foi estimada visualmente pelo autor dos dados como sendo de
-# aproximadamente 50% (~50).
+# terrafina [g/kg]
+# old: Terra fina [%v]
+# new: terrafina
+# The fine earth fraction (volume) was visually estimated by the data author as being approximately
+# 50% (~50). To convert from volume (%) to mass (g/kg), we assume a bulk density of 1.3 g/cm³ and
+# use the formula: terrafina (g/kg) = terrafina (%) * bulk density (g/cm³) * 10
 data.table::setnames(ctb0040_layer, old = "Terra fina [%v]", new = "terrafina")
 ctb0040_layer[, terrafina := as.character(terrafina)]
 ctb0040_layer[, terrafina := gsub("~", "", terrafina)]
-ctb0040_layer[, terrafina := as.numeric(terrafina)]
+ctb0040_layer[, terrafina := as.numeric(terrafina) * 1.3 * 10]
 summary(ctb0040_layer[, terrafina])
 
 # Argila [g/kg] -> argila
