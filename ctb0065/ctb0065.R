@@ -238,6 +238,24 @@ ctb0065_event[, pedregosidade := NA_character_]
 # document, we can infer that the profiles do not exhibit rockiness. 
 ctb0065_event[, rochosidade := "ausente"]
 
+# cobertura
+# Concatenates one or more source columns (e.g. situacao, uso_atual, cobertura) into a single
+# field. Adjust the vector below with the names of the already-renamed source columns.
+data.table::setnames(ctb0065_event, old="Uso e cobertura da terra", new = "cobertura")
+cobertura_cols <- c("cobertura")
+concat_columns(ctb0065_event, target = "cobertura", sources = cobertura_cols)
+
+#vegetacao
+ctb0065_event[, vegetacao := NA_character_]
+
+# erosao
+#  No erosion data available in the source document for this dataset.
+ctb0065_event[, erosao := NA_character_]
+erosao_cols <- c("erosao")
+concat_columns(ctb0065_event, target = "erosao", sources = erosao_cols)
+ctb0065_event[, .N, by = erosao]
+
+
 str(ctb0065_event)
 
 # layers ###########################################################################################
