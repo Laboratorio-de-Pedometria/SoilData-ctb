@@ -390,6 +390,10 @@ select_output_columns <- function(data) {
     "amostra_area",
     "taxon_sibcs", "taxon_st",
     "pedregosidade", "rochosidade",
+    #cobertura vai concatecar ("situacao" + "uso atual" + "cobertura")
+    #vegetacao <- vegetacao_primaria
+    #erosao (existe a possibilidade de ter mais tipos)
+    "erosao", "cobertura", "vegetacao", 
     "camada_nome", "amostra_id", "camada_id",
     "profund_sup", "profund_inf",
     "terrafina",
@@ -495,4 +499,25 @@ check_depth_inversion <- function(data) {
     message("No layers with inverted or negative depths were found. You can proceed.")
   }
   return(invisible(inverted_depths))
+}
+
+
+# Concatenate source columns into a single field ###################################################
+# This function concatenates the values of one or more source columns of a data.table into a single
+# target column, using a separator. If only one source column is provided, the function leaves the
+# data unchanged (the single column already plays the role of the target).
+# data: data.table containing the source columns
+# target: character string, name of the target column to be created (e.g. "cobertura")
+# sources: character vector with the names of the already-renamed source columns
+# sep: character string used as separator between concatenated values (default is " | ")
+# Returns: the data.table invisibly, modified by reference
+# Example usage: concat_columns(ctb0065_event, "cobertura", c("situacao", "uso_atual", "cobertura_src"))
+# Note: The function modifies the data.table in place using data.table semantics. NA values are
+# coerced to the string "NA" by paste(); preprocess the source columns if a different behavior is
+# desired.
+concat_columns <- function(data, target, sources, sep = " | ") {
+  if (length(sources) > 1) {
+    data[, (target) := do.call(paste, c(.SD, sep = sep)), .SDcols = sources]
+  }
+  return(invisible(data))
 }
