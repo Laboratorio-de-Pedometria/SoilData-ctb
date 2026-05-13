@@ -260,18 +260,18 @@ check_missing_layer(ctb0066_layer)
 
 # terrafina
 # The terrafina (fine earth fraction) is not available in the original publication. However, this
-# information could be infered from other features. This will be possible when the complete data 
+# information could be infered from other features. This will be possible when the complete data
 # from the annex of the original publication is digitized and added to the dataset. For now, we
 # set NA.
 ctb0066_layer[, terrafina := NA_real_]
 
 # areia
-# old: "Areia total (%)"
+# old: "Areia total [%]"
 # new: areia
 # Only 21 samples of soil (all taken at the 0−20 cm depth) were selected for textural analysis
 # (sand, silt, and clay). Organossols and Melanic Gleissols were generally excluded from routine
 # granulometric analysis.
-data.table::setnames(ctb0066_layer, old = "Areia total (%)", new = "areia")
+data.table::setnames(ctb0066_layer, old = "Areia total [%]", new = "areia")
 ctb0066_layer[, areia := areia * 10]
 summary(ctb0066_layer[, areia])
 # There are 239 layers missing sand content
@@ -279,9 +279,9 @@ ctb0066_layer[!is.na(areia), .N]
 check_empty_layer(ctb0066_layer, "areia")
 
 # silte
-# old: Silte (%)
+# old: Silte [%]
 # new: silte
-data.table::setnames(ctb0066_layer, old = "Silte (%)", new = "silte")
+data.table::setnames(ctb0066_layer, old = "Silte [%]", new = "silte")
 ctb0066_layer[, silte := silte * 10]
 summary(ctb0066_layer[, silte])
 # there are 239 layers missing silt content
@@ -289,9 +289,9 @@ ctb0066_layer[!is.na(silte), .N]
 check_empty_layer(ctb0066_layer, "silte")
 
 # argila
-# old: Argila (%)
+# old: Argila [%]
 # new: argila
-data.table::setnames(ctb0066_layer, old = "Argila (%)", new = "argila")
+data.table::setnames(ctb0066_layer, old = "Argila [%]", new = "argila")
 ctb0066_layer[, argila := argila * 10]
 summary(ctb0066_layer[, argila])
 # there are 240 layers missing clay content
@@ -307,9 +307,9 @@ ctb0066_layer[!psd %in% psd_lims & !is.na(psd), .N]
 # 0 layers have a sum of the particle size distribution outside the limits.
 
 # carbono
-# old: C (%)
+# old: C [%]
 # new: carbono
-data.table::setnames(ctb0066_layer, old = "C (%)", new = "carbono")
+data.table::setnames(ctb0066_layer, old = "C [%]", new = "carbono")
 ctb0066_layer[, carbono := carbono * 10]
 summary(ctb0066_layer[, carbono])
 # There are 3 layers missing carbon content: P49A, P49B, and P48. All of the 0-20 cm depth.
@@ -318,9 +318,9 @@ summary(ctb0066_layer[, carbono])
 check_empty_layer(ctb0066_layer, "carbono")
 
 # ctc
-# old: T (mmolc/dm^3)
+# old: T [mmolc/dm^3]
 # new: ctc
-data.table::setnames(ctb0066_layer, old = "T (mmolc/dm^3)", new = "ctc")
+data.table::setnames(ctb0066_layer, old = "T [mmolc/dm^3]", new = "ctc")
 ctb0066_layer[, ctc := as.numeric(ctc)]
 summary(ctb0066_layer[, ctc])
 # There are 3 layers missing ctc content. The same layers missing carbon content.
