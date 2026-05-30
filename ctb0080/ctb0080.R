@@ -78,13 +78,13 @@ ctb0080_event[, .N, by = ano_fonte]
 
 # coord_x
 # X -> coord_x
-data.table::setnames(ctb0080_event, old = "X", new = "coord_x")
+data.table::setnames(ctb0080_event, old = "X [m]", new = "coord_x")
 ctb0080_event[, coord_x := as.numeric(coord_x)]
 summary(ctb0080_event[, coord_x])
 
 # coord_y
 # Y -> coord_y
-data.table::setnames(ctb0080_event, old = "Y", new = "coord_y")
+data.table::setnames(ctb0080_event, old = "Y [m]", new = "coord_y")
 ctb0080_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0080_event[, coord_y])
 
@@ -129,7 +129,7 @@ ctb0080_event[, .N, by = coord_fonte]
 # The coordinates were obtained using GPS equipment, but the sources do not explicitly state the
 # technical precision (e.g., error margin in meters or centimeters) of the GPS device used. So we
 # will assume a precision of 10 meters.
-data.table::setnames(ctb0080_event, old = "Precisão (coord)", new = "coord_precisao")
+data.table::setnames(ctb0080_event, old = "Precisão (coord) [m]", new = "coord_precisao")
 ctb0080_event[, coord_precisao := as.numeric(coord_precisao)]
 summary(ctb0080_event[, coord_precisao])
 ctb0080_event[is.na(coord_precisao), coord_precisao := 10]
@@ -177,6 +177,25 @@ ctb0080_event[, .N, by = pedregosidade]
 data.table::setnames(ctb0080_event, old = "Rochosidade", new = "rochosidade")
 ctb0080_event[, rochosidade := as.character(rochosidade)]
 ctb0080_event[, .N, by = rochosidade]
+
+# cobertura
+# Concatenates one or more source columns (e.g. situacao, uso_atual, cobertura) into a single
+# field. Adjust the vector below with the names of the already-renamed source columns.
+data.table::setnames(ctb0080_event, old = "Uso atual", new = "uso_atual")
+cobertura_cols <- c("uso_atual")
+concat_columns(ctb0080_event, target = "cobertura", sources = cobertura_cols)
+ctb0080_event[, .N, by = cobertura]
+
+#vegetacao
+data.table::setnames(ctb0080_event, old="Vegetação", new="vegetacao")
+ctb0080_event[, vegetacao := as.character(vegetacao)]
+ctb0080_event[, .N, by = vegetacao]
+
+# erosao
+data.table::setnames(ctb0080_event, old="Erosão", new="erosao")
+erosao_cols <- c("erosao")
+concat_columns(ctb0080_event, target = "erosao", sources = erosao_cols)
+ctb0080_event[, .N, by = erosao]
 
 str(ctb0080_event)
 
@@ -319,9 +338,9 @@ ctb0080_layer[!psd_check & !is.na(psd_check), .(observacao_id, camada_nome, argi
 # There are no layers with sum of the particle size distribution outside the limits.
 
 # carbono
-# old: C[orgânico] [g/kg]
+# old: C (orgânico) [g/kg]
 # new: carbono
-data.table::setnames(ctb0080_layer, old = "C[orgânico] [g/kg]", new = "carbono")
+data.table::setnames(ctb0080_layer, old = "C (orgânico) [g/kg]", new = "carbono")
 ctb0080_layer[, carbono := as.numeric(carbono)]
 summary(ctb0080_layer[, carbono])
 # There are 11 layers with missing "carbono" values. These include organic layers and an R layer,
@@ -341,7 +360,7 @@ check_empty_layer(ctb0080_layer, "ctc")
 # ph
 # old: pH [H_2O]
 # new: ph
-data.table::setnames(ctb0080_layer, old = "pH [H_2O]", new = "ph")
+data.table::setnames(ctb0080_layer, old = "pH (H_2O)", new = "ph")
 ctb0080_layer[, ph := as.numeric(ph)]
 summary(ctb0080_layer[, ph])
 # There are 1740 layers with missing "ph" values. These include organic layers, an R layer, and the
