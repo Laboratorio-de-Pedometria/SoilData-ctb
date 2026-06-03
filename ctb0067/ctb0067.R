@@ -170,6 +170,26 @@ data.table::setnames(ctb0067_event, old = "Rochosidade", new = "rochosidade")
 ctb0067_event[, rochosidade := as.character(rochosidade)]
 ctb0067_event[, .N, by = rochosidade]
 
+# cobertura
+# Concatenates one or more source columns (e.g. situacao, uso_atual, cobertura) into a single
+# field. Adjust the vector below with the names of the already-renamed source columns.
+data.table::setnames(ctb0067_event, old = "Situação declive e cobertura", new="cobertura")
+data.table::setnames(ctb0067_event, old = "Uso atual", new="uso_atual")
+cobertura_cols <- c("cobertura", "uso_atual")
+concat_columns(ctb0067_event, target = "cobertura", sources = cobertura_cols)
+
+#vegetacao
+data.table::setnames(ctb0067_event, old="Vegetação primária", new= "vegetacao")
+ctb0067_event[, vegetacao := as.character(vegetacao)]
+ctb0067_event[, .N, by = vegetacao]
+
+# erosao
+#  No erosion data available in the source document for this dataset.
+data.table::setnames(ctb0067_event, old = "Erosão", new="erosao")
+erosao_cols <- c("erosao")
+concat_columns(ctb0067_event, target = "erosao", sources = erosao_cols)
+ctb0067_event[, .N, by = erosao]
+
 
 
 str(ctb0067_event)
@@ -204,6 +224,7 @@ ctb0067_layer[, amostra_id := NA_real_]
 # old: Profundidade inicial [cm]
 # new: profund_sup
 data.table::setnames(ctb0067_layer, old = "Profundidade inicial [cm]", new = "profund_sup")
+ctb0067_layer[, profund_sup := depth_slash(profund_sup), by = .I]
 ctb0067_layer[, profund_sup := as.numeric(profund_sup)]
 summary(ctb0067_layer[, profund_sup])
 
@@ -211,8 +232,16 @@ summary(ctb0067_layer[, profund_sup])
 # old: Profundidade final [cm]
 # new: profund_inf
 data.table::setnames(ctb0067_layer, old = "Profundidade final [cm]", new = "profund_inf")
+ctb0067_layer[, profund_inf := depth_slash(profund_inf), by = .I]
+ctb0067_layer[, profund_inf := depth_plus(profund_inf), by = .I]
 ctb0067_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0067_layer[, profund_inf])
+
+# camada_id
+# We will create a unique identifier for each layer.
+ctb0067_layer <- ctb0067_layer[order(observacao_id, profund_sup, profund_inf)]
+ctb0067_layer[, camada_id := 1:.N, by = observacao_id]
+ctb0067_layer[, .N, by = camada_id]
 
 
 # argila
