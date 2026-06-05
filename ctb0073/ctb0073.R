@@ -179,6 +179,28 @@ data.table::setnames(ctb0073_event, old = "Rochosidade", new = "rochosidade")
 ctb0073_event[, rochosidade := as.character(rochosidade)]
 ctb0073_event[, .N, by = rochosidade]
 
+# cobertura
+# Concatenates one or more source columns (e.g. situacao, uso_atual, cobertura) into a single
+# field. Adjust the vector below with the names of the already-renamed source columns.
+data.table::setnames(ctb0073_event, old = "Situação, declive e cobertura vegetal sobre o perfil", new="situacao")
+data.table::setnames(ctb0073_event, old = "Uso atual", new="uso_atual")
+cobertura_cols <- c("situacao", "uso_atual")
+concat_columns(ctb0073_event, target = "cobertura", sources = cobertura_cols)
+
+#vegetacao
+data.table::setnames(ctb0073_event, old="Vegetação primária", new= "vegetacao")
+ctb0073_event[, vegetacao := as.character(vegetacao)]
+ctb0073_event[, .N, by = vegetacao]
+
+# erosao
+#  No erosion data available in the source document for this dataset.
+data.table::setnames(ctb0073_event, old = "Erosão", new="erosao")
+erosao_cols <- c("erosao")
+concat_columns(ctb0073_event, target = "erosao", sources = erosao_cols)
+ctb0073_event[, .N, by = erosao]
+
+
+
 str(ctb0073_event)
 
 # layers ###########################################################################################
