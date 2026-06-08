@@ -57,7 +57,7 @@ any(table(ctb0093_event[, observacao_id]) > 1)
 data.table::setnames(ctb0093_event, old = "Ano (coleta)", new = "data_ano")
 ctb0093_event[, data_ano := as.integer(data_ano)]
 ctb0093_event[, .N, by = data_ano]
-# There are 36 events from the year of 2008. This is the same year of the events from ctb0092, a
+# There are 36 events from the year of 2008. This is the same year of the events from ctb0093, a
 # study from the same research group in the same region. We need to check with them if these are
 # the same events.
 
@@ -168,6 +168,26 @@ ctb0093_event[, pedregosidade := NA_character_]
 # rochosidade
 # Data on rockiness is missing in this document.
 ctb0093_event[, rochosidade := NA_character_]
+
+# cobertura
+# Concatenates one or more source columns (e.g. situacao, uso_atual, cobertura) into a single
+# field. Adjust the vector below with the names of the already-renamed source columns.
+ctb0093_event[, cobertura := NA_character_]
+cobertura_cols <- c("cobertura")
+concat_columns(ctb0093_event, target = "cobertura", sources = cobertura_cols)
+
+#vegetacao
+ctb0093_event[, vegetacao := NA_character_]
+ctb0093_event[, .N, by = vegetacao]
+
+# erosao
+#  No erosion data available in the source document for this dataset.
+ctb0093_event[, erosao := NA_character_]
+erosao_cols <- c("erosao")
+concat_columns(ctb0093_event, target = "erosao", sources = erosao_cols)
+ctb0093_event[, .N, by = erosao]
+
+
 
 str(ctb0093_event)
 
@@ -312,9 +332,9 @@ ctb0093[, dataset_id := "ctb0093"]
 # citation
 ctb0093 <- merge(ctb0093, ctb0093_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0093)
-# Layers: 759
-# Events: 373
-# Georeferenced events: 370
+# Layers: 695
+# Events: 339
+# Georeferenced events: 334
 
 # Plot using mapview
 if (FALSE) {
