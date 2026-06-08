@@ -84,30 +84,81 @@ summary(ctb0087_event[, coord_y])
 # Check for duplicate coordinates
 check_equal_coordinates(ctb0087_event)
 
-# Datum (coord) -> coord_datum
-#data.table::setnames(ctb0087_event, old = "Datum (coord)", new = "coord_datum")
-#ctb0087_event[, coord_datum := as.character(coord_datum)]
-#ctb0087_event[, coord_datum := gsub("WGS-84", 4326, coord_datum)]
-#ctb0087_event[, coord_datum := gsub("WGS84", 4326, coord_datum)]
-#ctb0087_event[, coord_datum := as.integer(coord_datum)]
-#ctb0087_event[is.na(coord_datum) & !is.na(coord_x) & !is.na(coord_y), coord_datum := 4326L]
-#ctb0087_event[, .N, by = coord_datum]
+#Datum (coord) -> coord_datum
+data.table::setnames(ctb0087_event, old = "Datum (coord)", new = "coord_datum")
+ctb0087_event[, coord_datum := gsub("WGS 84 UTM 21 S", 32721, coord_datum)]
+ctb0087_event[, coord_datum := as.integer(coord_datum)]
+ctb0087_event[is.na(coord_datum) & !is.na(coord_x) & !is.na(coord_y), coord_datum := 32721L]
+ctb0087_event[, .N, by = coord_datum]
 
-# Fonte (coord) -> coord_fonte
-# The sources strongly indicate that the author and their research team used a GPS device in the
-# field to register the locations of sampling points.
-#data.table::setnames(ctb0087_event, old = "Fonte (coord)", new = "coord_fonte")
-#ctb0087_event[, coord_fonte := as.character(coord_fonte)]
-#ctb0087_event[is.na(coord_fonte) & !(is.na(coord_x) & is.na(coord_y)), coord_fonte := "GPS"]
-#ctb0087_event[, .N, by = coord_fonte]
+#Fonte (coord) -> coord_fonte
+#The sources strongly indicate that the author and their research team used a GPS device in the
+#field to register the locations of sampling points.
+data.table::setnames(ctb0087_event, old = "Fonte (coord)", new = "coord_fonte")
+ctb0087_event[, coord_fonte := as.character(coord_fonte)]
+ctb0087_event[is.na(coord_fonte) & !(is.na(coord_x) & is.na(coord_y)), coord_fonte := "GPS"]
+ctb0087_event[, .N, by = coord_fonte]
 
-# Precisão (coord) -> coord_precisao
-# The precision of the coordinates is not informed in this dataset. However, the coordinates were
-# likelly collected using a GPS device. Therefore, we will assume a precision of 10 meters.
-#data.table::setnames(ctb0087_event, old = "Precisão (coord)", new = "coord_precisao")
-#ctb0087_event[, coord_precisao := as.numeric(coord_precisao)]
-#ctb0087_event[is.na(coord_precisao) & !(is.na(coord_x) & is.na(coord_y)), coord_precisao := 10]
-#summary(ctb0087_event[, coord_precisao])
+#Precisão (coord) -> coord_precisao
+#The precision of the coordinates is not informed in this dataset. However, the coordinates were
+#likelly collected using a GPS device. Therefore, we will assume a precision of 10 meters.
+data.table::setnames(ctb0087_event, old = "Precisão (coord)", new = "coord_precisao")
+ctb0087_event[, coord_precisao := as.numeric(coord_precisao)]
+ctb0087_event[is.na(coord_precisao) & !(is.na(coord_x) & is.na(coord_y)), coord_precisao := 10]
+summary(ctb0087_event[, coord_precisao])
+
+# Identifica as linhas que possuem coordenadas válidas para transformação
+idx_transform <- which(!is.na(ctb0087_event$coord_x) & !is.na(ctb0087_event$coord_y))
+
+if (length(idx_transform) > 0) {
+  
+  # Create the spatial object (sf) from the UTM coordinates using the correct name
+  utm_sirgas_sf <- sf::st_as_sf(
+    ctb0087_event[idx_transform, ],
+    coords = c("coord_x", "coord_y"),
+    crs = 32721, # CRS de Origem: WGS 84 UTM 21 S
+    remove = FALSE
+  )
+  
+  # Identifies which geometries are duplicated (are exactly at the same point)
+  # We use sf::st_geometry to compare the actual spatial position of the points
+  is_dup <- duplicated(sf::st_geometry(utm_sirgas_sf)) | 
+    duplicated(sf::st_geometry(utm_sirgas_sf), fromLast = TRUE)
+  
+  # If there are duplicates, apply a real 1-meter jitter to the correct object
+  if (any(is_dup)) {
+    set.seed(12345)
+    jittered <- sf::st_jitter(utm_sirgas_sf[is_dup, ], amount = 1)
+    coords_j <- sf::st_coordinates(jittered)
+    # grava de volta as coordenadas UTM com jitter no objeto principal
+    utm_sirgas_sf$coord_x[is_dup] <- coords_j[, 1]
+    utm_sirgas_sf$coord_y[is_dup] <- coords_j[, 2]
+    utm_sirgas_sf <- sf::st_as_sf(
+      sf::st_drop_geometry(utm_sirgas_sf),
+      coords = c("coord_x", "coord_y"), crs = 32721, remove = FALSE
+    )
+    linhas_para_atualizar <- idx_transform[is_dup]
+    ctb0087_event[linhas_para_atualizar,
+                  coord_precisao := round(sqrt(coord_precisao^2 + 1^2), 2)]
+  }
+  
+  # Reprojeta (transforma) as coordenadas já corrigidas para WGS84 (EPSG:4326)
+  wgs84_sf <- sf::st_transform(utm_sirgas_sf, crs = 4326)
+  
+  # Extrai as novas coordenadas geográficas (Longitude, Latitude)
+  transformed_coords <- sf::st_coordinates(wgs84_sf)
+  
+  # Atualiza a tabela original com as coordenadas convertidas em graus e o fuso 4326
+  ctb0087_event[idx_transform, `:=`(
+    coord_x = transformed_coords[, "X"],
+    coord_y = transformed_coords[, "Y"],
+    coord_datum = 4326L # Usando L para garantir o tipo inteiro estável
+  )]
+}
+
+check_equal_coordinates(ctb0087_event)
+summary(ctb0087_event[, .(coord_x, coord_y)])
+
 
 # País -> pais_id
 data.table::setnames(ctb0087_event, old = "País", new = "pais_id")
@@ -147,6 +198,25 @@ ctb0087_event[, .N, by = pedregosidade]
 #data.table::setnames(ctb0087_event, old = "Rochosidade", new = "rochosidade")
 ctb0087_event[, rochosidade := NA_character_]
 ctb0087_event[, .N, by = rochosidade]
+
+# cobertura
+# Concatenates one or more source columns (e.g. situacao, uso_atual, cobertura) into a single
+# field. Adjust the vector below with the names of the already-renamed source columns.
+data.table::setnames(ctb0087_event, old="Situação e declive", new="situacao")
+data.table::setnames(ctb0087_event, old="Uso e cobertura da terra", new="cobertura")
+cobertura_cols <- c("situacao", "cobertura")
+concat_columns(ctb0087_event, target = "cobertura", sources = cobertura_cols)
+
+# vegetacao 
+data.table::setnames(ctb0087_event, old="Vegetação local", new="vegetacao")
+ctb0087_event[, .N, by = vegetacao]
+
+# erosao
+data.table::setnames(ctb0087_event, old="Erosão", new="erosao")
+erosao_cols <- c("erosao")
+concat_columns(ctb0087_event, target = "erosao", sources = erosao_cols)
+ctb0087_event[, .N, by = erosao]
+
 
 str(ctb0087_event)
 
@@ -287,6 +357,13 @@ ctb0087_layer[!psd %in% psd_lims & !is.na(psd), ..cols]
 # No layers with psd != 1000.
 ctb0087_layer[, psd := NULL]
 
+
+# terrafina
+# missing information about "terrafina"
+ctb0087_layer[, terrafina := NA_character_]
+summary(ctb0087_layer[, terrafina])
+
+
 # carbono
 ctb0087_layer[, carbono := NA_real_]
 summary(ctb0087_layer[, carbono])
@@ -337,9 +414,9 @@ ctb0087[, dataset_id := "ctb0087"]
 # citation
 ctb0087 <- merge(ctb0087, ctb0087_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0087)
-# Layers: 
-# Events: 
-# Georeferenced events: 
+# Layers: 159
+# Events: 44
+# Georeferenced events: 35 
 
 # Plot using mapview
 if (FALSE) {
@@ -353,3 +430,4 @@ if (FALSE) {
 # Write to disk ####################################################################################
 ctb0087 <- select_output_columns(ctb0087)
 data.table::fwrite(ctb0087, "ctb0087/ctb0087.csv")
+
