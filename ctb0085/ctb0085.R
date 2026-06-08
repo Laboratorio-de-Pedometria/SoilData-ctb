@@ -214,6 +214,27 @@ ctb0085_event[, rochosidade := as.character(rochosidade)]
 ctb0085_event[, .N, by = rochosidade]
 
 
+# cobertura
+# Concatenates one or more source columns (e.g. situacao, uso_atual, cobertura) into a single
+# field. Adjust the vector below with the names of the already-renamed source columns.
+data.table::setnames(ctb0085_event, old = "Situação, declive e cobertura vegetal", new="situacao")
+data.table::setnames(ctb0085_event, old = "Uso e cobertura da terra", new="cobertura")
+cobertura_cols <- c("situacao","cobertura")
+concat_columns(ctb0085_event, target = "cobertura", sources = cobertura_cols)
+
+#vegetacao
+data.table::setnames(ctb0085_event, old = "Vegetação primária", new="vegetacao")
+ctb0085_event[, vegetacao := as.character(vegetacao)]
+ctb0085_event[, .N, by = vegetacao]
+
+# erosao
+data.table::setnames(ctb0085_event, old = "Erosão", new="erosao")
+erosao_cols <- c("erosao")
+concat_columns(ctb0085_event, target = "erosao", sources = erosao_cols)
+ctb0085_event[, .N, by = erosao]
+
+
+
 str(ctb0085_event)
 
 # layers ###########################################################################################
@@ -250,6 +271,14 @@ summary(ctb0085_layer[, profund_sup])
 data.table::setnames(ctb0085_layer, old = "Profundidade final [cm]", new = "profund_inf")
 ctb0085_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0085_layer[, profund_inf])
+
+
+# camada_id
+# We will create a unique identifier for each layer.
+ctb0085_layer <- ctb0085_layer[order(observacao_id, profund_sup, profund_inf)]
+ctb0085_layer[, camada_id := 1:.N, by = observacao_id]
+ctb0085_layer[, .N, by = camada_id]
+
 
 #areia grossa
 # old: Areia grossa 2-0,20 mm (g/kg)
