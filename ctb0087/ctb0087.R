@@ -209,6 +209,7 @@ concat_columns(ctb0087_event, target = "cobertura", sources = cobertura_cols)
 
 # vegetacao 
 data.table::setnames(ctb0087_event, old="Vegetação local", new="vegetacao")
+ctb0087_event(, vegetacao:= as.character(vegetacao))
 ctb0087_event[, .N, by = vegetacao]
 
 # erosao
