@@ -76,14 +76,14 @@ ctb0100_event[, .N, by = ano_fonte]
 # coord_x
 # old: X
 # new: coord_x
-data.table::setnames(ctb0100_event, old = "X", new = "coord_x")
+data.table::setnames(ctb0100_event, old = "X [m]", new = "coord_x")
 ctb0100_event[, coord_x := as.numeric(coord_x)]
 summary(ctb0100_event[, coord_x])
 
 # coord_y
 # old: Y
 # new: coord_y
-data.table::setnames(ctb0100_event, old = "Y", new = "coord_y")
+data.table::setnames(ctb0100_event, old = "Y [m]", new = "coord_y")
 ctb0100_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0100_event[, coord_y])
 
@@ -153,9 +153,9 @@ ctb0100_event[, amostra_area := as.numeric(amostra_area)]
 summary(ctb0100_event[, amostra_area])
 
 # taxon_sibcs
-# old: SiBCS[2013]
+# old: SiBCS v2013
 # new: taxon_sibcs
-data.table::setnames(ctb0100_event, old = "SiBCS [2013]", new = "taxon_sibcs")
+data.table::setnames(ctb0100_event, old = "SiBCS v2013", new = "taxon_sibcs")
 ctb0100_event[, taxon_sibcs := as.character(taxon_sibcs)]
 
 
@@ -173,6 +173,27 @@ ctb0100_event[, pedregosidade := as.character(pedregosidade)]
 # Rochosidade (superficie)
 data.table::setnames(ctb0100_event, old = "Rochosidade", new = "rochosidade")
 ctb0100_event[, rochosidade := as.character(rochosidade)]
+
+
+# cobertura
+# Concatenates one or more source columns (e.g. situacao, uso_atual, cobertura) into a single
+# field. Adjust the vector below with the names of the already-renamed source columns.
+data.table::setnames(ctb0100_event, old = "Uso atual", new = "uso_atual")
+cobertura_cols <- c("uso_atual")
+concat_columns(ctb0100_event, target = "cobertura", sources = cobertura_cols)
+
+#vegetacao
+data.table::setnames(ctb0100_event, old = "Vegetação primária", new = "vegetacao")
+ctb0100_event[, vegetacao := as.character(vegetacao)]
+ctb0100_event[, .N, by = vegetacao]
+
+# erosao
+data.table::setnames(ctb0100_event, old = "Erosão", new = "erosao")
+erosao_cols <- c("erosao")
+concat_columns(ctb0100_event, target = "erosao", sources = erosao_cols)
+ctb0100_event[, .N, by = erosao]
+
+
 
 
 str(ctb0100_event)
@@ -306,7 +327,7 @@ summary_soildata(ctb0100)
 
 #Layers: 34
 #Events: 7
-#Georeferenced events: 5
+#Georeferenced events: 7
 
 
 # Plot using mapview
