@@ -111,8 +111,8 @@ data.table::setnames(ctb0074_event, old = "Município", new = "municipio_id")
 ctb0074_event[, municipio_id := NA_character_]
 ctb0074_event[, .N, by = municipio_id]
 
-# Área do evento [m2] -> amostra_area
-data.table::setnames(ctb0074_event, old = "Área do evento [m2]", new = "amostra_area")
+# Área amostrada [m^2] -> amostra_area
+data.table::setnames(ctb0074_event, old = "Área amostrada [m^2]", new = "amostra_area")
 ctb0074_event[, amostra_area := NA_character_]
 summary(ctb0074_event[, amostra_area])
 
@@ -159,12 +159,6 @@ ctb0074_layer <- google_sheet(ctb0074_ids$gs_id, ctb0074_ids$gid_layer)
 str(ctb0074_layer)
 
 # Process fields
-
-# This study analyzed both the soil matrix and the nodules (plintites and petroplintites)
-# separately. This is represented in the "Material" column. Our target is the soil matrix
-# only. Therefore, we will filter the dataset to keep only the layers where "Material" is
-# "matriz".
-ctb0074_layer <- ctb0074_layer[Material == "matriz"]
 
 # ID do evento -> observacao_id
 data.table::setnames(ctb0074_layer, old = "ID do evento", new = "observacao_id")
@@ -222,7 +216,7 @@ ctb0074_layer[, terrafina := NA_real_]
 # areia
 # old: Areia [g/kg]
 # new: areia
-data.table::setnames(ctb0074_layer, old = "Silte [g/kg]", new = "areia")
+data.table::setnames(ctb0074_layer, old = "Areia [g/kg]", new = "areia")
 ctb0074_layer[, areia := as.numeric(areia)]
 summary(ctb0074_layer[, areia])
 check_empty_layer(ctb0074_layer, "areia")
@@ -293,9 +287,9 @@ ctb0074[, dataset_id := "ctb0074"]
 # citation
 ctb0074 <- merge(ctb0074, ctb0074_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0074)
-# Layers: 51
-# Events: 8
-# Georeferenced events: 8
+# Layers: 304
+# Events: 90
+# Georeferenced events: 0
 
 # Plot using mapview
 if (FALSE) {
