@@ -209,7 +209,7 @@ concat_columns(ctb0087_event, target = "cobertura", sources = cobertura_cols)
 
 # vegetacao 
 data.table::setnames(ctb0087_event, old="Vegetação local", new="vegetacao")
-ctb0087_event(, vegetacao:= as.character(vegetacao))
+ctb0087_event[, vegetacao := as.character(vegetacao)]
 ctb0087_event[, .N, by = vegetacao]
 
 # erosao
@@ -385,9 +385,9 @@ ctb0087_layer[,
 ]
 
 # ph
-# old: pH H2O
+# old: pH H_2O
 # new: ph
-data.table::setnames(ctb0087_layer, old = "pH H2O", new = "ph")
+data.table::setnames(ctb0087_layer, old = "pH H_2O", new = "ph")
 ctb0087_layer[, ph := as.numeric(ph)]
 summary(ctb0087_layer[, ph])
 
@@ -415,9 +415,9 @@ ctb0087[, dataset_id := "ctb0087"]
 # citation
 ctb0087 <- merge(ctb0087, ctb0087_citation, by = "dataset_id", all.x = TRUE)
 summary_soildata(ctb0087)
-# Layers: 159
-# Events: 44
-# Georeferenced events: 35 
+# Layers: 139
+# Events: 39
+# Georeferenced events: 30 
 
 # Plot using mapview
 if (FALSE) {
