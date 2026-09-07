@@ -100,7 +100,7 @@ ctb0068_event[, coord_y := NA_real_]
 # old:  Datum (coord)
 # new:  coord_datum
 data.table::setnames(ctb0068_event, old = "Datum (coord)", new = "coord_datum")
-ctb0066_event[, coord_datum := NA_real_]
+ctb0068_event[, coord_datum := NA_real_]
 
 # Precisão (coord) [m] -> coord_precisao
 # Coordinates were attributed with little knowledge of the precision. We set it to NA_real_
@@ -150,6 +150,26 @@ ctb0068_event[, pedregosidade := NA_character_]
 # there is no roughness in this work.
 
 ctb0068_event[, rochosidade := NA_character_]
+
+# cobertura
+# Concatenates one or more source columns (e.g. situacao, uso_atual, cobertura) into a single
+# field. Adjust the vector below with the names of the already-renamed source columns.
+ctb0068_event[, cobertura := NA_character_]
+cobertura_cols <- c("cobertura")
+concat_columns(ctb0068_event, target = "cobertura", sources = cobertura_cols)
+
+#vegetacao
+ctb0068_event[, vegetacao := NA_character_]
+ctb0068_event[, .N, by = vegetacao]
+
+# erosao
+#  No erosion data available in the source document for this dataset.
+ctb0068_event[, erosao := NA_character_]
+erosao_cols <- c("erosao")
+concat_columns(ctb0068_event, target = "erosao", sources = erosao_cols)
+ctb0068_event[, .N, by = erosao]
+
+
 
 
 str(ctb0068_event)

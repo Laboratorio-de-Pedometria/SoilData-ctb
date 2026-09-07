@@ -135,6 +135,25 @@ ctb0092_event[, pedregosidade := NA_character_]
 # now.
 ctb0092_event[, rochosidade := NA_character_]
 
+# cobertura
+# Concatenates one or more source columns (e.g. situacao, uso_atual, cobertura) into a single
+# field. Adjust the vector below with the names of the already-renamed source columns.
+ctb0092_event[, cobertura := NA_character_]
+cobertura_cols <- c("cobertura")
+concat_columns(ctb0092_event, target = "cobertura", sources = cobertura_cols)
+
+#vegetacao
+ctb0092_event[, vegetacao := NA_character_]
+ctb0092_event[, .N, by = vegetacao]
+
+# erosao
+#  No erosion data available in the source document for this dataset.
+ctb0092_event[, erosao := NA_character_]
+erosao_cols <- c("erosao")
+concat_columns(ctb0092_event, target = "erosao", sources = erosao_cols)
+ctb0092_event[, .N, by = erosao]
+
+
 str(ctb0092_event)
 
 # layers ###########################################################################################

@@ -518,6 +518,8 @@ check_depth_inversion <- function(data) {
 concat_columns <- function(data, target, sources, sep = " | ") {
   if (length(sources) > 1) {
     data[, (target) := do.call(paste, c(.SD, sep = sep)), .SDcols = sources]
+  }else if (length(sources) == 1){
+    data[, (target) := .SD, .SDcols = sources]
   }
   return(invisible(data))
 }

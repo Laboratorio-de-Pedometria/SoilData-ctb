@@ -203,6 +203,23 @@ ctb0094_event[, pedregosidade := NA_character_]
 
 ctb0094_event[, rochosidade := NA_character_]
 
+# cobertura
+# Concatenates one or more source columns (e.g. situacao, uso_atual, cobertura) into a single
+# field. Adjust the vector below with the names of the already-renamed source columns.
+data.table::setnames(ctb0094_event, old="Uso da terra", new="uso_atual")
+cobertura_cols <- c("uso_atual")
+concat_columns(ctb0094_event, target = "cobertura", sources = cobertura_cols)
+
+#vegetacao
+ctb0094_event[, vegetacao := NA_character_]
+ctb0094_event[, .N, by = vegetacao]
+
+# erosao
+#  No erosion data available in the source document for this dataset.
+ctb0094_event[, erosao := NA_character_]
+erosao_cols <- c("erosao")
+concat_columns(ctb0094_event, target = "erosao", sources = erosao_cols)
+ctb0094_event[, .N, by = erosao]
 
 
 str(ctb0094_event)
@@ -241,6 +258,14 @@ summary(ctb0094_layer[, profund_sup])
 data.table::setnames(ctb0094_layer, old = "Profundidade final [cm]", new = "profund_inf")
 ctb0094_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0094_layer[, profund_inf])
+
+# camada_id
+# We will create a unique identifier for each layer indicating the order of the layers in each soil
+# profile. Order by observacao_id and mid_depth.
+ctb0094_layer[, mid_depth := (profund_sup + profund_inf) / 2]
+data.table::setorder(ctb0094_layer, observacao_id, mid_depth)
+ctb0094_layer[, camada_id := seq_len(.N), by = observacao_id]
+ctb0094_layer[, .N, by = camada_id]
 
 #areia 
 # old: Areia [%]

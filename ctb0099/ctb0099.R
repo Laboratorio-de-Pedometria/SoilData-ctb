@@ -94,12 +94,12 @@ ctb0099_event[, .N, by = ano_fonte]
 
 # Longitude -> coord_x
 data.table::setnames(ctb0099_event, old = "Longitude", new = "coord_x")
-ctb0099_event[, coord_x := as.character(coord_x)]
+ctb0099_event[, coord_x := as.numeric(coord_x)]
 summary(ctb0099_event[, coord_x])
 
 # Latitude -> coord_y
 data.table::setnames(ctb0099_event, old = "Latitude", new = "coord_y")
-ctb0099_event[, coord_y := as.character(coord_y)]
+ctb0099_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0099_event[, coord_y])
 
 
@@ -181,6 +181,26 @@ ctb0099_event[, pedregosidade := NA_character_]
 ctb0099_event[, rochosidade := NA_character_]
 
 
+# cobertura
+# Concatenates one or more source columns (e.g. situacao, uso_atual, cobertura) into a single
+# field. Adjust the vector below with the names of the already-renamed source columns.
+ctb0099_event[, uso_atual := NA_character_]
+cobertura_cols <- c("uso_atual")
+concat_columns(ctb0099_event, target = "cobertura", sources = cobertura_cols)
+
+#vegetacao
+ctb0099_event[, vegetacao := NA_character_]
+ctb0099_event[, .N, by = vegetacao]
+
+# erosao
+ctb0099_event[, erosao:= NA_character_]
+erosao_cols <- c("erosao")
+concat_columns(ctb0099_event, target = "erosao", sources = erosao_cols)
+ctb0099_event[, .N, by = erosao]
+
+
+
+
 
 str(ctb0099_event)
 
@@ -218,6 +238,17 @@ summary(ctb0099_layer[, profund_sup])
 data.table::setnames(ctb0099_layer, old = "Profundidade final [cm]", new = "profund_inf")
 ctb0099_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0099_layer[, profund_inf])
+
+
+
+# camada_id
+# We will create a unique identifier for each layer indicating the order of the layers in each soil
+# profile. Order by observacao_id and mid_depth.
+ctb0099_layer[, mid_depth := (profund_sup + profund_inf) / 2]
+data.table::setorder(ctb0099_layer, observacao_id, mid_depth)
+ctb0099_layer[, camada_id := seq_len(.N), by = observacao_id]
+ctb0099_layer[, .N, by = camada_id]
+
 
 #areia fina
 # old: Areia fina [%]
@@ -322,3 +353,4 @@ ctb0099 <- select_output_columns(ctb0099)
 data.table::fwrite(ctb0099, "ctb0099/ctb0099.csv")
 data.table::fwrite(ctb0099_event, "ctb0099/ctb0099_event.csv")
 data.table::fwrite(ctb0099_layer, "ctb0099/ctb0099_layer.csv")
+

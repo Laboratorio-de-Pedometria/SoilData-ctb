@@ -154,6 +154,25 @@ ctb0082_event[, pedregosidade := NA_character_]
 # missing in this document.
 ctb0082_event[, rochosidade := NA_character_]
 
+# cobertura
+# Concatenates one or more source columns (e.g. situacao, uso_atual, cobertura) into a single
+# field. Adjust the vector below with the names of the already-renamed source columns.
+data.table::setnames(ctb0082_event, old = "Uso e cobertura da terra", new="cobertura")
+cobertura_cols <- c("cobertura")
+concat_columns(ctb0082_event, target = "cobertura", sources = cobertura_cols)
+
+#vegetacao
+data.table::setnames(ctb0082_event, old="Vegetação", new= "vegetacao")
+ctb0082_event[, vegetacao := as.character(vegetacao)]
+ctb0082_event[, .N, by = vegetacao]
+
+# erosao
+#  No erosion data available in the source document for this dataset.
+ctb0082_event[, erosao := NA_character_]
+erosao_cols <- c("erosao")
+concat_columns(ctb0082_event, target = "erosao", sources = erosao_cols)
+ctb0082_event[, .N, by = erosao]
+
 
 str(ctb0082_event)
 
@@ -190,6 +209,12 @@ summary(ctb0082_layer[, profund_sup])
 data.table::setnames(ctb0082_layer, old = "Profundidade final [cm]", new = "profund_inf")
 ctb0082_layer[, profund_inf := as.numeric(profund_inf)]
 summary(ctb0082_layer[, profund_inf])
+
+# camada_id
+# We will create a unique identifier for each layer.
+ctb0082_layer <- ctb0082_layer[order(observacao_id, profund_sup, profund_inf)]
+ctb0082_layer[, camada_id := 1:.N, by = observacao_id]
+ctb0082_layer[, .N, by = camada_id]
 
 #We dont have Areia/Silte/Argila informations in this document. So we set as NA_real_ (N/A)
 
