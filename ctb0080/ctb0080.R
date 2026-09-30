@@ -4,10 +4,10 @@
 # Source helper functions and packages
 source("./helper.R")
 
-# Google Sheet #####################################################################################
+# Google Sheet #################################################################
 # ctb0080
-# Dados de "Variabilidade de atributos do solo em um transecto entre os biomas Pantanal
-# Mato-Grossense e Cerrado"
+# Dados de "Variabilidade de atributos do solo em um transecto entre os biomas 
+# Pantanal Mato-Grossense e Cerrado"
 # 
 # Google Drive: https://drive.google.com/drive/u/1/folders/1n87B-QaQnTRNSpVDPpdtKEv5dbkOfbp6
 # NotebookLM: https://notebooklm.google.com/notebook/d8e16cd4-a3e8-4575-bf39-ac51f561a9de
@@ -71,20 +71,23 @@ ctb0080_event[, .N, by = ano_fonte]
 
 # data_ano - fill missing values
 year_range <- ctb0080_event[!is.na(data_ano), range(data_ano)]
-ctb0080_event[is.na(data_ano), data_ano := sample(year_range[1]:year_range[2], .N, replace = TRUE)]
+ctb0080_event[is.na(data_ano), data_ano := sample(year_range[1]:year_range[2],
+  .N,
+  replace = TRUE
+)]
 ctb0080_event[is.na(ano_fonte), ano_fonte := "Estimativa"]
 ctb0080_event[, .N, by = data_ano]
 ctb0080_event[, .N, by = ano_fonte]
 
 # coord_x
-# X -> coord_x
-data.table::setnames(ctb0080_event, old = "X", new = "coord_x")
+# X [m] -> coord_x
+data.table::setnames(ctb0080_event, old = "X [m]", new = "coord_x")
 ctb0080_event[, coord_x := as.numeric(coord_x)]
 summary(ctb0080_event[, coord_x])
 
 # coord_y
-# Y -> coord_y
-data.table::setnames(ctb0080_event, old = "Y", new = "coord_y")
+# Y [m] -> coord_y
+data.table::setnames(ctb0080_event, old = "Y [m]", new = "coord_y")
 ctb0080_event[, coord_y := as.numeric(coord_y)]
 summary(ctb0080_event[, coord_y])
 
@@ -125,11 +128,14 @@ data.table::setnames(ctb0080_event, old = "Fonte (coord)", new = "coord_fonte")
 ctb0080_event[, coord_fonte := as.character(coord_fonte)]
 ctb0080_event[, .N, by = coord_fonte]
 
-# Precisão (coord) -> coord_precisao
+# Precisão (coord) [m] -> coord_precisao
 # The coordinates were obtained using GPS equipment, but the sources do not explicitly state the
 # technical precision (e.g., error margin in meters or centimeters) of the GPS device used. So we
 # will assume a precision of 10 meters.
-data.table::setnames(ctb0080_event, old = "Precisão (coord)", new = "coord_precisao")
+data.table::setnames(ctb0080_event,
+  old = "Precisão (coord) [m]",
+  new = "coord_precisao"
+)
 ctb0080_event[, coord_precisao := as.numeric(coord_precisao)]
 summary(ctb0080_event[, coord_precisao])
 ctb0080_event[is.na(coord_precisao), coord_precisao := 10]
@@ -319,9 +325,12 @@ ctb0080_layer[!psd_check & !is.na(psd_check), .(observacao_id, camada_nome, argi
 # There are no layers with sum of the particle size distribution outside the limits.
 
 # carbono
-# old: C[orgânico] [g/kg]
+# old: C (orgânico) [g/kg]
 # new: carbono
-data.table::setnames(ctb0080_layer, old = "C[orgânico] [g/kg]", new = "carbono")
+data.table::setnames(ctb0080_layer,
+  old = "C (orgânico) [g/kg]",
+  new = "carbono"
+)
 ctb0080_layer[, carbono := as.numeric(carbono)]
 summary(ctb0080_layer[, carbono])
 # There are 11 layers with missing "carbono" values. These include organic layers and an R layer,
@@ -339,9 +348,9 @@ summary(ctb0080_layer[, ctc])
 check_empty_layer(ctb0080_layer, "ctc")
 
 # ph
-# old: pH [H_2O]
+# old: pH (H_2O)
 # new: ph
-data.table::setnames(ctb0080_layer, old = "pH [H_2O]", new = "ph")
+data.table::setnames(ctb0080_layer, old = "pH (H_2O)", new = "ph")
 ctb0080_layer[, ph := as.numeric(ph)]
 summary(ctb0080_layer[, ph])
 # There are 1740 layers with missing "ph" values. These include organic layers, an R layer, and the
