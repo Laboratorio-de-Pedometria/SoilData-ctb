@@ -393,7 +393,7 @@ select_output_columns <- function(data) {
     #cobertura vai concatecar ("situacao" + "uso atual" + "cobertura")
     #vegetacao <- vegetacao_primaria
     #erosao (existe a possibilidade de ter mais tipos)
-    "erosao", "cobertura", "vegetacao", 
+    # "erosao", "cobertura", "vegetacao", 
     "camada_nome", "amostra_id", "camada_id",
     "profund_sup", "profund_inf",
     "terrafina",
