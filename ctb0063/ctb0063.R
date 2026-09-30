@@ -13,10 +13,10 @@ if (!require("sf")) {
 # Source helper functions
 source("./helper.R")
 
-# Google Sheet #####################################################################################
+# Google Sheet #################################################################
 # ctb0063
-# Dados de "Levantamento de reconhecimento de alta intensidade dos solos da Apa de Cafuringa-DF,
-# escala 1:100.000"
+# Dados de "Levantamento de reconhecimento de alta intensidade dos solos da Apa 
+# de Cafuringa-DF, escala 1:100.000"
 # https://drive.google.com/drive/folders/1xCfTSFF5fk5izBf7kjtkuJqHss-jddLf
 gs <- "13s32KBMYs7-g5pQyLg7WzhcK8RRvQMF3T93ZT9-An14"
 gid_validation <- 1974932169
@@ -24,14 +24,14 @@ gid_citation <- 923063661
 gid_event <- 1636375983
 gid_layer <- 2135436033
 
-# validation #######################################################################################
+# validation ###################################################################
 ctb0063_validation <- google_sheet(gs, gid_validation)
 str(ctb0063_validation)
 
 # Check for negative validation results
 sum(ctb0063_validation == FALSE, na.rm = TRUE)
 
-# citation #########################################################################################
+# citation #####################################################################
 ctb0063_citation <- google_sheet(gs, gid_citation)
 str(ctb0063_citation)
 
@@ -198,14 +198,20 @@ ctb0063_layer <- ctb0063_layer[order(observacao_id, profund_sup, profund_inf)]
 ctb0063_layer[, camada_id := 1:.N, by = observacao_id]
 ctb0063_layer[, .N, by = camada_id]
 
-# Terra fina [%] * 10 -> terrafina
+# Terra fina < 2mm [%] * 10 -> terrafina
 # 2024-12-20 Missing. Lisiane will check.
-data.table::setnames(ctb0063_layer, old = "Terra fina [%]", new = "terrafina")
+data.table::setnames(ctb0063_layer,
+  old = "Terra fina < 2mm [%]",
+  new = "terrafina"
+)
 ctb0063_layer[, terrafina := as.numeric(terrafina) * 10]
 summary(ctb0063_layer[, terrafina])
 
-# Argila [%] * 10 -> argila
-data.table::setnames(ctb0063_layer, old = "Argila [%]", new = "argila")
+# Argila < 0,002mm [%] * 10 -> argila
+data.table::setnames(ctb0063_layer,
+  old = "Argila < 0,002mm [%]",
+  new = "argila"
+)
 ctb0063_layer[, argila := as.numeric(argila) * 10]
 summary(ctb0063_layer[, argila])
 
