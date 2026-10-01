@@ -16,33 +16,37 @@ if (!requireNamespace("parzer")) {
   install.packages("parzer")
 }
 
-# Describe soil data ###############################################################################
+# Describe soil data ###########################################################
 # This function summarizes a data.frame containing soil data.
-# It prints the column names, number of layers, number of events, and number of georeferenced events.
+# It prints the column names, number of layers, number of events, and number of 
+# georeferenced events.
 # x: data.frame containing soil data
 # na.rm: logical, whether to remove NA values (default is TRUE)
 # Returns: None, prints the summary to the console
 # Example usage: summary_soildata(soil_data, na.rm = TRUE)
-# Note: The function assumes that the data.table package is loaded and that the data has columns
-# 'dataset_id', 'observacao_id', 'coord_x', and 'coord_y'.
+# Note: The function assumes that the data.table package is loaded and that the 
+# data has columns 'dataset_id', 'observacao_id', 'coord_x', and 'coord_y'.
 summary_soildata <- function(x, na.rm = TRUE) {
   id <- c("dataset_id", "observacao_id")
   cat("Column names:")
   cat("\n", paste(names(x)), collapse = " ")
   cat("\nLayers:", nrow(x))
   cat("\nEvents:", nrow(unique(x[, ..id])))
-  cat("\nGeoreferenced events:", nrow(unique(x[!is.na(coord_x) & !is.na(coord_y), ..id])))
+  cat(
+    "\nGeoreferenced events:",
+    nrow(unique(x[!is.na(coord_x) & !is.na(coord_y), ..id]))
+  )
   cat("\n")
 }
 
-# Read Google Sheet ################################################################################
+# Read Google Sheet ############################################################
 # This function reads a Google Sheet and returns it as a data.table.
 # gs: Google Sheet ID
 # gid: Google Sheet GID
 # Returns: data.table with the contents of the Google Sheet
 # Example usage: google_sheet("1A2B3C4D5E6F7G8H9I0J", "123456789")
-# Note: Ensure that the Google Sheet is publicly accessible or shared with the appropriate
-# permissions.
+# Note: Ensure that the Google Sheet is publicly accessible or shared with the 
+# appropriate permissions.
 google_sheet <- function(gs, gid) {
   sheet_path <- paste0(
     "https://docs.google.com/spreadsheets/u/1/d/",
@@ -54,25 +58,32 @@ google_sheet <- function(gs, gid) {
   )
   dt <- data.table::fread(
     sheet_path,
-    dec = ",", sep = "\t", na.strings = c("NA", "NaN", "-", "#N/A"), header = TRUE
+    dec = ",", sep = "\t", na.strings = c("NA", "NaN", "-", "#N/A"), 
+    header = TRUE
   )
   return(dt)
 }
 
-# Read SoilData Catalog ############################################################################
-# This function reads a spreadsheet catalog containing the spreadsheet ID and GID for each dataset.
-# It returns a data.table with the dataset ID, Google Sheet ID, and GID.
+# Read SoilData Catalog ########################################################
+# This function reads a spreadsheet catalog containing the spreadsheet ID and 
+# GID for each dataset. It returns a data.table with the dataset ID, Google 
+# Sheet ID, and GID.
 # ctb: character string, the dataset ID (e.g., "ctb0001")
 # Returns: data.table with the dataset ID, Google Sheet ID, and GID
 # Example usage: soildata_catalog("ctb0001")
-# Note: The function assumes that the google_sheet function is available and that the Google Sheet
-# with the catalog is publicly accessible.
+# Note: The function assumes that the google_sheet function is available and 
+# that the Google Sheet with the catalog is publicly accessible.
 soildata_catalog <- function(ctb) {
   # Read the catalog from the Google Sheet
-  catalog <- google_sheet(gs = "13_6nt97aNc3bWHrfXW-OpkmtvVh-D37DLgRnu6Yps48", gid = 0)
+  catalog <- google_sheet(
+    gs = "13_6nt97aNc3bWHrfXW-OpkmtvVh-D37DLgRnu6Yps48", gid = 0
+  )
   # Keep only relevant columns
   # ID, gs_id	gid_citation	gid_event	gid_layer	gid_validation
-  catalog <- catalog[, .(ID, gs_id, gid_citation, gid_event, gid_layer, gid_validation)]
+  catalog <- catalog[
+    ,
+    .(ID, gs_id, gid_citation, gid_event, gid_layer, gid_validation)
+  ]
   # Filter by ID == ctb
   catalog <- catalog[ID == ctb]
   # Check if catalog is empty
@@ -82,18 +93,20 @@ soildata_catalog <- function(ctb) {
   return(catalog)
 }
 
-# Solve plus sign in layer depth limits ############################################################
-# This function checks if a string (soil layer depth, generally the last record of the 'profund_inf'
-# column) ends with a plus sign ('+'). This generraly occurs when the final depth of a soil layer is
-# not specified, indicating that the layer extends beyond a certain depth. If the string ends with
-# a plus sign, it evaluates the string as an R expression and adds a specified depth value
+# Solve plus sign in layer depth limits ########################################
+# This function checks if a string (soil layer depth, generally the last record 
+# of the 'profund_inf' column) ends with a plus sign ('+'). This generraly 
+# occurs when the final depth of a soil layer is not specified, indicating that
+# the layer extends beyond a certain depth. If the string ends with a plus sign,
+# it evaluates the string as an R expression and adds a specified depth value
 # (default is 20) to it. The result is returned as a character string.
 # x: string representing the soil layer depth
-# plus.depth: numeric value to be added to the depth if it ends with a plus sign (default is 20)
+# plus.depth: numeric value to be added to the depth if it ends with a plus sign
+# (default is 20)
 # Returns: character string representing the updated soil layer depth
 # Example usage: depth_plus("100+") # returns "120"
-# Note: The function uses `eval(parse(...))` to evaluate the string as an R expression,
-# which allows for dynamic calculations based on the string content.
+# Note: The function uses `eval(parse(...))` to evaluate the string as an R 
+# expression, which allows for dynamic calculations based on the string content.
 depth_plus <- function (x, plus.depth = 20) {
   if (grepl("\\+$", x)) {
     x <- eval(parse(text = paste0(x, plus.depth)))
@@ -102,19 +115,20 @@ depth_plus <- function (x, plus.depth = 20) {
   return(x)
 }
 
-# Solve slash in layer depth limits ################################################################
-# This function checks if a string contains a slash ('/'), specifically, the depth limits of soil
-# layers. This is often used to represent a range of depths in a soil layer with irregular, wavy, 
-# or broken boundaries. If a slash is found, it replaces it with a plus sign ('+'), evaluates the
-# string as an R expression, and divides the result by the number of slashes plus one. The final
-# result is returned as a character string. This function is useful for processing depth limits
-# that are represented as ranges, allowing for a more standardized representation of soil layer
-# depths.
+# Solve slash in layer depth limits ############################################
+# This function checks if a string contains a slash ('/'), specifically, the 
+# depth limits of soil layers. This is often used to represent a range of depths
+# in a soil layer with irregular, wavy, or broken boundaries. If a slash is 
+# found, it replaces it with a plus sign ('+'), evaluates the string as an R 
+# expression, and divides the result by the number of slashes plus one. The 
+# final result is returned as a character string. This function is useful for 
+# processing depth limits that are represented as ranges, allowing for a more 
+# standardized representation of soil layer depths.
 # x: string representing the depth limits of soil layers
 # Returns: character string representing the processed depth limits
 # Example usage: depth_slash("10/20") # returns "15"
-# Note: The function uses `eval(parse(...))` to evaluate the string as an R expression,
-# which allows for dynamic calculations based on the string content.
+# Note: The function uses `eval(parse(...))` to evaluate the string as an R 
+# expression, which allows for dynamic calculations based on the string content.
 depth_slash <- function(x) {
   if (grepl("/", x)) {
     n_slash <- sum(grepl("/", x))
